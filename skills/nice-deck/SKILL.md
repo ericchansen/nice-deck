@@ -61,8 +61,10 @@ imagery. A PPTX export is an optional, lossy afterthought, never the goal.
 
 4. **Build on a language template.** Copy `templates/languages/<language>.html`, keep its shell
    (nav, dots, progress, keyboard handler, animation classes), and replace the slide content.
-   One `.slide` section per slide. Serve locally to view: `python -m http.server` in the deck
-   folder, open `http://localhost:8000/<deck>.html`.
+   One `.slide` section per slide. Copying a template to a new deck folder **also requires copying
+   its `heroes/` folder** (or updating the relative `heroes/hero-*.png` paths) — otherwise the
+   hero images 404. Serve locally to view: `python -m http.server` in the deck folder, open
+   `http://localhost:8000/<deck>.html`.
 
 5. **Generate heroes.** Write prompts from the chosen language's illustration style; **bake only
    short labels** (1–4 words) with `reads EXACTLY "…"`; never trust the model with a URL,
@@ -74,10 +76,11 @@ imagery. A PPTX export is an optional, lossy afterthought, never the goal.
    Place heroes full-bleed via `background:center/cover`. The model is **3:2 only** (1536×1024);
    let it crop to 16:9, don't distort. Serialize gens (~30s gaps); each takes ~100–140s.
 
-6. **Verify by screenshot — before reporting.** This is the gate, not optional.
+6. **Verify by screenshot — before reporting.** This is the gate, not optional. Run both
+   commands from `skills/nice-deck`.
    ```
-   npm i playwright && npx playwright install chromium   # once
-   node scripts/check.js http://localhost:8000/<deck>.html <prefix> ./_renders
+   npm i playwright && npx playwright install chromium   # once, from skills/nice-deck
+   node scripts/check.js http://localhost:8000/<deck>.html <prefix> ./_renders   # from skills/nice-deck
    ```
    Actually look at every render: heroes crisp and non-garbled, on-language, native strings
    exact, nothing overlaps or clips, the deck reads coherently, **09/09 no console errors**.

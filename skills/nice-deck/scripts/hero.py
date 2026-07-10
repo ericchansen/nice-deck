@@ -18,6 +18,7 @@ Usage:
   python hero.py --prompt "..." --out heroes/01.png --size 1536x1024 --quality high
 """
 import argparse, base64, json, os, subprocess, sys, time, urllib.request, urllib.error
+from pathlib import Path
 
 DEFAULT_API_VERSIONS = ["2025-04-01-preview", "2025-12-01-preview",
                         "2026-04-01-preview", "2026-01-01-preview",
@@ -75,6 +76,8 @@ def gen(prompt, size, quality, endpoint, deployment, versions, tok):
 
 
 def main():
+    # Load the repo-root .env (where .env.example lives) regardless of cwd, then a local .env.
+    load_dotenv(Path(__file__).resolve().parents[3] / ".env")
     load_dotenv()
     ap = argparse.ArgumentParser()
     ap.add_argument("--prompt")
