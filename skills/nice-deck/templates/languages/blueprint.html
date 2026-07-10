@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nice·deck — Blueprint deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@10..48,300..800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--nav:#080C1E;--nav2:#0C1230;--grid:rgba(142,150,230,.115);--grid2:rgba(142,150,230,.06);--indigo:#6E6AF0;--indigo-soft:#9C99F5;--amber:#E6982F;--amber-soft:#F4B85F;--txt:#E7E9F6;--txt-dim:#A4ADD0;--txt-faint:#657096;--line:rgba(156,153,245,.32);--panel:rgba(9,15,42,.72);--disp:"Bricolage Grotesque",system-ui,sans-serif;--sans:"Inter",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%}body{background:var(--nav);color:var(--txt);font-family:var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased;position:relative}body:before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(120% 100% at 50% 0%,var(--nav2),var(--nav) 58%,#050817),linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px),linear-gradient(var(--grid2) 1px,transparent 1px),linear-gradient(90deg,var(--grid2) 1px,transparent 1px);background-size:100% 100%,44px 44px,44px 44px,220px 220px,220px 220px;mask-image:radial-gradient(120% 100% at 50% 45%,#000 54%,transparent 94%)}body:after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(100% 75% at 50% 42%,transparent 58%,rgba(0,0,0,.5))}.aurora,.vignette{display:none}.deck{position:fixed;inset:0;z-index:3}.slide{position:absolute;inset:0;padding:54px 96px 78px;display:flex;flex-direction:column;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .5s ease;overflow:hidden}.slide.active{opacity:1;visibility:visible;pointer-events:auto}.slide:before{content:"";position:absolute;inset:18px;border:1px solid rgba(156,153,245,.16);pointer-events:none}.slide:after{content:attr(data-sheet);position:absolute;right:34px;top:28px;font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:var(--txt-faint)}.eyebrow{font-family:var(--mono);font-size:clamp(11px,.9vw,14px);letter-spacing:.28em;text-transform:uppercase;color:var(--txt-faint)}.eyebrow b{color:var(--indigo-soft)}.head{font-family:var(--disp);font-weight:800;line-height:.98;letter-spacing:-.02em;font-size:clamp(42px,5.3vw,78px);color:#fff;margin-top:13px}.head .am{color:var(--amber-soft)}.head .in{color:var(--indigo-soft)}.lede{font-size:clamp(16px,1.35vw,22px);color:var(--txt-dim);margin-top:14px;max-width:32ch;line-height:1.38}.footer{position:absolute;left:96px;right:96px;bottom:34px;display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);font-size:clamp(10px,.8vw,13px);color:var(--txt-faint);border-top:1px solid rgba(156,153,245,.22);padding-top:11px}.footer .r{color:var(--txt-dim);letter-spacing:.08em}.panel,.term,.artboard,#s7 .chain .st,#s7 .vs .one,#s9 .cta .install{background:var(--panel);border:1px solid var(--line);border-radius:4px;box-shadow:0 24px 70px rgba(0,0,0,.36),0 0 0 1px rgba(255,255,255,.02) inset;position:relative}.panel:before,.term:before{content:"";position:absolute;inset:8px;border:1px solid rgba(156,153,245,.10);pointer-events:none}.tag,#s5 .it{font-family:var(--mono);border:1px solid rgba(156,153,245,.28);border-radius:0;background:rgba(255,255,255,.025);color:var(--txt-dim)}.tag.ind,#s5 .lane.d .lt,#s6 .cell.src .v,#s9 .big .in{color:var(--indigo-soft)}.tag.amb,#s5 .it.star,#s5 .lane.b .lt,#s6 .cell.out .v,#s7 .pr.two h3,#s9 .cc .v b{color:var(--amber-soft);border-color:rgba(230,152,47,.45)}.rise,.fade,.grow,.wm .w,.artboard{opacity:0}.slide.active .rise{animation:rise .75s cubic-bezier(.2,.8,.2,1) forwards;animation-delay:var(--d,0s)}.slide.active .fade{animation:fade .85s ease forwards;animation-delay:var(--d,0s)}.slide.active .grow{animation:grow .7s cubic-bezier(.2,.8,.2,1) forwards;animation-delay:var(--d,0s)}@keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}@keyframes fade{to{opacity:1}}@keyframes grow{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}.wm{font-family:var(--disp);font-weight:800;letter-spacing:-.04em;line-height:.88;display:flex;flex-wrap:nowrap}.slide.active .wm .w{animation:wordIn .75s cubic-bezier(.2,.85,.2,1) forwards;animation-delay:var(--wd,0s)}@keyframes wordIn{from{opacity:0;transform:translateY(36px) rotate(3deg)}to{opacity:1;transform:none}}.artboard{border-radius:5px;background:#F7F4EC;box-shadow:0 28px 70px rgba(0,0,0,.55),0 0 46px -8px rgba(110,106,240,.5);border:1px solid rgba(156,153,245,.35);overflow:visible}.slide.active .artboard{animation:grow .8s cubic-bezier(.2,.8,.2,1) .25s forwards}.artboard img{display:block;width:100%;height:100%;object-fit:cover;border-radius:4px}.artboard .cap{display:none}.artboard .sheen{position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 32%,rgba(255,255,255,.16) 47%,transparent 62%);transform:translateX(-120%);overflow:hidden}.slide.active .artboard .sheen{animation:sheen 3.2s ease .9s infinite}@keyframes sheen{0%{transform:translateX(-120%)}55%,100%{transform:translateX(120%)}}.tick{position:absolute;width:19px;height:19px;border:1.5px solid var(--indigo-soft);opacity:.92}.tl{left:-10px;top:-10px;border-right:0;border-bottom:0}.tr{right:-10px;top:-10px;border-left:0;border-bottom:0}.bl{left:-10px;bottom:-10px;border-right:0;border-top:0}.br{right:-10px;bottom:-10px;border-left:0;border-top:0}.figcap{position:absolute;left:0;bottom:-27px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--txt-faint);white-space:nowrap}.figcap b{color:var(--amber-soft)}.pin{position:absolute;z-index:6;max-width:210px}.pin .n{font-family:var(--disp);font-weight:800;font-size:14px;color:var(--nav);display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 5px rgba(230,152,47,.16)}.pin .t{font-family:var(--disp);font-weight:800;font-size:16px;color:#fff;margin-top:8px;line-height:1.05}.pin .d{font-size:13px;line-height:1.38;color:var(--txt-dim);margin-top:4px}.pin.r{text-align:right}.pin.small{max-width:180px}.pin.small .t{font-size:14px}.pin.small .d{font-size:12px}.wire-layer{position:absolute;inset:0;width:100%;height:100%;z-index:2;overflow:visible;pointer-events:none}.wire-layer path{fill:none;stroke:var(--indigo-soft);stroke-width:1.35;opacity:.56;stroke-dasharray:1;stroke-dashoffset:1}.slide.active .wire-layer path{animation:draw 1s ease var(--d,.2s) forwards}.flow-dot{fill:var(--amber);r:3;opacity:0}.slide.active .flow-dot{animation:flowIn .2s ease var(--fd,.9s) forwards}@keyframes draw{to{stroke-dashoffset:0}}@keyframes flowIn{to{opacity:1}}#s1{flex-direction:row;align-items:center;gap:64px}#s1 .left{width:43%;z-index:5}#s1 .right{flex:1;position:relative;height:100%;z-index:3;display:flex;align-items:center;justify-content:center}#s1 .wm{font-size:clamp(64px,8vw,124px);white-space:nowrap;margin-top:18px}#s1 .dot{color:var(--amber);-webkit-text-fill-color:var(--amber)}#s1 .sub{font-size:clamp(18px,1.55vw,25px);color:var(--txt-dim);margin-top:24px;max-width:27ch;line-height:1.35}#s1 .sub b{color:#fff}#s1 .artboard{width:min(45vw,640px);aspect-ratio:3/2}#s1 .term{margin-top:32px;width:min(42vw,540px)}#s1 .term .body{font-size:clamp(12px,1vw,16px);line-height:1.7}.term{background:rgba(4,8,24,.86);border:1px solid rgba(156,153,245,.34);border-radius:4px;overflow:visible}.term .bar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid rgba(156,153,245,.22);background:rgba(156,153,245,.045)}.term .bar i{width:10px;height:10px;border-radius:50%;display:block}.r1{background:#E0645C}.r2{background:#E0B23C}.r3{background:#5BC46B}.term .bar span{margin-left:8px;font-family:var(--mono);font-size:12px;color:var(--txt-faint);letter-spacing:.08em}.term .body{padding:16px 18px;font-family:var(--mono);min-height:1em}.term .ln{white-space:pre-wrap;word-break:break-word}.term .p{color:var(--indigo-soft)}.term .id{color:var(--amber-soft)}.term .ok{color:#75D77E}.term .cm{color:var(--txt-faint)}.term .k{color:var(--txt-dim)}#s2{justify-content:center}#s2 .idx{position:absolute;right:5vw;bottom:8vh;font-family:var(--disp);font-weight:800;font-size:13vw;line-height:.9;color:rgba(156,153,245,.055);pointer-events:none}#s2 .kick{font-family:var(--mono);font-size:13px;letter-spacing:.34em;text-transform:uppercase;color:var(--amber-soft)}#s2 .big{font-family:var(--disp);font-weight:800;line-height:1.02;letter-spacing:-.025em;font-size:clamp(52px,6.7vw,104px);color:#fff;margin-top:20px;max-width:18ch;background:var(--panel);border:1px solid var(--line);padding:42px 50px;position:relative}#s2 .big b{color:var(--indigo-soft)}#s2 .rule{height:3px;width:min(37vw,560px);transform:scaleX(0);transform-origin:left;background:linear-gradient(90deg,var(--indigo),var(--amber));margin-top:34px}.slide.active #s2 .rule{animation:ruleGrow 1s cubic-bezier(.2,.8,.2,1) .5s forwards}@keyframes ruleGrow{to{transform:scaleX(1)}}#s3{flex-direction:row;align-items:center;gap:50px}#s3 .left{width:43%;z-index:4}#s3 .right{flex:1;position:relative;display:flex;align-items:center;justify-content:center;z-index:3}#s3 .stats{display:grid;grid-template-columns:1fr 1fr;gap:18px 22px;margin-top:34px}#s3 .st{padding:18px;border:1px solid var(--line);background:var(--panel);border-radius:4px}#s3 .st .n{font-family:var(--disp);font-weight:800;letter-spacing:-.03em;line-height:.92;font-size:clamp(44px,4.9vw,78px);color:#fff}#s3 .st.a .n{color:var(--amber-soft)}#s3 .st.i .n{color:var(--indigo-soft)}#s3 .st .l{font-size:clamp(12px,1vw,16px);color:var(--txt-dim);margin-top:6px;line-height:1.25}#s3 .artboard{width:min(43vw,620px);aspect-ratio:3/2}#s4 .cols{display:grid;grid-template-columns:1fr 1fr;gap:90px;margin-top:42px;flex:1;min-height:0;align-items:center}#s4 .col{padding:34px;min-height:390px;display:flex;flex-direction:column;justify-content:center}#s4 .col .cap,#s4 .col .flow,#s5 .lane .ln,#s6 .cell .sub,#s7 .pr .sub,#s7 .self,#s8 .note .k,#s9 .cc .k{font-family:var(--mono);color:var(--txt-faint)}#s4 .col h3{font-family:var(--disp);font-weight:800;font-size:clamp(34px,3.4vw,54px);line-height:.95;margin-top:12px}#s4 .col.p1 h3,#s7 .pr.one h3{color:var(--indigo-soft)}#s4 .col.p2 h3{color:var(--amber-soft)}#s4 .col p{font-size:clamp(15px,1.22vw,20px);color:var(--txt-dim);line-height:1.42;margin-top:18px}#s4 .flow{font-size:clamp(14px,1.2vw,19px);padding-top:28px;line-height:1.9}#s4 .flow .a{color:var(--amber-soft)}#s4 .chips{display:grid;gap:12px;margin-top:28px}#s5 .lanes{display:flex;flex-direction:column;gap:10px;margin-top:24px;flex:1;min-height:0;justify-content:center}#s5 .lane{padding:18px 22px;min-height:142px}#s5 .lane .lh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;border-bottom:2px solid rgba(156,153,245,.42);padding-bottom:12px}#s5 .lane .lt{font-family:var(--disp);font-weight:800;font-size:clamp(22px,2vw,30px)}#s5 .lane .items{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;overflow:visible}#s5 .it{font-size:clamp(10px,.8vw,12px);padding:6px 9px;white-space:nowrap}#s5 .lane .foot{display:none}#s5 .legend{margin-top:10px;font-family:var(--mono);font-size:clamp(12px,.95vw,15px);color:var(--txt-dim)}#s5 .legend b{color:var(--amber-soft)}#s6 .flowrows{display:flex;flex-direction:column;gap:16px;margin-top:30px;flex:1;justify-content:center}#s6 .fr{display:grid;grid-template-columns:1fr .78fr 1.35fr 1.2fr;align-items:center;gap:30px;background:transparent;border:0;box-shadow:none}#s6 .cell{min-height:105px;padding:18px 14px;text-align:center;position:relative;border:1px solid var(--line);background:var(--panel);border-radius:4px;display:flex;flex-direction:column;justify-content:center}#s6 .cell .k{display:none}#s6 .cell .v{font-family:var(--disp);font-weight:800;font-size:clamp(19px,1.7vw,27px);line-height:1.07;color:#fff}#s6 .colhead{display:grid;grid-template-columns:1fr .78fr 1.35fr 1.2fr;gap:30px;font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--txt-faint);padding:0 10px}#s6 .sumbar{margin-top:16px;font-family:var(--mono);font-size:clamp(14px,1.25vw,20px);color:#fff;text-align:center;letter-spacing:.05em}#s6 .sumbar b{color:var(--indigo-soft)}#s6 .sumbar .am{color:var(--amber-soft)}#s7 .two{display:grid;grid-template-columns:1fr 1fr;gap:52px;margin-top:34px;flex:1;z-index:3}#s7 .pr{padding:36px;display:flex;flex-direction:column;justify-content:center}#s7 .pr h3{font-family:var(--disp);font-weight:800;font-size:clamp(32px,3vw,48px);line-height:1}#s7 .vs{display:flex;align-items:center;gap:14px;font-family:var(--mono);font-size:clamp(14px,1.2vw,18px);color:#fff}#s7 .vs .many{color:var(--txt-faint);flex:1;font-size:clamp(12px,1vw,15px);line-height:1.5;border:1px solid rgba(156,153,245,.24);padding:16px}#s7 .vs .one{background:var(--indigo);color:#fff;border-radius:0;padding:14px 18px;font-weight:700;white-space:nowrap}#s7 .chain{display:grid;grid-template-columns:1fr 1fr;gap:22px;font-family:var(--mono);font-size:clamp(12px,1vw,15px);position:relative}#s7 .chain .st{border-radius:0;padding:14px;color:#fff;text-align:center}#s7 .chain .st.err{color:var(--amber-soft);border-color:rgba(230,152,47,.45)}#s7 .chain .ar{display:none}#s8{align-items:center;justify-content:center}#s8 .wrap8{width:min(78vw,1040px);z-index:3}#s8 .wrap8 .head{font-size:clamp(54px,6.5vw,96px)}#s8 .term{margin-top:38px}#s8 .term .body{font-size:clamp(17px,1.52vw,24px);line-height:2.05;min-height:190px}#s8 .notes{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:26px}#s8 .note{padding:22px 20px}#s8 .note .v{font-family:var(--disp);font-weight:800;font-size:clamp(21px,1.8vw,28px);color:#fff;margin-top:7px}#s9{justify-content:center;align-items:flex-start}#s9 .big{font-family:var(--disp);font-weight:800;font-size:clamp(48px,5.8vw,88px);line-height:1;letter-spacing:-.02em;max-width:14ch}#s9 .sub{font-size:clamp(18px,1.55vw,25px);color:var(--txt-dim);margin-top:22px}#s9 .cards{display:flex;gap:18px;margin-top:42px}#s9 .cc{padding:24px 22px;min-width:230px}#s9 .cc .v{font-family:var(--disp);font-weight:800;font-size:31px;color:#fff;margin-top:9px}#s9 .cta{margin-top:42px;display:flex;align-items:center;gap:14px;font-family:var(--mono);font-size:18px}#s9 .cta .g{color:var(--indigo-soft);font-size:28px}#s9 .cta .install{color:#fff;border-radius:0;padding:12px 15px}.nav{position:fixed;z-index:6;left:50%;bottom:2.4vh;transform:translateX(-50%);display:flex;align-items:center;gap:14px;padding:9px 14px;border-radius:999px;background:rgba(5,8,24,.78);border:1px solid var(--line);backdrop-filter:blur(12px)}.nav button{background:none;border:none;color:var(--txt-dim);cursor:pointer;font-size:20px;line-height:1;padding:4px 8px;border-radius:8px;transition:color .2s,background .2s}.nav button:hover{color:var(--txt);background:rgba(255,255,255,.06)}.nav .count{font-family:var(--mono);font-size:14px;color:var(--txt-dim);letter-spacing:.1em;min-width:6ch;text-align:center}.dots{display:flex;gap:7px;align-items:center}.dots i{width:7px;height:7px;border-radius:50%;background:rgba(140,146,180,.28);cursor:pointer;transition:all .25s}.dots i.on{background:var(--amber-soft);width:20px;border-radius:4px}.hint{position:fixed;z-index:6;right:2.4vw;bottom:2.8vh;font-family:var(--mono);font-size:12px;color:var(--txt-faint);letter-spacing:.08em;opacity:0;animation:hintIn .6s ease 1.2s forwards}@keyframes hintIn{to{opacity:.8}}.progress{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--indigo),var(--amber));z-index:6;transition:width .5s ease}
+</style>
+</head>
+<body>
+<div class="aurora"><i></i><i></i><i></i></div>
+<div class="vignette"></div>
+<div class="progress" id="prog"></div>
+
+<div class="deck" id="deck">
+
+  <!-- 1 · TITLE -->
+  <section class="slide active" id="s1">
+    <div class="left">
+      <div class="eyebrow rise" style="--d:.05s">An open-source deck engine · <b>Copilot CLI skill</b></div>
+      <div class="wm" aria-label="nice-deck">
+        <span class="w" style="--wd:.15s">n</span><span class="w" style="--wd:.2s">i</span><span class="w" style="--wd:.25s">c</span><span class="w" style="--wd:.3s">e</span>
+        <span class="w dot" style="--wd:.36s">·</span>
+        <span class="w" style="--wd:.5s">d</span><span class="w" style="--wd:.55s">e</span><span class="w" style="--wd:.6s">c</span><span class="w" style="--wd:.66s">k</span>
+      </div>
+      <div class="sub rise" style="--d:.7s">Web-native slides. <b>Five design languages</b>. <b>AI hero images</b> —<br>generated in your voice.</div>
+      <div class="term rise" style="--d:.95s">
+        <div class="bar"><i class="r1"></i><i class="r2"></i><i class="r3"></i><span>Copilot CLI</span></div>
+        <div class="body" id="term1"></div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="stage3d" data-par="1">
+        <div class="artboard">
+          <img src="heroes/hero-dark.png" alt="nice-deck assembling a deck">
+          <div class="sheen"></div>
+          <div class="cap">nice-deck · web-native slides, in your voice</div>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span>github.com/ericchansen/nice-deck</span><span class="r">Open source · MIT</span></div>
+  </section>
+
+  <!-- 2 · SECTION / THESIS -->
+  <section class="slide" id="s2">
+    <div class="idx fade" style="--d:.2s">nice·deck</div>
+    <div class="kick rise" style="--d:.1s">The thesis</div>
+    <div class="big rise" style="--d:.25s">Not a template.<br><b>A deck that sounds like you.</b></div>
+    <div class="rule"></div>
+  </section>
+
+  <!-- 3 · ADOPTION / BIG NUMBERS -->
+  <section class="slide" id="s3">
+    <div class="left">
+      <div class="eyebrow rise" style="--d:.05s">What it is · <b>the engine</b></div>
+      <div class="head rise" style="--d:.15s">Small engine. <span class="am">Big range.</span></div>
+      <div class="lede rise" style="--d:.28s">Everything a fresh session needs to build a deck like this one.</div>
+      <div class="stats">
+        <div class="st a rise" style="--d:.4s"><div class="n" data-count="5" data-suffix="">0</div><div class="l">design languages</div></div>
+        <div class="st i rise" style="--d:.52s"><div class="n" data-count="3" data-suffix="">0</div><div class="l">reference docs · voice · languages · facts</div></div>
+        <div class="st rise" style="--d:.64s"><div class="n" data-count="2" data-suffix="">0</div><div class="l">scripts · make + verify</div></div>
+        <div class="st a rise" style="--d:.76s"><div class="n">MIT</div><div class="l">open source · fork the voice</div></div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="stage3d" data-par="1">
+        <div class="artboard">
+          <img src="heroes/hero-dark.png" alt="five design languages">
+          <div class="sheen"></div>
+          <div class="cap">Stage · Immersive · Poster · Blueprint · Terminal</div>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span>hero vs structured · decided per slide</span><span class="r">no invented numbers</span></div>
+  </section>
+
+  <!-- 4 · PLUGIN VS SERVER -->
+  <section class="slide" id="s4">
+    <div class="eyebrow rise" style="--d:.05s">The core decision</div>
+    <div class="head rise" style="--d:.15s">It's <span class="in">generated</span>, not just themed.</div>
+    <div class="cols">
+      <div class="col panel p1 grow" data-fig="FIG.04A — AI for art" style="--d:.3s">
+        <div class="cap">AI for art</div>
+        <h3>Heroes</h3>
+        <p>Full-bleed generated images carry the low-label, conceptual slides — titles, stats, story.</p>
+        <div class="flow">concept <span class="a">→</span> gpt-image-2 <span class="a">→</span> hero</div>
+      </div>
+      <div class="col panel p2 grow" data-fig="FIG.04B — native for facts" style="--d:.45s">
+        <div class="cap">Native for facts</div>
+        <h3>HTML</h3>
+        <p>Anything you'd copy-paste stays real text — never handed to an image model.</p>
+        <div class="chips">
+          <span class="tag ind">editable · pixel-exact</span>
+          <span class="tag">URLs stay selectable</span>
+          <span class="tag amb">no garbled strings</span>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span>nice-deck</span><span class="r">Hero vs structured</span></div>
+  </section>
+
+  <!-- 5 · DATA SOURCES -->
+  <section class="slide" id="s5">
+    <div class="eyebrow rise" style="--d:.05s">What's in the box</div>
+    <div class="head rise" style="--d:.15s">One skill. <span class="am">Everything included.</span></div>
+    <div class="lanes">
+      <div class="lane d panel grow" style="--d:.3s">
+        <div class="lh"><span class="lt">The brain</span><span class="ln">4 · docs</span></div>
+        <div class="items">
+          <span class="it star">voice.hansen.md</span><span class="it star">design-languages.md</span>
+          <span class="it">facts-sheet.template.md</span><span class="it">SKILL.md</span>
+        </div>
+        <div class="foot">the knows-you layer</div>
+      </div>
+      <div class="lane b panel grow" style="--d:.42s">
+        <div class="lh"><span class="lt">The pipeline</span><span class="ln">2 · scripts</span></div>
+        <div class="items">
+          <span class="it star">hero.py</span><span class="it star">check.js</span>
+          <span class="it">gpt-image-2</span><span class="it">Playwright</span>
+        </div>
+        <div class="foot">make + verify</div>
+      </div>
+      <div class="lane a panel grow" style="--d:.54s">
+        <div class="lh"><span class="lt">The templates</span><span class="ln">5 · languages</span></div>
+        <div class="items">
+          <span class="it star">Stage</span><span class="it">Immersive</span><span class="it">Poster</span><span class="it">Blueprint</span><span class="it">Terminal</span>
+        </div>
+        <div class="foot">copy one, swap content</div>
+      </div>
+    </div>
+    <div class="legend rise" style="--d:.7s">3 layers · one workflow &nbsp;·&nbsp; <b>★</b> = start here</div>
+    <div class="footer"><span>nice-deck</span><span class="r">What's in the box</span></div>
+  </section>
+
+  <!-- 6 · DATA FLOW -->
+  <section class="slide" id="s6">
+    <div class="eyebrow rise" style="--d:.05s">The workflow</div>
+    <div class="head rise" style="--d:.15s">How a deck <span class="in">gets made.</span></div>
+    <div class="flowrows">
+      <div class="colhead rise" style="--d:.3s"><span>Input</span><span>Pass</span><span>Tool</span><span>Outcome</span></div>
+      <div class="fr panel grow" style="--d:.4s">
+        <div class="cell src"><div class="v">Your drafts</div></div>
+        <div class="cell"><div class="v">editorial</div></div>
+        <div class="cell"><div class="v">voice contract</div><div class="sub">flesh out · don't parrot</div></div>
+        <div class="cell out"><div class="v">Tight copy · filled slides</div></div>
+      </div>
+      <div class="fr panel grow" style="--d:.54s">
+        <div class="cell src"><div class="v">A language</div></div>
+        <div class="cell"><div class="v">build</div></div>
+        <div class="cell"><div class="v">deck shell + CSS</div></div>
+        <div class="cell out"><div class="v">Web-native deck</div></div>
+      </div>
+      <div class="fr panel grow" style="--d:.68s">
+        <div class="cell src"><div class="v">Concepts</div></div>
+        <div class="cell"><div class="v">generate</div></div>
+        <div class="cell"><div class="v">hero.py</div><div class="sub">gpt-image-2</div></div>
+        <div class="cell out"><div class="v">Bespoke full-bleed art</div></div>
+      </div>
+    </div>
+    <div class="sumbar rise" style="--d:.85s">draft → language → heroes → <b>verify</b> · <span class="am">09 / 09</span> before report</div>
+    <div class="footer"><span>nice-deck</span><span class="r">Workflow</span></div>
+  </section>
+
+  <!-- 7 · AGENTIC PATTERN -->
+  <section class="slide" id="s7">
+    <div class="eyebrow rise" style="--d:.05s">How it behaves</div>
+    <div class="head rise" style="--d:.15s">Two <span class="am">hard rules.</span></div>
+    <div class="two">
+      <div class="pr panel one grow" style="--d:.3s">
+        <h3>Never parrot</h3>
+        <div class="sub">structure = contract</div>
+        <div class="demo">
+          <div class="vs">
+            <span class="many">quote your rough note back at you</span>
+            <span class="one">flesh it out</span>
+          </div>
+          <div class="self">structure is a contract · prose is raw material</div>
+        </div>
+      </div>
+      <div class="pr panel two grow" style="--d:.45s">
+        <h3>Always verify</h3>
+        <div class="sub">before reporting</div>
+        <div class="demo">
+          <div class="chain">
+            <span class="st">build</span><span class="ar">→</span>
+            <span class="st">screenshot</span><span class="ar">→</span>
+            <span class="st err">✓ 09 / 09</span><span class="ar">→</span>
+            <span class="st">report</span>
+          </div>
+          <div class="self">↺ every slide checked · no "done" without looking</div>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span>nice-deck</span><span class="r">House rules</span></div>
+  </section>
+
+  <!-- 8 · INSTALL -->
+  <section class="slide" id="s8">
+    <div class="wrap8">
+      <div class="eyebrow rise" style="--d:.05s">Get started</div>
+      <div class="head rise" style="--d:.15s">Two commands.</div>
+      <div class="term rise" style="--d:.3s">
+        <div class="bar"><i class="r1"></i><i class="r2"></i><i class="r3"></i><span>Copilot CLI</span></div>
+        <div class="body" id="term8"></div>
+      </div>
+      <div class="notes">
+        <div class="note panel grow" style="--d:.5s"><div class="k">Then</div><div class="v">Ask: build a deck</div></div>
+        <div class="note panel grow" style="--d:.6s"><div class="k">Images</div><div class="v">Azure OpenAI</div></div>
+        <div class="note panel grow" style="--d:.7s"><div class="k">Runtime</div><div class="v">Node + Python</div></div>
+      </div>
+    </div>
+    <div class="footer"><span>github.com/ericchansen/nice-deck</span><span class="r">MIT · fork the voice</span></div>
+  </section>
+
+  <!-- 9 · CLOSE -->
+  <section class="slide" id="s9">
+    <div class="eyebrow rise" style="--d:.05s">Open source</div>
+    <div class="big rise" style="--d:.18s">Fork the voice. <span class="in">Ship your own.</span></div>
+    <div class="sub rise" style="--d:.32s">The engine is yours — MIT, on GitHub.</div>
+    <div class="cards">
+      <div class="cc panel grow" style="--d:.46s"><div class="k">The engine</div><div class="v">5 languages</div><div class="k" style="margin-top:1vh">shell · scripts · docs</div></div>
+      <div class="cc panel grow" style="--d:.58s"><div class="k">The voice</div><div class="v"><b>swappable</b></div><div class="k" style="margin-top:1vh">drop in your own</div></div>
+    </div>
+    <div class="cta rise" style="--d:.72s"><span class="g">→</span><span class="install">copilot plugin install nice-deck@nice-deck</span></div>
+<div class="market-fig panel grow" style="--d:.38s"><div class="mf-title">The engine</div><div class="mf-stats"><div class="mf-stat"><div class="mf-num">5</div><div class="mf-label">languages<br>Stage · Immersive · Poster · Blueprint · Terminal</div></div><div class="mf-stat"><div class="mf-num" style="color:var(--indigo-soft)">MIT</div><div class="mf-label"><b style="color:#fff">open source</b><br>fork the voice, ship your own</div></div></div><div class="mf-shots"><img src="heroes/hero-dark.png" alt="the engine"><img src="heroes/hero-dark.png" alt="swappable voice"><img src="heroes/hero-dark.png" alt="ship your own deck"></div><div class="figcap">FIG.09 — build one, then make it yours</div></div>
+    <div class="footer"><span>github.com/ericchansen/nice-deck</span><span class="r">Open source · MIT</span></div>
+  </section>
+
+</div>
+
+<div class="nav">
+  <button id="prev" aria-label="Previous">‹</button>
+  <div class="count" id="count">01 / 09</div>
+  <button id="next" aria-label="Next">›</button>
+  <div class="dots" id="dots"></div>
+</div>
+
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+const N=slides.length;
+const count=document.getElementById('count');
+const prog=document.getElementById('prog');
+const dotsWrap=document.getElementById('dots');
+let idx=0, cleanup=null;
+
+slides.forEach((s,i)=>{const d=document.createElement('i');d.onclick=()=>show(i);dotsWrap.appendChild(d);});
+const dots=[...dotsWrap.children];
+
+function pad(n){return String(n).padStart(2,'0');}
+
+/* ---- per-slide activate hooks ---- */
+function typer(el, lines){
+  el.innerHTML=''; const ids=[]; let t=0;
+  lines.forEach((ln)=>{
+    const row=document.createElement('div'); row.className='ln'; el.appendChild(row);
+    const full=ln.html; let i=0;
+    // typing character-aware but we reveal by slicing plain text then swap to html at end
+    const plain=ln.plain;
+    ids.push(setTimeout(function tick(){
+      const step=()=>{
+        i++; row.textContent=plain.slice(0,i);
+        if(i<plain.length){ ids.push(setTimeout(step, ln.speed||26)); }
+        else { row.innerHTML=full; }
+      };
+      step();
+    }, t));
+    t += (ln.delay!=null?ln.delay : plain.length*(ln.speed||26)+320);
+  });
+  return ()=>{ ids.forEach(clearTimeout); };
+}
+function typer1(){
+  return typer(document.getElementById('term1'),[
+    {plain:'$ copilot plugin install nice-deck@nice-deck',
+     html:'<span class="p">$</span> copilot plugin install <span class="id">nice-deck@nice-deck</span>', speed:24},
+    {plain:'✓ 5 languages · hero pipeline · verify loop · ready',
+     html:'<span class="ok">✓</span> 5 languages · <span class="k">hero pipeline</span> · <span class="id">verify loop</span> <span class="cm">· ready</span>', delay:1500, speed:18},
+  ]);
+}
+function typer8(){
+  return typer(document.getElementById('term8'),[
+    {plain:'$ copilot plugin marketplace add ericchansen/nice-deck',
+     html:'<span class="p">$</span> copilot plugin marketplace add <span class="id">ericchansen/nice-deck</span>', speed:22},
+    {plain:'$ copilot plugin install nice-deck@nice-deck',
+     html:'<span class="p">$</span> copilot plugin install <span class="id">nice-deck@nice-deck</span>', speed:22},
+    {plain:'✓ 5 languages · hero pipeline · verify loop · installed',
+     html:'<span class="ok">✓</span> 5 languages · hero pipeline · verify loop <span class="cm">· installed</span>', delay:1400, speed:16},
+  ]);
+}
+function countUp(){
+  const els=[...slides[idx].querySelectorAll('[data-count]')]; const ids=[];
+  els.forEach(el=>{
+    const target=+el.dataset.count, suffix=el.dataset.suffix||'', comma=el.dataset.fmt==='comma';
+    const dur=1000, t0=performance.now();
+    function step(t){
+      const p=Math.min(1,(t-t0)/dur), val=Math.round((1-Math.pow(1-p,3))*target);
+      el.textContent=(comma?val.toLocaleString('en-US'):val)+suffix;
+      if(p<1) ids.push(requestAnimationFrame(step));
+    }
+    ids.push(requestAnimationFrame(step));
+  });
+  return ()=>ids.forEach(cancelAnimationFrame);
+}
+const HOOKS={s1:typer1, s3:countUp, s8:typer8};
+
+function show(n){
+  n=(n+N)%N;
+  if(cleanup){cleanup();cleanup=null;}
+  slides.forEach((s,i)=>s.classList.toggle('active',i===n));
+  idx=n;
+  count.textContent=pad(n+1)+' / '+pad(N);
+  dots.forEach((d,i)=>d.classList.toggle('on',i===n));
+  prog.style.width=((n+1)/N*100)+'%';
+  const h=HOOKS[slides[n].id]; if(h) cleanup=h();
+}
+function next(){show(idx+1);} function prev(){show(idx-1);}
+document.getElementById('next').onclick=next;
+document.getElementById('prev').onclick=prev;
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();next();}
+  else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();prev();}
+  else if(e.key==='Home'){show(0);} else if(e.key==='End'){show(N-1);}
+});
+
+/* parallax on image slides */
+let tx=0,ty=0,cx=0,cy=0;
+addEventListener('mousemove',e=>{tx=(e.clientX/innerWidth-.5);ty=(e.clientY/innerHeight-.5);});
+(function loop(){
+  cx+=(tx-cx)*.06; cy+=(ty-cy)*.06;
+  const p=slides[idx].querySelector('[data-par]');
+  if(p) p.style.transform=`rotateY(${cx*7}deg) rotateX(${-cy*7}deg) translate(${cx*14}px,${cy*14}px)`;
+  requestAnimationFrame(loop);
+})();
+
+show(0);
+</script>
+
+
+<style id="blueprint-final-polish">
+/* Final schematic pass: improve pin legibility/placement and add catalog figure on close */
+.pin{background:rgba(8,12,30,.72);border-left:1px solid rgba(230,152,47,.45);padding:8px 10px 10px;backdrop-filter:blur(4px)}
+.pin.r{border-left:0;border-right:1px solid rgba(230,152,47,.45)}
+#s1 .pin:nth-last-of-type(4){left:58px!important;top:232px!important}
+#s1 .pin:nth-last-of-type(3){left:58px!important;top:550px!important}
+#s1 .pin:nth-last-of-type(2){right:42px!important;top:245px!important}
+#s1 .pin:nth-last-of-type(1){right:42px!important;top:615px!important}
+#s1 .left{width:44%}#s1 .right{padding-right:72px}#s1 .wm{font-size:clamp(58px,7.4vw,116px)}#s1 .sub{max-width:20ch}
+#s2 .pin:nth-last-of-type(2){right:96px!important;top:180px!important}#s2 .pin:nth-last-of-type(1){right:96px!important;top:600px!important}
+#s3 .pin:nth-last-of-type(4){left:760px!important;top:88px!important}#s3 .pin:nth-last-of-type(3){right:48px!important;top:204px!important}#s3 .pin:nth-last-of-type(2){left:760px!important;bottom:92px!important}#s3 .pin:nth-last-of-type(1){right:55px!important;bottom:82px!important}
+#s4 .cols{gap:70px}.col.panel{overflow:visible}.col.panel:after{content:attr(data-fig);position:absolute;left:0;bottom:-27px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--txt-faint)}#s4 .p1{data-fig:""}
+#s5 .lane{overflow:visible}#s5 .lane:after{content:"";position:absolute;left:22px;right:22px;top:65px;height:1px;background:linear-gradient(90deg,var(--indigo-soft),transparent)}
+#s7 .pr{overflow:visible}#s7 .pr:after{position:absolute;left:0;bottom:-27px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--txt-faint)}#s7 .pr.one:after{content:"FIG.07A — abstraction choice"}#s7 .pr.two:after{content:"FIG.07B — error loop"}
+#s8 .pin:nth-last-of-type(3){left:64px!important;top:210px!important}#s8 .pin:nth-last-of-type(2){right:64px!important;top:260px!important}#s8 .pin:nth-last-of-type(1){right:64px!important;bottom:220px!important}
+#s9{justify-content:center}#s9 .cards{max-width:600px}#s9 .cta{font-size:16px}.market-fig{position:absolute;right:96px;top:180px;width:520px;height:430px;padding:22px;display:grid;grid-template-rows:auto 1fr auto;gap:16px;z-index:3}.market-fig .mf-title{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--txt-faint)}.market-fig .mf-stats{display:grid;grid-template-columns:1fr 1fr;gap:14px}.market-fig .mf-stat{border:1px solid rgba(156,153,245,.28);background:rgba(255,255,255,.03);padding:18px}.market-fig .mf-num{font-family:var(--disp);font-size:52px;font-weight:800;color:var(--amber-soft);line-height:.9}.market-fig .mf-label{font-family:var(--mono);font-size:13px;color:var(--txt-dim);margin-top:8px;line-height:1.45}.market-fig .mf-shots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.market-fig .mf-shots img{width:100%;height:92px;object-fit:cover;background:#fff;border:1px solid rgba(156,153,245,.3)}#s9 .footer{z-index:5}
+</style>
+
+<script>
+(function(){
+const NS='http://www.w3.org/2000/svg';
+const sheets=['BP-01 / TITLE','BP-02 / THESIS','BP-03 / ENGINE','BP-04 / DECISION','BP-05 / CONTENTS','BP-06 / WORKFLOW','BP-07 / RULES','BP-08 / INSTALL','BP-09 / CLOSE'];
+slides.forEach((s,i)=>s.dataset.sheet=sheets[i]);
+function tick(el,cap){['tl','tr','bl','br'].forEach(c=>{let t=document.createElement('span');t.className='tick '+c;el.appendChild(t)});let f=document.createElement('div');f.className='figcap';f.innerHTML=cap;el.appendChild(f)}
+document.querySelectorAll('.artboard').forEach((a,i)=>tick(a,["FIG.01 — <b>nice-deck</b> engine · 5 languages","FIG.03 — <b>Five languages</b> · one workflow"][i]||'FIG.09 — technical figure'));
+document.querySelectorAll('.term').forEach((t,i)=>tick(t,i?'FIG.08 — install terminal':'FIG.01B — install module'));
+function pin(s,cls,n,t,d){let p=document.createElement('div');p.className='pin '+cls;p.innerHTML=`<span class="n">${n}</span><div class="t">${t}</div><div class="d">${d}</div>`;document.getElementById(s).appendChild(p)}
+function wire(s,paths){let svg=document.createElementNS(NS,'svg');svg.setAttribute('class','wire-layer');svg.setAttribute('viewBox','0 0 1600 900');svg.setAttribute('preserveAspectRatio','none');paths.forEach((x,i)=>{let p=document.createElementNS(NS,'path');p.setAttribute('d',x);p.setAttribute('pathLength','1');p.style.setProperty('--d',(.65+i*.12)+'s');svg.appendChild(p);let c=document.createElementNS(NS,'circle');c.setAttribute('class','flow-dot');let m=document.createElementNS(NS,'animateMotion');m.setAttribute('dur','2.5s');m.setAttribute('begin',(1.3+i*.18)+'s');m.setAttribute('repeatCount','indefinite');m.setAttribute('path',x);c.appendChild(m);svg.appendChild(c)});document.getElementById(s).prepend(svg)}
+wire('s4',['M750 470 H850','M346 548 H536 V620 H915 V548 H1058']);
+wire('s6',['M350 334 H520 H684 H906 H1130','M350 479 H520 H684 H906 H1130','M350 624 H520 H684 H906 H1130']);
+wire('s7',['M1120 470 H1260 V570 H1110 V670 H1018']);
+wire('s9',['M674 628 H820 V560 H1000']);
+})();
+</script>
+</body>
+</html>

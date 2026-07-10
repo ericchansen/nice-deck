@@ -1,0 +1,11 @@
+{
+  "name": "nice-deck",
+  "description": "Build web-native presentation decks that present in your voice, with AI-generated hero images. Use when the user asks to build a deck, make slides, create a presentation, or turn draft slide notes into a finished deck.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Eric Hansen"
+  },
+  "repository": "https://github.com/ericchansen/nice-deck",
+  "license": "MIT",
+  "skills": "skills/"
+}
