@@ -4,7 +4,7 @@
     "name": "Eric Hansen"
   },
   "metadata": {
-    "description": "An open-source, presents-like-you deck engine: web-native HTML slides, 5 design languages, AI-generated hero images, and a screenshot verify loop.",
+    "description": "A co-directed deck engine that turns rough ideas into graphical web-native slides with original AI graphics and visually inspected previews.",
     "version": "0.1.0"
   },
   "plugins": [
@@ -12,7 +12,7 @@
       "name": "nice-deck",
       "source": ".",
       "version": "0.1.0",
-      "description": "Build web-native presentation decks that present in your voice, with AI-generated hero images."
+      "description": "Create graphical web-native decks through collaborative art direction and original AI graphics."
     }
   ]
 }
