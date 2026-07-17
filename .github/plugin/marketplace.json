@@ -1,0 +1,18 @@
+{
+  "name": "nice-deck",
+  "owner": {
+    "name": "Eric Hansen"
+  },
+  "metadata": {
+    "description": "A co-directed deck engine that turns rough ideas into graphical web-native slides with original AI graphics and visually inspected previews.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "nice-deck",
+      "source": ".",
+      "version": "0.1.0",
+      "description": "Create graphical web-native decks through collaborative art direction and original AI graphics."
+    }
+  ]
+}

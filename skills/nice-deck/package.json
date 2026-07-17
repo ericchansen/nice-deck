@@ -1,0 +1,16 @@
+{
+  "name": "nice-deck",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local preview tooling for co-directed web-native deck prototypes.",
+  "type": "module",
+  "scripts": {
+    "preview": "node scripts/preview.mjs",
+    "setup": "playwright install chromium",
+    "test": "node scripts/preview.test.mjs"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "1.61.1"
+  }
+}

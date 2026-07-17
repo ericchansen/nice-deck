@@ -1,0 +1,19 @@
+# secrets / local config
+.env
+*.env
+!.env.example
+
+# node
+node_modules/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+
+# build / scratch artifacts
+_renders/
+_*.png
+*.pptx
+.DS_Store
+.impeccable/hook.cache.json
