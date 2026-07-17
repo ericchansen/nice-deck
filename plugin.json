@@ -1,0 +1,11 @@
+{
+  "name": "nice-deck",
+  "description": "Turn rough presentation ideas into graphical web-native decks through collaborative art direction, original AI graphics, and visually inspected previews.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Eric Hansen"
+  },
+  "repository": "https://github.com/ericchansen/nice-deck",
+  "license": "MIT",
+  "skills": "skills/"
+}
