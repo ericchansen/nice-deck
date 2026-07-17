@@ -60,6 +60,7 @@ Gather only what is missing:
 - rough slide ideas or source material
 - verified facts and claims
 - constraints such as duration, brand assets, accessibility, and output path
+- the existing destination structure and required delivery formats
 
 Ask one focused question at a time. Do not ask the user to choose fonts, colors,
 or layouts. Those are proposals the agent should show.
@@ -150,6 +151,10 @@ idea and use graphics to carry meaning rather than adding explanatory prose.
 
 After each batch, preview, inspect, refresh Canvas, and collect a reaction.
 
+Resource directories are the deliberate exception to minimal speaking-slide
+density. Keep each entry's useful description and written canonical URL, and
+make every category visually consistent with the others.
+
 ### 7. Final verification
 
 Preview the complete deck and inspect every slide. Confirm:
@@ -160,6 +165,7 @@ Preview the complete deck and inspect every slide. Confirm:
 - readable projection-scale type
 - reduced-motion behavior
 - exact factual text and source fidelity
+- canonical URLs, working links, and no unnecessary trailing slashes
 - coherent narrative and visual grammar
 - generated graphics are crisp, purposeful, and free of garbled text
 
@@ -184,3 +190,20 @@ The generator is env-driven; see the repository `.env.example`.
 
 Every number, name, quote, URL, and command must be sourced in `brief.md`.
 Mark gaps as unverified and surface them. Never invent plausible specifics.
+
+## Delivery
+
+The HTML remains the source of truth. Before packaging, inspect the user's
+existing presentation directory and follow its naming and organization instead
+of inventing a destination.
+
+For an email-safe PDF:
+
+```powershell
+npm run export:pdf -- <deck.html> [deck.pdf]
+```
+
+The exporter uses the inspected slide renders and adds clickable link regions;
+it does not print and reflow the live deck. Read the packaged HTML back from its
+final directory, inspect the PDF pages, verify the links, and remove duplicate
+copies created during the session.

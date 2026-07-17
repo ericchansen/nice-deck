@@ -30,6 +30,8 @@ Never place an unverified claim on a finished slide without showing the user.
 - Accessibility:
 - Confidentiality:
 - Output path:
+- Existing destination convention:
+- Delivery formats:
 
 ## Narrative map
 
@@ -53,6 +55,7 @@ Never place an unverified claim on a finished slide without showing the user.
 - Three concrete voice words:
 - Physical scene:
 - Color strategy:
+- Color semantics:
 - Typography:
 - Composition:
 - Graphic medium:

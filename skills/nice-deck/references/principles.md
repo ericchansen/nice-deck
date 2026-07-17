@@ -35,6 +35,8 @@ a passing scanner, or a screenshot from a different browser is not enough.
 - Name the physical viewing scene before choosing light or dark.
 - Choose a restrained, committed, full-palette, or drenched color strategy and
   follow through. Do not hedge into faint gray.
+- Repeated color encodes a repeated meaning. Keep peers uniform or assign
+  genuinely distinct categories distinct colors.
 
 ## Type
 
@@ -43,6 +45,23 @@ a passing scanner, or a screenshot from a different browser is not enough.
   than -0.04em.
 - Balance headings, wrap prose cleanly, and keep body lines within 65–75ch.
 - Design for projection distance, not a laptop viewed at arm's length.
+- Use the available horizontal space. Constrain a heading only when the
+  composition earns the wrap.
+
+## Composition
+
+- Every slide has a job in the argument. Delete filler slides and filler copy.
+- Containers, rules, and dividers must communicate grouping or hierarchy.
+  Repeated gray boxes are not a default layout system.
+- A resource directory may be denser than a speaking slide, but its categories,
+  descriptions, and canonical URLs must remain scannable and consistent.
+
+## Evidence
+
+- Scope claims to what the named product or tool demonstrably does.
+- Use authoritative sources and canonical destinations.
+- Capture a landing or catalog page only after it has fully loaded; do not let a
+  random detail page stand in for the whole product.
 
 ## Graphics
 
