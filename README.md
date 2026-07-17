@@ -1,71 +1,84 @@
 # nice-deck
 
-**An open-source, presents-like-you deck engine.** Web-native HTML slides, five distinct design
-languages, AI-generated hero images, and a screenshot verify loop — packaged as a
-[GitHub Copilot CLI](https://github.com/github/copilot-cli) skill so a zero-context session can
-build a real deck on command.
+nice-deck turns a loose presentation brief into a graphical, web-native deck
+through collaborative art direction.
 
-nice-deck is **not a template picker.** It fleshes out your rough slide drafts *in your voice*,
-decides per slide whether a bespoke AI image or precise native HTML wins, and generates
-information-dense hero art — then verifies every slide renders before it reports back. The
-deliverable is a **website that happens to be slides** (motion, depth, full-bleed imagery); a
-PPTX export is an optional, lossy afterthought.
+You bring the gist, source material, and desired outcome. The AI helps shape
+the narrative, renders two or three real treatments of one representative
+slide, creates original graphics, and iterates with you before extending the
+chosen visual grammar across the deck.
 
-## Install (Copilot CLI)
+It is not a template picker. Every deck discovers its visual world from the
+content and the user's reaction to rendered work.
 
-```bash
-copilot plugin marketplace add ericchansen/nice-deck
-copilot plugin install nice-deck@nice-deck
+## What it produces
+
+- Concise slides designed to support a speaker rather than become a document.
+- Native HTML, CSS, SVG, and selectable exact text.
+- AI-generated graphics where illustration, atmosphere, texture, or character
+  work makes the idea land faster.
+- A web-native deck with keyboard navigation and reduced-motion support.
+- Playwright screenshots tied to the exact source hash shown in Canvas.
+
+PPTX is an optional lossy export and never drives the design.
+
+## Local prototyping
+
+Open a Copilot session in this repository. The repo-local extension loads the
+co-direction workflow and registers `nice_deck_preview`.
+
+Install the preview dependency once:
+
+```powershell
+cd skills\nice-deck
+npm install
+npm run setup
 ```
 
-Then just ask: *"build me a deck about X"* / *"turn these slide notes into a presentation."*
+Then ask:
 
-## What's in the box
+```text
+Start a nice-deck prototype in $HOME\Documents\decks\my-deck.
 
-| Piece | What it is |
-|---|---|
-| **The brain** | `skills/nice-deck/references/voice.hansen.md` — a **swappable voice contract** (copy rules, anti-patterns, signature moves). Fork it, drop in your own voice. |
-| **5 design languages** | `references/design-languages.md` + `templates/languages/*.html` — Stage, Immersive, Poster, Blueprint, Terminal. Each genuinely **re-layouts**, not just recolors, and carries a hard-won pitfall rule. |
-| **The image pipeline** | `scripts/hero.py` — hero-image generator for an Azure OpenAI image deployment (built on `gpt-image-2`), Entra ID auth, env-driven config. |
-| **The verify gate** | `scripts/check.js` — walks every slide, screenshots it, and fails on any console error. "Verify before you report," encoded. |
-| **Facts guardrail** | `references/facts-sheet.template.md` — never invent a number, name, URL, or command. |
-
-## The 5 design languages
-
-- **Stage** — cinematic dark keynote: spotlit floating artboard + a live self-typing terminal.
-- **Immersive** — the AI hero *is* the slide; slow Ken Burns drift (clean heroes, no grain).
-- **Poster** — light Swiss editorial: cream paper, giant stacked type, matted photo plates.
-- **Blueprint** — annotated navy schematic: numbered margin pins, self-drawing connectors.
-- **Terminal** — CLI-native: monospace, windowed terminals, ASCII tables, a blinking cursor.
-
-See a worked example in [`skills/nice-deck/templates/languages/`](skills/nice-deck/templates/languages/) —
-the same short deck rendered in all five languages.
-
-## Configure image generation
-
-`hero.py` calls an Azure OpenAI image deployment using an Entra ID (AAD) token from the Azure
-CLI — **no API keys**. Copy `.env.example` to `.env` and set your own resource:
-
-```bash
-cp .env.example .env
-# edit AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_DEPLOYMENT
-az login
+The audience is ...
+The argument is ...
+The rough slide ideas are ...
 ```
 
-Nothing internal is committed — you bring your own endpoint and deployment.
+nice-deck creates the workspace outside this public repository, selects one
+representative slide, and renders two or three art-direction probes using real
+draft graphics when imagery is part of the direction. It inspects the
+screenshots and opens the exact cache-busted build in Browser Canvas before
+asking for your reaction.
 
-## Verify a deck
+To preview a deck directly:
 
-```bash
-cd skills/nice-deck/templates/languages
-python -m http.server 8000                 # serve the deck
-npm i playwright && npx playwright install chromium   # once
-node ../../scripts/check.js http://localhost:8000/poster.html poster ./_renders
+```powershell
+cd skills\nice-deck
+npm run preview -- $HOME\Documents\decks\my-deck\deck.html
 ```
 
-Green means every slide rendered with no console errors. Then actually *look* at the renders.
+Open the printed cache-busted URL; press `Ctrl+C` to stop the preview server.
+
+## Image generation
+
+`skills/nice-deck/scripts/image.py` calls an Azure OpenAI image deployment with
+an Entra ID token from Azure CLI. Copy `.env.example` to `.env`, set the
+endpoint and deployment, then run:
+
+```powershell
+python scripts\image.py --prompt-file direction.txt --out assets\direction.png --quality medium
+```
+
+Configuration is local and ignored by git. No endpoint, subscription, token, or
+generated dogfood deck belongs in this repository.
+
+## Install as a plugin
+
+Public plugin packaging will be finalized after the repo-local workflow has
+been dogfooded. The skill already lives under `skills/nice-deck`; the local
+extension is the development path.
 
 ## License
 
-[MIT](LICENSE). The default "Hansen" voice is a worked example — fork it and make it yours.
-
+MIT

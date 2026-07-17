@@ -1,109 +1,186 @@
 ---
 name: nice-deck
-description: 'Build web-native presentation decks that present in your voice, with AI-generated hero images. Trigger when the user asks to build a deck, make slides, create a presentation, turn draft notes into slides, or reskin/finish a deck. Not a template picker — it fleshes out drafts in the user''s voice and generates bespoke hero art.'
+description: Build graphical, web-native presentation decks from rough notes through collaborative art direction, original AI graphics, and visually inspected Playwright previews. Use for decks, slides, presentations, slide prototypes, or reskinning an existing deck.
 license: MIT
-allowed-tools: Bash, PowerShell
 ---
 
-# nice-deck — build a presents-like-you deck
+# nice-deck
 
-Turn rough per-slide drafts into a polished, **web-native HTML deck** that presents in the
-user's voice, with **bespoke AI-generated hero images** where they win. This is not a
-template picker. It pairs a swappable **voice contract** (the "knows me" layer) with a
-per-slide editorial + visual decision, a `gpt-image-2` image pipeline, and a screenshot
-**verify gate**.
+Turn a loose presentation brief into an authored web-native deck. The user
+directs meaning, mood, metaphor, and the final visual world. The agent shapes
+the story, brings strong visual proposals, creates the graphics, implements the
+slides, and owns production quality.
 
-The deliverable is a **website that happens to be slides** — motion, depth, full-bleed
-imagery. A PPTX export is an optional, lossy afterthought, never the goal.
+This is not a template picker. Do not choose a theme from a library. Discover a
+visual grammar from the actual content and the user's reaction to rendered work.
 
-## Bundled assets (in this skill folder)
-- `references/voice.hansen.md` — the default/example **voice contract** (copy rules, anti-
-  patterns, signature moves). **Swappable** — a user forks this and drops in their own voice.
-- `references/design-languages.md` — the **5 design languages** (Stage, Immersive, Poster,
-  Blueprint, Terminal), each with signature moves and hard-won pitfall rules.
-- `references/facts-sheet.template.md` — the "never invent a number" guardrail; copy per deck.
-- `templates/languages/*.html` — 5 **working, self-contained** decks, one per language. Copy
-  one as a starting point and swap the content; each is already a functioning slide shell
-  (nav, dots, progress, keyboard, animations).
-- `scripts/hero.py` — `gpt-image-2` hero generator (env-driven; see `.env.example` at repo root).
-- `scripts/check.js` — screenshot verifier: walks every slide, fails on any console error.
+The website is the product. PPTX is an optional lossy export and never drives a
+design decision.
 
-## Inputs you ask for (or infer)
-- **Drafts** — the user's per-slide notes or mockup. **Structure is a contract** (keep their
-  slide count, order, and the intent of each slide). **Wording is raw material** — flesh out
-  thin notes, cut bloat, never parrot a rough note back as finished copy.
-- **A voice** — default to `voice.hansen.md`; if the user has their own, use it. It wins over
-  any default here.
-- **A facts sheet** — the single source of truth for every number, name, URL, and command.
-  Never invent; flag gaps. Start from `facts-sheet.template.md`.
+## Load before building
+
+Read:
+
+- `references/principles.md`
+- `references/profile.hansen.md` when working for Eric Hansen
+- `references/brief.template.md` before creating a deck workspace
+
+Use `scripts/image.py` for generated graphics and `nice_deck_preview` for every
+visual checkpoint. If the extension tool is unavailable, run
+`npm run preview -- <deck.html>` from this skill directory.
+
+## Workspace
+
+Create the deck outside the nice-deck repository unless the user explicitly
+wants an example committed here:
+
+```text
+brief.md
+deck.html
+deck.js
+assets/
+directions/
+_renders/
+```
+
+Copy `runtime/deck.js` to the workspace as `deck.js`. It supplies navigation,
+not aesthetics. Each deck owns its HTML and CSS.
+
+Never put confidential source material or dogfood decks in this public repo.
 
 ## Process
-1. **Editorial pass.** For each draft slide, apply the voice contract: rewrite thin notes into
-   crisp copy, trim bloat, keep the slide list intact, and plan a layout that **fills the
-   canvas** (composed to the edges — not a centered paragraph in a sea of white, not a wall of
-   text). If a slide is thin, the fix is a stronger visual, not more words.
 
-2. **Pick a design language.** Choose one of the 5 (or offer 2–3 for the user to compare). Read
-   `design-languages.md` for its signature moves **and its pitfall rules**. The languages must
-   genuinely **re-layout, not recolor** — if two languages differ only in palette, you failed.
+### 1. Understand the talk
 
-3. **Per-slide decision — hero vs structured** (the core rule):
-   > **AI for art + short baked labels. Native HTML text for anything you'd copy-paste.**
-   - **Full-bleed generated HERO** when the slide is low-label and conceptual: title, thesis,
-     stats, journey, people, "why this matters." Let a bespoke image carry it.
-   - **Structured HTML** when text is exact/critical: URLs, commands, quotes, dense tag lists,
-     precise diagrams. `gpt-image-2` garbles long strings — these stay native, pixel-accurate,
-     and (for URLs) actually selectable.
-   - **Hybrid** is great: a generated background or spot illustration with native text on top
-     for the exact strings.
-   - When unsure, default to structured HTML + one strong bespoke graphic over a fully
-     generated slide with risky text.
+Gather only what is missing:
 
-4. **Build on a language template.** Copy `templates/languages/<language>.html`, keep its shell
-   (nav, dots, progress, keyboard handler, animation classes), and replace the slide content.
-   One `.slide` section per slide. Copying a template to a new deck folder **also requires copying
-   its `heroes/` folder** (or updating the relative `heroes/hero-*.png` paths) — otherwise the
-   hero images 404. Serve locally to view: `python -m http.server` in the deck folder, open
-   `http://localhost:8000/<deck>.html`.
+- audience and physical setting
+- argument or outcome
+- desired audience reaction
+- rough slide ideas or source material
+- verified facts and claims
+- constraints such as duration, brand assets, accessibility, and output path
 
-5. **Generate heroes.** Write prompts from the chosen language's illustration style; **bake only
-   short labels** (1–4 words) with `reads EXACTLY "…"`; never trust the model with a URL,
-   command, or long quote. Generate one **style token per deck** and reuse it across every hero
-   so the images look like a coherent set.
-   ```
-   python scripts/hero.py --prompt-file p.txt --out heroes/01.png --size 1536x1024 --quality high
-   ```
-   Place heroes full-bleed via `background:center/cover`. The model is **3:2 only** (1536×1024);
-   let it crop to 16:9, don't distort. Serialize gens (~30s gaps); each takes ~100–140s.
+Ask one focused question at a time. Do not ask the user to choose fonts, colors,
+or layouts. Those are proposals the agent should show.
 
-6. **Verify by screenshot — before reporting.** This is the gate, not optional. Run both
-   commands from `skills/nice-deck`.
-   ```
-   npm i playwright && npx playwright install chromium   # once, from skills/nice-deck
-   node scripts/check.js http://localhost:8000/<deck>.html <prefix> ./_renders   # from skills/nice-deck
-   ```
-   Actually look at every render: heroes crisp and non-garbled, on-language, native strings
-   exact, nothing overlaps or clips, the deck reads coherently, **09/09 no console errors**.
-   Regenerate/fix until it holds. Never report "done" without having looked.
+Create `brief.md` from `references/brief.template.md`. Treat the user's slide
+list as intent, not immutable prose. Propose narrative changes and get agreement
+before silently adding, dropping, or reordering ideas.
 
-7. **(Optional) PPTX.** Only if the user needs it. It is lossy — motion and depth don't survive.
-   The web deck is the product.
+### 2. Map the narrative
 
-## House rules (from the voice contract — enforce these)
-- **Never parrot the draft.** Flesh out or keep simple; fill the slide.
-- **Multi-theme, web-native.** 4 of the 5 languages are dark. There is no "light only" rule.
-- **Ground every number.** Use the facts sheet; flag anything unverified rather than fabricating.
-- **Anti-patterns:** dot-and-line filler; generic corporate stock (handshake, glowing brain,
-  blue swooshes, 3D isometric SaaS); verbatim quoting; walls of text; AI-rendered exact strings;
-  invented numbers or install commands.
-- **Craft, per language:** no film grain on Immersive hero backgrounds; restraint + no overlap
-  over the hero on Blueprint; real heroes are mandatory (not optional) on Poster; every language
-  must genuinely re-layout.
+Write a concise slide map. For each slide, state its job in the argument and the
+one idea the audience should retain.
 
-## Environment
-- **Image model:** any Azure OpenAI image deployment (built and tested on `gpt-image-2`).
-  Config via env — see `.env.example`: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, and
-  optionally `AZURE_OPENAI_API_VERSION` / `AZURE_SUBSCRIPTION_ID`. **No keys committed.**
-- **Auth:** Entra ID (AAD) via `az account get-access-token --resource
-  https://cognitiveservices.azure.com`. `hero.py` handles this; just be logged in with `az login`.
-- **Verify:** Playwright/Chromium via `scripts/check.js` (local install).
+Choose one representative slide for art-direction discovery. Prefer the slide
+that tests the deck's hardest combination of content, graphics, and tone. A
+title slide is not automatically representative.
+
+### 3. Render art-direction probes
+
+Create two or three treatments of the same representative slide under
+`directions/`. Keep the content constant so the user is comparing visual
+direction rather than copy.
+
+Each treatment is a self-contained HTML file. It may load `../deck.js` and
+public images or fonts under `../assets/`; inline its treatment-specific CSS and
+JavaScript. The preview server intentionally refuses arbitrary workspace files.
+It also blocks network requests, so download any required font or image into
+`assets/` instead of depending on a remote URL.
+
+The treatments must differ in medium and composition, not merely palette.
+Derive each from the brief. Reject topic reflexes and their obvious
+second-order alternatives.
+
+For each direction decide:
+
+- a one-sentence physical scene
+- three concrete voice words
+- color strategy
+- typographic object or reference
+- composition and information hierarchy
+- graphic medium
+- motion behavior
+- the specific AI-slop risk it avoids
+
+When generated imagery is part of a direction, generate a real draft graphic
+for the probe. Do not use a placeholder and ask the user to imagine it.
+
+Use native HTML/SVG for exact information and structural diagrams. Use
+generated raster graphics for atmosphere, texture, characters, illustration,
+or visual worlds that vector work cannot carry. Never ask an image model to
+render a URL, command, long quote, or other exact text.
+
+### 4. Inspect before showing
+
+Run `nice_deck_preview` on every treatment. It produces a source hash,
+screenshots, and the exact cache-busted URL.
+
+Then:
+
+1. View every screenshot with an image-capable tool.
+2. Judge it against `references/principles.md`.
+3. Fix contrast, overflow, weak hierarchy, generic graphics, and obvious slop.
+4. Open or refresh the Browser Canvas to the exact URL returned by preview.
+5. Present the treatments together and ask for a reaction.
+
+Do not return from a slide edit without a fresh inspected render and something
+new in Canvas. A clean scanner result is not visual inspection.
+
+### 5. Commit the direction
+
+Record the selected direction and the user's reaction in `brief.md`, including:
+
+- palette mechanics rather than just color values
+- typography and hierarchy
+- composition rules
+- visual medium and reusable image-prompt recipe
+- motion behavior
+- what to avoid
+
+Refine the representative slide until the user wants the deck to continue.
+Do not build the remaining slides while the visual language is unresolved.
+
+### 6. Build in small batches
+
+Extend the approved grammar to one or a few slides at a time. Consistency of
+voice matters more than identical layouts. Each slide should have one dominant
+idea and use graphics to carry meaning rather than adding explanatory prose.
+
+After each batch, preview, inspect, refresh Canvas, and collect a reaction.
+
+### 7. Final verification
+
+Preview the complete deck and inspect every slide. Confirm:
+
+- no console, page, asset, or navigation errors
+- no clipping or overflow
+- WCAG AA contrast
+- readable projection-scale type
+- reduced-motion behavior
+- exact factual text and source fidelity
+- coherent narrative and visual grammar
+- generated graphics are crisp, purposeful, and free of garbled text
+
+Never report completion from code inspection alone.
+
+## Generated graphics
+
+Use `scripts/image.py`:
+
+```powershell
+python scripts/image.py --prompt-file direction.txt --out assets/direction.png --quality medium
+```
+
+Use draft quality for art-direction probes and high quality after selection.
+Build prompts from the approved scene, medium, composition, palette mechanics,
+and negative constraints. Preserve the chosen recipe across the deck without
+forcing every slide into the same composition.
+
+The generator is env-driven; see the repository `.env.example`.
+
+## Facts
+
+Every number, name, quote, URL, and command must be sourced in `brief.md`.
+Mark gaps as unverified and surface them. Never invent plausible specifics.
