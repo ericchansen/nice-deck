@@ -11,6 +11,7 @@ const previewModuleUrl = pathToFileURL(join(skillRoot, "scripts", "preview.mjs")
 const product = readFileSync(join(repoRoot, "PRODUCT.md"), "utf8");
 const workflow = readFileSync(join(skillRoot, "SKILL.md"), "utf8");
 const principles = readFileSync(join(skillRoot, "references", "principles.md"), "utf8");
+const profile = readFileSync(join(skillRoot, "references", "profile.hansen.md"), "utf8");
 
 let workspaceRoot = repoRoot;
 let activeSource;
@@ -168,6 +169,7 @@ const session = await joinSession({
           product,
           workflow,
           principles,
+          profile,
         ].join("\n\n"),
       };
     },
