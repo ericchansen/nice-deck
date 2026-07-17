@@ -5,6 +5,7 @@
   "description": "Local preview tooling for co-directed web-native deck prototypes.",
   "type": "module",
   "scripts": {
+    "export:pdf": "node scripts/export-pdf.mjs",
     "preview": "node scripts/preview.mjs",
     "setup": "playwright install chromium",
     "test": "node scripts/preview.test.mjs"

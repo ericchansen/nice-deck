@@ -60,6 +60,16 @@ npm run preview -- $HOME\Documents\decks\my-deck\deck.html
 
 Open the printed cache-busted URL; press `Ctrl+C` to stop the preview server.
 
+Export an email-safe PDF from those exact inspected renders:
+
+```powershell
+cd skills\nice-deck
+npm run export:pdf -- $HOME\Documents\decks\my-deck\deck.html
+```
+
+The PDF is intentionally lossy: each page matches the rendered slide and keeps
+its clickable links. The HTML remains the editable source of truth.
+
 ## Image generation
 
 `skills/nice-deck/scripts/image.py` calls an Azure OpenAI image deployment with
