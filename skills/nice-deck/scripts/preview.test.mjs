@@ -48,7 +48,11 @@ const document = (content, style = "") => `<!doctype html>
     <style>${style}</style>
   </head>
   <body>
-    <section class="slide" style="display: flex"><h1>${content}</h1><a href="https://example.com">Source</a></section>
+    <section class="slide" style="display: flex">
+      <h1>${content}</h1>
+      <a href="https://example.com">Source</a>
+      <a href="./local.html">Local</a>
+    </section>
     <section class="slide"><h1>Second</h1></section>
     <script src="../deck.js"></script>
     <script>
@@ -156,10 +160,12 @@ try {
   const pdfText = pdf.toString("latin1");
   assert.equal(exported.pages, 2);
   assert.equal(exported.links, 1);
+  assert.deepEqual(exported.skippedLinks, ["./local.html"]);
   assert.equal(pdf.subarray(0, 5).toString(), "%PDF-");
   assert(pdf.length > 1000);
   assert.equal(pdfText.match(/\/Type\s*\/Page\b/g)?.length, 2);
   assert.match(pdfText, /https:\/\/example\.com/);
+  assert.doesNotMatch(pdfText, /\.\/local\.html/);
 
   const contrastPath = join(directions, "contrast.html");
   await writeFile(

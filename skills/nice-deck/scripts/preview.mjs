@@ -90,7 +90,7 @@ async function ensureDirectory(path, label, parent) {
   return canonical;
 }
 
-async function atomicWriteFile(path, content) {
+export async function atomicWriteFile(path, content) {
   const directory = dirname(path);
   const name = basename(path);
   const temporary = join(directory, `.${name}-${randomUUID()}.tmp`);
