@@ -2,7 +2,7 @@ import { readFile, mkdir } from "node:fs/promises";
 import { dirname, extname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { chromium } from "playwright";
-import { previewDeck } from "./preview.mjs";
+import { atomicWriteFile, previewDeck } from "./preview.mjs";
 
 const viewport = { width: 1600, height: 900 };
 const pageSize = { width: 1280, height: 720 };
@@ -20,12 +20,14 @@ function exportDocument(slides) {
   const scaleY = pageSize.height / viewport.height;
   const pages = slides.map((slide) => {
     const links = slide.links.map((link) => {
-      const left = Math.max(0, link.x) * scaleX;
-      const top = Math.max(0, link.y) * scaleY;
-      const width = Math.min(viewport.width - link.x, link.width) * scaleX;
-      const height = Math.min(viewport.height - link.y, link.height) * scaleY;
+      const left = Math.max(0, Math.min(viewport.width, link.x));
+      const top = Math.max(0, Math.min(viewport.height, link.y));
+      const right = Math.max(0, Math.min(viewport.width, link.x + link.width));
+      const bottom = Math.max(0, Math.min(viewport.height, link.y + link.height));
+      const width = (right - left) * scaleX;
+      const height = (bottom - top) * scaleY;
       if (width <= 0 || height <= 0) return "";
-      return `<a href="${escapeHtml(link.href)}" style="left:${left}px;top:${top}px;width:${width}px;height:${height}px"></a>`;
+      return `<a href="${escapeHtml(link.href)}" style="left:${left * scaleX}px;top:${top * scaleY}px;width:${width}px;height:${height}px"></a>`;
     }).join("");
     return `<section><img src="data:image/png;base64,${slide.image}">${links}</section>`;
   }).join("");
@@ -84,6 +86,7 @@ export async function exportDeck({ sourcePath, outputPath } = {}) {
     }
 
     const slides = [];
+    const skippedLinks = [];
     for (let index = 0; index < preview.screenshots.length; index += 1) {
       if (runtimeReady) {
         await page.evaluate((slideIndex) => window.__niceDeck.goTo(slideIndex), index);
@@ -91,40 +94,49 @@ export async function exportDeck({ sourcePath, outputPath } = {}) {
       await page.evaluate(() => new Promise((resolveFrame) => {
         requestAnimationFrame(() => requestAnimationFrame(resolveFrame));
       }));
-      const links = await page.locator(".slide:visible a[href]").evaluateAll((anchors) => (
-        anchors.map((anchor) => {
+      const linkData = await page.locator(".slide:visible a[href]").evaluateAll((anchors) => {
+        const links = [];
+        const skipped = [];
+        for (const anchor of anchors) {
+          const href = anchor.getAttribute("href").trim();
+          if (!/^(?:https?:|mailto:)/i.test(href)) {
+            skipped.push(href);
+            continue;
+          }
           const rect = anchor.getBoundingClientRect();
-          return {
+          links.push({
             href: anchor.getAttribute("href"),
             x: rect.x,
             y: rect.y,
             width: rect.width,
             height: rect.height,
-          };
-        })
-      ));
+          });
+        }
+        return { links, skipped };
+      });
+      skippedLinks.push(...linkData.skipped);
       slides.push({
         image: (await readFile(preview.screenshots[index])).toString("base64"),
-        links,
+        links: linkData.links,
       });
     }
 
     await page.setContent(exportDocument(slides), { waitUntil: "load" });
-    await page.pdf({
-      path: output,
+    const pdf = await page.pdf({
       displayHeaderFooter: false,
       preferCSSPageSize: true,
       printBackground: true,
     });
-    const pdf = await readFile(output);
     if (!pdf.subarray(0, 5).equals(Buffer.from("%PDF-"))) {
       throw new Error(`invalid PDF output: ${output}`);
     }
+    await atomicWriteFile(output, pdf);
 
     return {
       links: slides.reduce((total, slide) => total + slide.links.length, 0),
       output,
       pages: slides.length,
+      skippedLinks,
       sourceHash: preview.sourceHash,
     };
   } finally {
@@ -150,6 +162,9 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) 
     console.log(`pdf: ${result.output}`);
     console.log(`pages: ${result.pages}`);
     console.log(`links: ${result.links}`);
+    if (result.skippedLinks.length) {
+      console.log(`skipped unsupported links: ${result.skippedLinks.join(", ")}`);
+    }
     console.log(`source hash: ${result.sourceHash}`);
   } catch (error) {
     console.error(`PDF export failed: ${error.message}`);

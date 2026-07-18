@@ -68,7 +68,8 @@ npm run export:pdf -- $HOME\Documents\decks\my-deck\deck.html
 ```
 
 The PDF is intentionally lossy: each page matches the rendered slide and keeps
-its clickable links. The HTML remains the editable source of truth.
+its external web and email links. Unsupported local and internal links are
+reported and omitted. The HTML remains the editable source of truth.
 
 ## Image generation
 

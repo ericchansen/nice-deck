@@ -204,6 +204,7 @@ npm run export:pdf -- <deck.html> [deck.pdf]
 ```
 
 The exporter uses the inspected slide renders and adds clickable link regions;
-it does not print and reflow the live deck. Read the packaged HTML back from its
-final directory, inspect the PDF pages, verify the links, and remove duplicate
-copies created during the session.
+it does not print and reflow the live deck. External web and email links are
+preserved; unsupported local and internal links are reported and omitted. Read
+the packaged HTML back from its final directory, inspect the PDF pages, verify
+the links, and remove duplicate copies created during the session.
