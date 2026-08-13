@@ -18,7 +18,7 @@ Usage:
   python image.py --prompt-file direction.txt --out assets/direction.png --quality medium
   python image.py --prompt "..." --out assets/final.png --size 1536x1024 --quality high
 """
-import argparse, base64, json, os, shutil, subprocess, sys, time, urllib.request, urllib.error, urllib.parse
+import argparse, base64, datetime, hashlib, json, os, shutil, subprocess, sys, time, urllib.request, urllib.error, urllib.parse
 from pathlib import Path
 
 DEFAULT_API_VERSIONS = ["2025-04-01-preview", "2025-12-01-preview",
@@ -109,6 +109,8 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--size", default="1536x1024")
     ap.add_argument("--quality", default="high")
+    ap.add_argument("--intended-slide", required=True)
+    ap.add_argument("--visual-role", required=True)
     a = ap.parse_args()
 
     endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT", "")
@@ -126,8 +128,24 @@ def main():
     if not b64:
         sys.exit(f"no b64 in response: {json.dumps(resp)[:300]}")
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
-    open(a.out, "wb").write(base64.b64decode(b64))
+    image = base64.b64decode(b64)
+    open(a.out, "wb").write(image)
+    metadata = {
+        "prompt": prompt,
+        "model": deployment,
+        "size": a.size,
+        "quality": a.quality,
+        "outputSha256": hashlib.sha256(image).hexdigest(),
+        "generatedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "intendedSlide": a.intended_slide,
+        "visualRole": a.visual_role,
+    }
+    sidecar = f"{a.out}.provenance.json"
+    with open(sidecar, "w", encoding="utf-8") as handle:
+        json.dump(metadata, handle, indent=2, ensure_ascii=True)
+        handle.write("\n")
     print(f"saved {a.out} ({len(b64) * 3 // 4 // 1024} KB) in {time.time() - t0:.0f}s")
+    print(f"saved {sidecar}")
 
 
 if __name__ == "__main__":

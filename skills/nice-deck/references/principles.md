@@ -55,6 +55,17 @@ a passing scanner, or a screenshot from a different browser is not enough.
   Repeated gray boxes are not a default layout system.
 - A resource directory may be denser than a speaking slide, but its categories,
   descriptions, and canonical URLs must remain scannable and consistent.
+- Empty space is intentional only when the hierarchy, evidence, and conclusion
+  still form a complete thought.
+
+## Reasoning and tone
+
+- Every slide visibly answers a question with evidence, decision relevance, and
+  a caveat.
+- Do not turn timing, correlation, or absence into causal or event language.
+- Prefer evidence-led, collaborative recommendations over customer-facing
+  commands.
+- Speaker notes deepen the argument; they do not supply missing slide logic.
 
 ## Evidence
 
@@ -66,12 +77,19 @@ a passing scanner, or a screenshot from a different browser is not enough.
 ## Graphics
 
 - A graphic must explain, orient, or create intentional emotion.
-- Prefer SVG, CSS, and native text for structural or exact information.
-- Use generated imagery for atmosphere, texture, characters, illustration, and
-  other worlds that benefit from generation.
+- Quantitative evidence uses the sanctioned Apache ECharts SVG renderer.
+  Hand-built CSS/SVG bars, rails, gates, and pseudo-charts are not primary
+  visuals.
+- Conceptual diagrams and visual metaphors start from generated imagery.
+- Native SVG, CSS, and HTML are reserved for exact overlays, simple separators,
+  tables, formulas, and accessibility fallbacks.
+- Hybrid composition is expected: a chart or generated visual carries the idea
+  while native labels, values, citations, and recommendations preserve accuracy.
 - Real generated graphics belong in image-led direction probes. Placeholders do
   not support an honest comparison.
-- Never trust generated imagery with exact strings longer than a short label.
+- Generated imagery contains no authoritative text, values, logos, or
+  fabricated product interfaces.
+- Every slide declares its primary visual modality before implementation.
 
 ## Motion
 
@@ -79,6 +97,13 @@ a passing scanner, or a screenshot from a different browser is not enough.
 - Ease out without bounce or elastic behavior.
 - Every animation has a reduced-motion alternative.
 - The visible default remains useful in headless and background rendering.
+- Charts register readiness, reset interaction state, and disable animation in
+  deterministic capture mode.
+- No decision-critical fact exists only in a tooltip, filter, or hover state.
+- Direct labels are preferred to legends. Reference lines carry inline labels,
+  units, and meaning; unexplained dashed lines are banned.
+- Data slides show units, a visible takeaway, assumptions, source IDs, and why
+  the evidence matters to the decision.
 
 ## Slop test
 

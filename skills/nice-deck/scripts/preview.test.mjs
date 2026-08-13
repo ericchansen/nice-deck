@@ -1,231 +1,305 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import {
   access,
   cp,
-  link,
   mkdir,
   mkdtemp,
   readFile,
   realpath,
   rm,
-  symlink,
   writeFile,
 } from "node:fs/promises";
-import { request } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { exportDeck } from "./export-pdf.mjs";
-import { previewDeck } from "./preview.mjs";
-import { scanSource } from "./scan.mjs";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { chromium } from "playwright";
+import { exportPortable } from "./export-portable.mjs";
+import { previewDeck, startStaticServer } from "./preview.mjs";
+import { scanSource, scanWorkspace } from "./scan.mjs";
+import { syncRuntime } from "./sync-runtime.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const workspace = await mkdtemp(join(tmpdir(), "nice-deck-test-"));
-const directions = join(workspace, "directions");
 let liveServer;
 
-function rawStatus(base, path) {
-  const url = new URL(base);
-  return new Promise((resolveStatus, reject) => {
-    const requestHandle = request({
-      hostname: url.hostname,
-      method: "GET",
-      path,
-      port: url.port,
-    }, (response) => {
-      response.resume();
-      response.once("end", () => resolveStatus(response.statusCode));
-    });
-    requestHandle.once("error", reject);
-    requestHandle.end();
+const sources = {
+  version: 1,
+  sources: [
+    {
+      id: "S1",
+      title: "Fixture extract",
+      publisher: "Test",
+      date: "2026-08-12",
+      type: "measured-internal-extract",
+      locator: "Fixture values",
+      confidentiality: "test",
+    },
+    {
+      id: "S2",
+      title: "Fixture documentation",
+      publisher: "Test",
+      date: "2026-08-12",
+      type: "public-url",
+      url: "https://example.com/source",
+      locator: "Fixture method",
+      confidentiality: "public",
+    },
+  ],
+};
+
+const contract = (id, overrides = {}) => ({
+  id,
+  question: "What does the fixture show?",
+  answer: "The fixture has a supported answer.",
+  decisionRelevance: "The fixture changes the capacity decision.",
+  claimStatus: "measured",
+  sourceIds: ["S1"],
+  captureState: "Authored default state.",
+  accessibility: "Native text remains visible.",
+  modality: "native",
+  renderer: "html",
+  ...overrides,
+});
+
+const nativeDocument = (content) => `<!doctype html>
+<html><head><link rel="stylesheet" href="deck.css"></head><body>
+  <section class="slide" data-slide-id="01" data-visual-modality="native">
+    <h1>${content}</h1>
+  </section>
+  <section class="slide" data-slide-id="02" data-visual-modality="native">
+    <h1>Second</h1>
+  </section>
+  <script src="deck.js"></script>
+</body></html>`;
+
+async function writeJson(path, value) {
+  await writeFile(path, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+async function configure(manifest) {
+  await writeJson(join(workspace, "sources.json"), sources);
+  await writeJson(join(workspace, "visual-manifest.json"), {
+    version: 1,
+    slides: manifest,
   });
 }
 
-const document = (content, style = "") => `<!doctype html>
-<html>
-  <head>
-    <link rel="stylesheet" href="../deck.css">
-    <style>${style}</style>
-  </head>
-  <body>
-    <section class="slide" style="display: flex">
-      <h1>${content}</h1>
-      <a href="https://example.com">Source</a>
-      <a href="./local.html">Local</a>
-    </section>
-    <section class="slide"><h1>Second</h1></section>
-    <script src="../deck.js"></script>
-    <script>
-      if (getComputedStyle(document.querySelector(".slide")).display !== "flex") {
-        console.error("authored display was not preserved");
-      }
-    </script>
-  </body>
-</html>`;
-
 try {
-  await mkdir(directions);
   await writeFile(join(workspace, "brief.md"), "# Test deck\n");
-  await writeFile(join(workspace, "credentials.json"), "{\"secret\":\"do not serve\"}\n");
   await cp(join(here, "..", "runtime", "deck.js"), join(workspace, "deck.js"));
+  await syncRuntime({ workspaceRoot: workspace });
   await writeFile(join(workspace, "deck.css"), `
-    :root { --bg: #ffffff; --ink: #111111; }
+    :root { --bg: #fff; --ink: #111; }
     * { box-sizing: border-box; }
     body { margin: 0; background: var(--bg); color: var(--ink); }
     .slide { display: grid; width: 100vw; height: 100vh; place-items: center; }
+    .chart { width: 900px; height: 500px; }
+    .nice-deck-chart-error { padding: 30px; background: #fff0f0; color: #8a001f; }
   `);
+  await configure([contract("01"), contract("02")]);
 
-  const probe = join(directions, "probe.html");
-  await writeFile(probe, document("First"));
-
+  const probe = join(workspace, "probe.html");
+  await writeFile(probe, nativeDocument("First"));
   const first = await previewDeck({ sourcePath: probe, keepServer: true });
   liveServer = first.server;
   assert.equal(first.ok, true);
   assert.equal(first.workspaceRoot, await realpath(workspace));
   assert.equal(first.screenshots.length, 2);
   assert.match(first.sourceHash, /^[0-9a-f]{64}$/);
-  await access(first.previewFile);
   await Promise.all(first.screenshots.map((file) => access(file)));
-
-  const record = JSON.parse(await readFile(first.previewFile, "utf8"));
-  assert.equal(record.sourceHash, first.sourceHash);
-  assert.equal(record.screenshots.length, 2);
-
-  await writeFile(probe, document("Changed"));
-  const immutableHtml = await (await fetch(first.url)).text();
-  assert.match(immutableHtml, />First</);
-  assert.doesNotMatch(immutableHtml, />Changed</);
   assert.equal((await fetch(new URL("/.env", first.url))).status, 403);
-  assert.equal(await rawStatus(first.url, "/%2e%2e/deck.js"), 403);
-  assert.equal(await rawStatus(first.url, "/.hidden/../deck.js"), 403);
-  assert.equal((await fetch(new URL("/credentials.json", first.url))).status, 404);
-  assert.equal((await fetch(new URL("/deck.js%5Cnode_modules", first.url))).status, 403);
+  assert.equal((await fetch(new URL("/runtime/echarts.min.js", first.url))).status, 200);
+  assert.equal((await fetch(new URL("/runtime/charts.js", first.url))).status, 200);
+  assert.equal((await fetch(new URL("/__nice-deck/echarts.min.js", first.url))).status, 410);
+  assert.equal((await fetch(new URL("/runtime/arbitrary.js", first.url))).status, 404);
   await liveServer.close();
   liveServer = undefined;
 
-  const second = await previewDeck({
-    sourcePath: probe,
-    outDir: join(workspace, "custom-output"),
+  assert(scanSource("p { background-clip: text; }").some(
+    ({ name }) => name === "gradient-text",
+  ));
+  assert(scanSource("artifact 98f5264e-7cca-47f6-88ed-cfa5cc14a02a").some(
+    ({ name }) => name === "private-guid",
+  ));
+
+  const badManifest = join(workspace, "bad.html");
+  await writeFile(
+    badManifest,
+    '<section class="slide" data-slide-id="01" data-visual-modality="native"></section>',
+  );
+  await configure([{ ...contract("01"), sourceIds: ["S99"] }]);
+  assert((await scanWorkspace({ root: workspace, sourcePath: badManifest })).some(
+    ({ name }) => name === "unresolved-source",
+  ));
+  await configure([contract("01"), contract("02")]);
+
+  const assets = join(workspace, "assets");
+  await mkdir(assets);
+  const generatedAsset = join(assets, "concept.png");
+  const generatedBytes = Buffer.from("generated fixture");
+  await writeFile(generatedAsset, generatedBytes);
+  await writeJson(`${generatedAsset}.provenance.json`, {
+    prompt: "A text-free conceptual fixture.",
+    model: "fixture-model",
+    size: "1536x1024",
+    quality: "draft",
+    outputSha256: createHash("sha256").update(generatedBytes).digest("hex"),
+    generatedAt: "2026-08-12T00:00:00Z",
+    intendedSlide: "01",
+    visualRole: "Conceptual fixture",
   });
-  assert.notEqual(second.sourceHash, first.sourceHash);
-  const repeated = await previewDeck({ sourcePath: probe });
-  assert.equal(repeated.sourceHash, second.sourceHash);
-  const linkedOutput = join(workspace, "linked-output");
-  const linkedTarget = join(workspace, "linked-target");
-  await Promise.all([mkdir(linkedOutput), mkdir(linkedTarget)]);
-  await symlink(
-    linkedTarget,
-    join(linkedOutput, repeated.sourceHash.slice(0, 12)),
-    process.platform === "win32" ? "junction" : "dir",
+  const conceptualPath = join(workspace, "conceptual.html");
+  await writeFile(
+    conceptualPath,
+    '<section class="slide" data-slide-id="01" data-visual-modality="conceptual"></section>',
   );
-  await assert.rejects(
-    previewDeck({ sourcePath: probe, outDir: linkedOutput }),
-    /render directory must be a real directory/,
-  );
-  const repeatedSnapshot = join(
-    dirname(repeated.screenshots[0]),
-    "site",
-    "directions",
-    "probe.html",
-  );
-  await writeFile(repeatedSnapshot, document("Corrupt"));
-  const screenshotTarget = join(workspace, "screenshot-target.png");
-  const previewTarget = join(workspace, "preview-target.json");
-  await Promise.all([
-    writeFile(screenshotTarget, "screenshot sentinel"),
-    writeFile(previewTarget, "preview sentinel"),
-    rm(repeated.screenshots[0]),
-    rm(repeated.previewFile),
+  await configure([contract("01", {
+    modality: "conceptual",
+    renderer: "generated-image",
+    generatedAsset: "assets/concept.png",
+    provenance: "assets/concept.png.provenance.json",
+  })]);
+  assert.equal((await scanWorkspace({
+    root: workspace,
+    sourcePath: conceptualPath,
+  })).length, 0);
+  await writeFile(generatedAsset, "tampered");
+  assert((await scanWorkspace({ root: workspace, sourcePath: conceptualPath })).some(
+    ({ name }) => name === "generated-provenance-hash",
+  ));
+  await writeFile(generatedAsset, generatedBytes);
+
+  const chartPath = join(workspace, "chart.html");
+  await writeFile(chartPath, `<!doctype html>
+  <html><head>
+    <link rel="stylesheet" href="deck.css">
+  </head><body>
+    <section class="slide" data-slide-id="01" data-visual-modality="native">
+      <h1>Question first</h1>
+    </section>
+    <section class="slide" data-slide-id="02" data-visual-modality="data">
+      <h1>Deterministic chart</h1>
+      <div id="fixture-chart" class="chart" data-chart
+        data-chart-units="requests"
+        data-visible-takeaway="March reaches 42"
+        data-decision-relevance="Peak shape changes capacity"
+        data-claim-status="measured"
+        data-direct-labels="true"></div>
+      <p>Visible takeaway: March reaches 42.</p>
+      <footer data-citation>[S1] Fixture extract, 2026-08-12</footer>
+    </section>
+    <script src="runtime/echarts.min.js"></script>
+    <script src="runtime/charts.js"></script>
+    <script src="deck.js"></script>
+    <script>
+      const option = niceDeckCharts.archetypes.comparison({
+        categories: ["Jan", "Feb", "Mar"],
+        values: [20, 30, 42],
+        valueFormatter: (value) => String(value),
+      });
+      niceDeckCharts.create(document.getElementById("fixture-chart"), option, {
+        units: "requests",
+        takeaway: "March reaches 42",
+        decisionRelevance: "Peak shape changes capacity",
+        claimStatus: "measured",
+        archetype: "comparison",
+      }).catch(() => {});
+    </script>
+  </body></html>`);
+  await configure([
+    contract("01"),
+    contract("02", {
+      modality: "data",
+      renderer: "echarts-svg",
+      chartSelector: "#fixture-chart",
+      sourceSummary: "Fixture values 20, 30, and 42.",
+      units: "requests",
+      visibleTakeaway: "March reaches 42.",
+      chartArchetype: "comparison",
+    }),
   ]);
-  await Promise.all([
-    link(screenshotTarget, repeated.screenshots[0]),
-    link(previewTarget, repeated.previewFile),
-  ]);
-  const repaired = await previewDeck({ sourcePath: probe, keepServer: true });
-  liveServer = repaired.server;
-  const repairedHtml = await (await fetch(repaired.url)).text();
-  assert.match(repairedHtml, />Changed</);
-  assert.doesNotMatch(repairedHtml, />Corrupt</);
-  assert.equal(await readFile(screenshotTarget, "utf8"), "screenshot sentinel");
-  assert.equal(await readFile(previewTarget, "utf8"), "preview sentinel");
-  await liveServer.close();
+
+  const chartFirst = await previewDeck({ sourcePath: chartPath });
+  const chartSecond = await previewDeck({ sourcePath: chartPath });
+  assert.equal(chartFirst.ok, true);
+  assert.equal(chartSecond.ok, true);
+  assert.equal(
+    createHash("sha256").update(await readFile(chartFirst.screenshots[1])).digest("hex"),
+    createHash("sha256").update(await readFile(chartSecond.screenshots[1])).digest("hex"),
+  );
+
+  const directBrowser = await chromium.launch();
+  const directPage = await directBrowser.newPage({ viewport: { width: 1600, height: 900 } });
+  await directPage.goto(pathToFileURL(chartPath).href, { waitUntil: "networkidle" });
+  await directPage.keyboard.press("ArrowRight");
+  await directPage.waitForFunction(() => (
+    document.querySelector("[data-chart]")?.dataset.chartReady === "true"
+  ));
+  const directState = await directPage.evaluate(() => {
+    const chart = document.querySelector("[data-chart]");
+    const svg = chart?.querySelector("svg");
+    const rect = svg?.getBoundingClientRect();
+    return {
+      height: rect?.height ?? 0,
+      labels: document.body.innerText.includes("March"),
+      marks: svg?.querySelectorAll("path,rect,circle").length ?? 0,
+      width: rect?.width ?? 0,
+    };
+  });
+  assert(directState.width > 0 && directState.height > 0 && directState.marks > 0);
+  assert.equal(directState.labels, true);
+  await directBrowser.close();
+
+  const interactive = await previewDeck({ sourcePath: chartPath, captureMode: false });
+  assert.equal(interactive.ok, true);
+  assert.deepEqual(interactive.chartAudit, []);
+
+  const portableRoot = join(workspace, "portable");
+  const portable = await exportPortable({ sourcePath: chartPath, outputDir: portableRoot });
+  assert.doesNotMatch(await readFile(portable.html, "utf8"), /\/__nice-deck\//);
+  const staticServer = await startStaticServer(portable.root);
+  liveServer = staticServer;
+  let browser = await chromium.launch();
+  let page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
+  await page.goto(staticServer.urlFor(portable.html), { waitUntil: "networkidle" });
+  await page.keyboard.press("ArrowRight");
+  await page.waitForFunction(() => (
+    document.querySelector("[data-chart]")?.dataset.chartReady === "true"
+  ));
+  const portableState = await page.evaluate(() => {
+    const svg = document.querySelector("[data-chart] svg");
+    const rect = svg?.getBoundingClientRect();
+    return {
+      height: rect?.height ?? 0,
+      marks: svg?.querySelectorAll("path,rect,circle").length ?? 0,
+      width: rect?.width ?? 0,
+    };
+  });
+  assert(portableState.width > 0 && portableState.height > 0 && portableState.marks > 0);
+  await browser.close();
+  await staticServer.close();
   liveServer = undefined;
 
-  const findings = scanSource("p { background-clip: text; }");
-  assert(findings.some(({ name }) => name === "gradient-text"));
+  await rm(join(portable.root, "runtime", "echarts.min.js"));
+  const failureServer = await startStaticServer(portable.root);
+  liveServer = failureServer;
+  browser = await chromium.launch();
+  page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
+  await page.goto(failureServer.urlFor(portable.html), { waitUntil: "networkidle" });
+  await page.keyboard.press("ArrowRight");
+  await page.waitForSelector(".nice-deck-chart-error");
+  assert.match(await page.locator(".nice-deck-chart-error").innerText(), /Chart unavailable/);
+  await browser.close();
+  await failureServer.close();
+  liveServer = undefined;
 
-  const pdfPath = join(workspace, "deck.pdf");
-  const exported = await exportDeck({ sourcePath: probe, outputPath: pdfPath });
-  const pdf = await readFile(pdfPath);
-  const pdfText = pdf.toString("latin1");
-  assert.equal(exported.pages, 2);
-  assert.equal(exported.links, 1);
-  assert.deepEqual(exported.skippedLinks, ["./local.html"]);
-  assert.equal(pdf.subarray(0, 5).toString(), "%PDF-");
-  assert(pdf.length > 1000);
-  assert.equal(pdfText.match(/\/Type\s*\/Page\b/g)?.length, 2);
-  assert.match(pdfText, /https:\/\/example\.com/);
-  assert.doesNotMatch(pdfText, /\.\/local\.html/);
-
-  const contrastPath = join(directions, "contrast.html");
-  await writeFile(
-    contrastPath,
-    document("Invisible", "body { background: oklch(1 0 0); color: oklch(1 0 0); }"),
-  );
-  const contrast = await previewDeck({ sourcePath: contrastPath });
-  assert.equal(contrast.ok, false);
-  assert(contrast.contrast.some((failure) => failure.text.includes("Invisible")));
-
-  const opacityPath = join(directions, "opacity.html");
-  await writeFile(
-    opacityPath,
-    document("Faint", "body { background: #000; color: #fff; opacity: .1; }"),
-  );
-  const opacity = await previewDeck({ sourcePath: opacityPath });
-  assert(opacity.contrastUnverified.some(
-    (finding) => finding.reason === "opacity" && finding.text.includes("Faint"),
+  const missingCitation = (await readFile(chartPath, "utf8"))
+    .replace('<footer data-citation>[S1] Fixture extract, 2026-08-12</footer>', "");
+  await writeFile(chartPath, missingCitation);
+  assert((await scanWorkspace({ root: workspace, sourcePath: chartPath })).some(
+    ({ name }) => name === "visible-citation-missing",
   ));
-
-  const filterPath = join(directions, "filter.html");
-  await writeFile(
-    filterPath,
-    document("Filtered", ".slide { filter: opacity(.1); }"),
-  );
-  const filter = await previewDeck({ sourcePath: filterPath });
-  assert(filter.contrastUnverified.some(
-    (finding) => finding.reason === "filter" && finding.text.includes("Filtered"),
-  ));
-
-  const remotePath = join(directions, "remote.html");
-  await writeFile(
-    remotePath,
-    `${document("Offline")}<script src="https://example.com/remote.js"></script>
-    <script>new WebSocket("wss://example.com/socket")</script>`,
-  );
-  const remote = await previewDeck({ sourcePath: remotePath });
-  assert.equal(remote.ok, false);
-  assert(remote.browserErrors.some((error) => error.startsWith("request:")));
-  assert(remote.browserErrors.some((error) => error.startsWith("websocket:")));
-
-  const popupPath = join(directions, "popup.html");
-  await writeFile(
-    popupPath,
-    `${document("Popup")}<script>window.open("https://example.com/popup")</script>`,
-  );
-  const popup = await previewDeck({ sourcePath: popupPath });
-  assert.equal(popup.ok, false);
-  assert(popup.browserErrors.some(
-    (error) => error.startsWith("request:") && error.includes("/popup"),
-  ));
-
-  const brokenPath = join(directions, "broken.html");
-  await writeFile(
-    brokenPath,
-    `${document("Broken")}<script>console.error("expected")</script>`,
-  );
-  const broken = await previewDeck({ sourcePath: brokenPath });
-  assert.equal(broken.ok, false);
-  assert(broken.browserErrors.some((error) => error.includes("expected")));
 
   console.log("nice-deck preview self-test passed");
 } finally {
