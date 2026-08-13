@@ -38,6 +38,7 @@ wants an example committed here:
 brief.md
 deck.html
 deck.js
+visual-manifest.json
 assets/
 directions/
 _renders/
@@ -61,6 +62,7 @@ Gather only what is missing:
 - verified facts and claims
 - constraints such as duration, brand assets, accessibility, and output path
 - the existing destination structure and required delivery formats
+- optional visual references the user already trusts
 
 Ask one focused question at a time. Do not ask the user to choose fonts, colors,
 or layouts. Those are proposals the agent should show.
@@ -74,15 +76,32 @@ before silently adding, dropping, or reordering ideas.
 Write a concise slide map. For each slide, state its job in the argument and the
 one idea the audience should retain.
 
-Choose one representative slide for art-direction discovery. Prefer the slide
-that tests the deck's hardest combination of content, graphics, and tone. A
-title slide is not automatically representative.
+Also record the explanatory contract for every slide:
+
+- question
+- supported answer
+- visible evidence
+- decision relevance
+- caveat or uncertainty
+- claim status
+- source IDs
+- talk-track transition
+
+Data slides must state why the evidence changes the decision. Do not turn
+timing, correlation, or absence in an extract into a causal event or launch
+claim. Speaker notes may add depth but may not introduce the reasoning required
+to understand the slide.
+
+Choose two representative slides for art-direction discovery: one narrative
+slide that tests tone, type, composition, and conceptual imagery; and one data
+slide that tests chart grammar, annotation, sourcing, interaction, and decision
+relevance. A title slide is not automatically representative.
 
 ### 3. Render art-direction probes
 
-Create two or three treatments of the same representative slide under
-`directions/`. Keep the content constant so the user is comparing visual
-direction rather than copy.
+Create two or three paired treatments under `directions/`. Keep each
+representative slide's content and data constant across treatments so the user
+is comparing visual and explanatory language rather than copy.
 
 Each treatment is a self-contained HTML file. It may load `../deck.js` and
 public images or fonts under `../assets/`; inline its treatment-specific CSS and
@@ -104,14 +123,21 @@ For each direction decide:
 - graphic medium
 - motion behavior
 - the specific AI-slop risk it avoids
+- primary visual modality: `data`, `conceptual`, `hybrid`, or `native`
 
 When generated imagery is part of a direction, generate a real draft graphic
 for the probe. Do not use a placeholder and ask the user to imagine it.
 
-Use native HTML/SVG for exact information and structural diagrams. Use
-generated raster graphics for atmosphere, texture, characters, illustration,
-or visual worlds that vector work cannot carry. Never ask an image model to
-render a URL, command, long quote, or other exact text.
+Use the sanctioned Apache ECharts runtime with the SVG renderer for measured or
+modeled data. Do not build primary quantitative visuals from CSS widths, native
+SVG bars, or decorative rails. Use generated raster graphics as the starting
+point for conceptual diagrams and visual metaphors. Never ask an image model to
+render authoritative text, values, formulas, logos, product UI, URLs, commands,
+or quotes.
+
+Native HTML/SVG is for exact overlays, simple separators, tables, formulas, and
+accessibility fallbacks. Hybrid composition is normal: an ECharts or generated
+visual foundation plus precise native labels and decision text.
 
 ### 4. Inspect before showing
 
@@ -128,6 +154,9 @@ Then:
 
 Do not return from a slide edit without a fresh inspected render and something
 new in Canvas. A clean scanner result is not visual inspection.
+
+Stop propagation until the user approves or combines both the narrative and data
+proofs. Record the reaction in `brief.md`.
 
 ### 5. Commit the direction
 
@@ -184,12 +213,51 @@ Build prompts from the approved scene, medium, composition, palette mechanics,
 and negative constraints. Preserve the chosen recipe across the deck without
 forcing every slide into the same composition.
 
+Pass `--intended-slide` and `--visual-role` for every final asset. `image.py`
+writes a provenance sidecar containing the prompt, model, generation settings,
+timestamp, and output hash. Keep the sidecar beside the image.
+
 The generator is env-driven; see the repository `.env.example`.
 
 ## Facts
 
 Every number, name, quote, URL, and command must be sourced in `brief.md`.
 Mark gaps as unverified and surface them. Never invent plausible specifics.
+
+## Visual manifest
+
+Every deck workspace includes `visual-manifest.json`. Each slide records its
+identifier, primary modality, renderer or generated asset, source or provenance,
+capture-state requirements, and accessibility summary. A missing or conflicting
+declaration blocks preview.
+
+Each manifest slide also records `question`, `answer`, `decisionRelevance`,
+`claimStatus`, and `sourceIds`. Every source ID resolves through `sources.json`.
+Visible slide citations use short IDs such as `[S1]`, with public URLs clickable
+and non-linkable internal extracts described by safe human-readable locators.
+Never expose internal URLs, artifact IDs, subscription IDs, tokens, or private
+paths.
+
+For `data` slides, include an ECharts selector and source summary. For
+`conceptual` and `hybrid` slides, include the generated asset and matching
+provenance sidecar. A `native` slide is appropriate only when its primary visual
+is exact text, a table, a formula, or a simple accessibility fallback.
+
+Charts must use the hash-verified workspace `runtime/echarts.min.js` and
+`runtime/charts.js` files synced from the pinned canonical runtime. The master
+HTML must open directly from `file://`; `/__nice-deck/` is a retired
+preview-only path. Capture mode disables animation, resets interaction state,
+waits for readiness, and fails on timeout. Decision-critical facts must remain
+visible without hover.
+
+The master HTML is the direct-file source of truth. Run `npm run sync-runtime --
+<workspace>` before delivery; the helper verifies SHA-256 values against
+`runtime/chart-runtime.manifest.json` and copies only sanctioned runtime files.
+For delivery outside the preview extension, build a portable package by copying
+that direct-file-ready source and its local runtime without path rewriting. Test
+`file://`, an ordinary static server, and the sanctioned preview without capture
+mode. Missing runtime scripts must produce a visible error state, never a
+silent empty chart.
 
 ## Delivery
 

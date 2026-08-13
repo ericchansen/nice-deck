@@ -27,6 +27,7 @@ const prototypeExtensions = new Set([
   ".jpeg",
   ".jpg",
   ".js",
+  ".json",
   ".png",
   ".svg",
   ".webp",
@@ -107,10 +108,12 @@ function resultText(result) {
       contrast: result.contrast.length,
       contrastNeedsVisualReview: result.contrastUnverified.length,
       browser: result.browserErrors.length,
+      chartLifecycle: result.chartAudit?.length ?? 0,
     },
     issueCodes: {
       designScan: [...new Set(result.scan.map(({ name }) => name))],
       browser: [...new Set(result.browserErrors.map((error) => error.split(":")[0]))],
+      chartLifecycle: [...new Set((result.chartAudit ?? []).map(({ message }) => message))],
     },
     next: [
       "View every screenshot path with an image-capable tool.",
@@ -166,6 +169,10 @@ const session = await joinSession({
           "nice-deck repo-local prototyping is active.",
           "For any deck task, follow the product and workflow below.",
           "After editing a slide, use nice_deck_preview, view its exact screenshots, and refresh Browser Canvas to its exact URL before replying.",
+          "Do not autonomously implement a slide until its primary visual modality is declared in brief.md and visual-manifest.json. Data uses the sanctioned ECharts SVG runtime; conceptual and hybrid visuals require generated assets with valid provenance.",
+          "Every slide must declare its question, supported answer, visible evidence, decision relevance, caveat, claim status, source IDs, and transition. Do not convert timing or absence into causal event language, use customer-facing commands, or rely on notes to supply missing reasoning.",
+          "Art-direction approval requires paired narrative and data proofs. If no visual reference is supplied, show two or three real paired treatments and stop propagation until both proofs are approved or combined.",
+          "Data treatments require direct labels, visible units, assumptions, takeaway, decision relevance, and source IDs. Unexplained legends, dashed reference lines, and silent empty chart regions block presentation.",
           product,
           workflow,
           principles,
@@ -184,7 +191,7 @@ const session = await joinSession({
       if (!activeSource) {
         return {
           additionalContext:
-            "A slide asset changed. Call nice_deck_preview on the prototype HTML, view every returned screenshot, and open its exact URL in Browser Canvas before presenting.",
+            "A slide asset changed. Confirm the slide has a declared, compatible primary visual modality, then call nice_deck_preview on the prototype HTML, view every returned screenshot, and open its exact URL in Browser Canvas before presenting.",
         };
       }
 

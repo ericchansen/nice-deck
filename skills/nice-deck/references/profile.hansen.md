@@ -13,12 +13,16 @@ deck's visual world.
 - Make one representative slide excellent before producing the deck.
 - When adapting an existing deck, preserve its titles, structure, and visual
   framing unless Eric explicitly asks for a redesign.
+- Ask whether Eric has visual references, but do not require them. Without
+  references, show two or three real paired narrative/data proofs.
 
 ## Slide voice
 
 - Graphical and minimal. Slides support a speaker; they are not documents to
   read aloud.
 - Dry and declarative. Short sentences, concrete nouns, no marketing gloss.
+- Evidence-led rather than commanding. Say what the evidence supports and what
+  would change the decision.
 - Lead with the payoff when the material supports it.
 - Use the visual to explain or create emotion. Do not add copy to compensate for
   a weak composition.
@@ -30,6 +34,9 @@ deck's visual world.
 - Clean hierarchy, strong contrast, and readable projection-scale type.
 - Original graphics are welcome, including AI-generated work, when they carry
   real meaning.
+- Use ECharts for measured or modeled data and generated imagery for primary
+  conceptual visuals. Keep exact labels, values, formulas, citations, and
+  recommendations native.
 - Light or dark is a consequence of the viewing scene, not a default.
 - Minimal does not mean faint, empty, generic, or under-designed.
 - A deck may vary composition slide to slide while retaining one coherent voice.
@@ -39,6 +46,8 @@ deck's visual world.
   with an arbitrary narrow max-width.
 - Avoid repeated gray containers, dividers, and rules. A boundary must explain
   grouping or hierarchy.
+- Sparse slides still need a complete thought: answer, evidence, relevance, and
+  uncertainty may not be deferred to narration.
 
 ## Evidence and links
 
@@ -71,5 +80,7 @@ deck's visual world.
   paper defaults, and generic corporate stock.
 - Walls of text, copied draft prose, undersized metadata, or low-contrast gray.
 - Decorative dividers, repeated gray boxes, and arbitrary category colors.
+- Hand-built CSS/SVG pseudo-charts, rails, gates, and flow diagrams used as
+  primary visuals.
 - Showing a slide that has not been freshly rendered, inspected, and refreshed
   in Canvas.

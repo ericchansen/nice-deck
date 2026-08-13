@@ -1,0 +1,13 @@
+{
+  "echartsVersion": "5.6.0",
+  "files": {
+    "echarts.min.js": {
+      "sha256": "bf4a223524e40b77c304bec67e1222cf551f14880cf42c69dc046558e11c07b1",
+      "role": "echarts"
+    },
+    "charts.js": {
+      "sha256": "c04bd3a02dfe29eef824d630cbffc21100c74073877229ae15fdff65db0968fa",
+      "role": "authored-helper-and-theme"
+    }
+  }
+}

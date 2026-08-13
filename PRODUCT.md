@@ -66,10 +66,38 @@ approval gate.
 
 ### Graphics carry meaning
 
-Use the visual to explain, orient, or create emotion. Prefer native vector and
-HTML for structural ideas and exact information. Use generated imagery when
-atmosphere, texture, characters, or a richer illustrative world will make the
-idea land faster.
+Use the visual to explain, orient, or create emotion. Quantitative evidence uses
+the sanctioned Apache ECharts SVG runtime, not hand-built bars or pseudo-charts.
+Conceptual diagrams and visual metaphors begin with generated imagery. Native
+HTML and SVG are reserved for exact labels, values, formulas, citations,
+recommendations, simple separators, tables, and accessibility fallbacks.
+
+Hybrid composition is expected: generated or chart-rendered visual foundations
+carry the idea while native overlays preserve authoritative content. Generated
+imagery must never contain authoritative text, values, logos, or fabricated
+product interfaces. Every slide declares its primary visual modality before
+implementation.
+
+The master HTML is a directly openable artifact: runtime, fonts, scripts,
+styles, and assets use relative local paths and are integrity-synced from the
+pinned runtime manifest. Preview-only `/__nice-deck/` routes are not part of the
+authoring or delivery contract, and missing runtime files must surface a
+visible failure state.
+
+### Reasoning is visible
+
+Every slide answers a question with a supported answer, visible evidence, the
+reason that evidence matters, and an honest uncertainty boundary. Speaker notes
+may deepen that reasoning but may not rescue an unexplained slide. Timing,
+correlation, or missing observations must not be rewritten as causal events.
+
+Recommendation language is collaborative and evidence-led. State what becomes
+supportable when named evidence is available instead of issuing commands to the
+audience.
+
+Empty space is complete only when the remaining composition still carries a
+complete thought. Sparse is not a substitute for unresolved hierarchy,
+annotation, sourcing, or reasoning.
 
 ### The user directs; the AI produces
 

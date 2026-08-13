@@ -4,6 +4,7 @@ import {
   access,
   lstat,
   mkdir,
+  copyFile,
   readFile,
   readdir,
   realpath,
@@ -22,11 +23,18 @@ import {
   resolve,
   sep,
 } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright";
-import { formatFindings, scanSource } from "./scan.mjs";
+import { formatFindings, scanSource, scanWorkspace } from "./scan.mjs";
 
 const scannedExtensions = new Set([".html", ".css"]);
+const here = dirname(fileURLToPath(import.meta.url));
+const sanctionedRuntimeRoot = resolve(here, "..", "runtime");
+const sanctionedRuntimeFiles = [
+  "echarts.min.js",
+  "charts.js",
+];
+const sanctionedRuntimeManifest = "chart-runtime.manifest.json";
 const mimeTypes = new Map([
   [".css", "text/css; charset=utf-8"],
   [".gif", "image/gif"],
@@ -34,6 +42,7 @@ const mimeTypes = new Map([
   [".jpeg", "image/jpeg"],
   [".jpg", "image/jpeg"],
   [".js", "text/javascript; charset=utf-8"],
+  [".json", "application/json; charset=utf-8"],
   [".png", "image/png"],
   [".svg", "image/svg+xml"],
   [".webp", "image/webp"],
@@ -158,8 +167,16 @@ async function listStaticFiles(root, source) {
 
   await addFile(join(root, "deck.js"), new Set([".js"]));
   await addFile(join(root, "deck.css"), new Set([".css"]));
+  for (const entry of await readdir(root, { withFileTypes: true })) {
+    if (entry.isFile() && entry.name.endsWith(".js") && entry.name !== "deck.js") {
+      await addFile(join(root, entry.name), new Set([".js"]));
+    }
+  }
+  await addFile(join(root, "visual-manifest.json"), new Set([".json"]));
+  await addFile(join(root, "sources.json"), new Set([".json"]));
+  await addFile(join(root, "slide-contracts.json"), new Set([".json"]));
 
-  async function visitAssets(directory) {
+  async function visitAssets(directory, allowedExtensions = assetExtensions) {
     if (!await exists(directory)) return;
     const canonical = await realpath(directory);
     if (!isWithin(root, canonical)) {
@@ -168,21 +185,44 @@ async function listStaticFiles(root, source) {
     for (const entry of await readdir(canonical, { withFileTypes: true })) {
       if (isHidden(entry.name) || entry.isSymbolicLink()) continue;
       const path = join(canonical, entry.name);
-      if (entry.isDirectory()) await visitAssets(path);
-      else if (entry.isFile()) await addFile(path, assetExtensions);
+      if (entry.isDirectory()) await visitAssets(path, allowedExtensions);
+      else if (entry.isFile()) await addFile(path, allowedExtensions);
     }
   }
 
   await visitAssets(join(root, "assets"));
+  await visitAssets(join(root, "runtime"), staticExtensions);
   return [...files].sort();
 }
 
 async function readSources(root, files) {
-  return Promise.all(files.map(async (file) => ({
+  const sources = await Promise.all(files.map(async (file) => ({
     content: await readFile(file),
     file,
     path: relative(root, file),
   })));
+  return sources.sort((first, second) => first.path.localeCompare(second.path));
+}
+
+async function validateSanctionedRuntime(sources) {
+  const manifest = JSON.parse(
+    await readFile(join(sanctionedRuntimeRoot, sanctionedRuntimeManifest), "utf8"),
+  );
+  const findings = [];
+  for (const name of sanctionedRuntimeFiles) {
+    const source = sources.find(
+      ({ path }) => path === join("runtime", ...name.split("/")),
+    );
+    const expected = manifest.files?.[name]?.sha256;
+    const actual = source ? createHash("sha256").update(source.content).digest("hex") : null;
+    if (!expected || actual !== expected) {
+      findings.push({
+        file: name,
+        message: "Sanctioned chart runtime hash does not match chart-runtime.manifest.json.",
+      });
+    }
+  }
+  return findings;
 }
 
 function hashSources(sources) {
@@ -299,6 +339,11 @@ export async function startStaticServer(root) {
         return;
       }
       const pathname = decodeURIComponent(new URL(request.url, "http://localhost").pathname);
+      if (pathname.startsWith("/__nice-deck/")) {
+        response.writeHead(410, { "Content-Type": "text/plain; charset=utf-8" })
+          .end("Preview-only runtime path retired. Use a relative workspace runtime/ path.");
+        return;
+      }
       const segments = pathname.split("/").filter(Boolean);
       if (segments.some(isHidden)) {
         response.writeHead(403).end("forbidden");
@@ -494,6 +539,7 @@ export async function previewDeck({
   outDir,
   workspaceRoot,
   keepServer = false,
+  captureMode = true,
 } = {}) {
   if (!sourcePath) throw new Error("sourcePath is required");
 
@@ -515,6 +561,7 @@ export async function previewDeck({
   );
   const files = await listStaticFiles(root, source);
   const sources = await readSources(root, files);
+  const runtimeIntegrity = await validateSanctionedRuntime(sources);
   const sourceHash = hashSources(sources);
   const shortHash = sourceHash.slice(0, 12);
   const renderDirectory = await ensureDirectory(
@@ -525,9 +572,14 @@ export async function previewDeck({
   const snapshotRoot = join(renderDirectory, "site");
   await ensureSnapshot(renderDirectory, snapshotRoot, sources);
 
-  const scan = [];
+  const sourceRecord = sources.find(({ file }) => file === source);
+  const scan = await scanWorkspace({
+    root,
+    sourcePath: source,
+    source: sourceRecord.content.toString("utf8"),
+  });
   for (const scanned of sources.filter(
-    ({ file }) => scannedExtensions.has(extname(file).toLowerCase()),
+    ({ file }) => extname(file).toLowerCase() === ".css",
   )) {
     for (const finding of scanSource(scanned.content.toString("utf8"))) {
       scan.push({ file: scanned.path, ...finding });
@@ -536,8 +588,9 @@ export async function previewDeck({
 
   const server = await startStaticServer(snapshotRoot);
   const snapshotSource = join(server.root, relative(root, source));
-  const url = server.urlFor(snapshotSource, shortHash);
+  const url = `${server.urlFor(snapshotSource, shortHash)}${captureMode ? "&capture=1" : ""}`;
   const browserErrors = [];
+  const chartAudit = [];
   const contrast = [];
   const contrastUnverified = [];
   const screenshots = [];
@@ -598,13 +651,49 @@ export async function previewDeck({
 
     const slideCount = await page.locator(".slide").count() || 1;
     const runtimeReady = await page.evaluate(() => Boolean(window.__niceDeck));
+    const chartCount = await page.locator("[data-echart], [data-chart]").count();
     if (slideCount > 1 && !runtimeReady) {
       browserErrors.push("runtime: multi-slide decks must load deck.js");
+    }
+    if (chartCount) {
+      const chartRuntimeReady = await page.evaluate(() => Boolean(window.niceDeckCharts));
+      if (!chartRuntimeReady) {
+        browserErrors.push("charts: chart elements require the sanctioned nice-deck ECharts runtime");
+      }
     }
 
     for (let index = 0; index < slideCount; index += 1) {
       if (runtimeReady) {
         await page.evaluate((slideIndex) => window.__niceDeck.goTo(slideIndex), index);
+      }
+      if (chartCount) {
+        try {
+          await page.evaluate(async () => {
+            await window.niceDeckCharts.resize();
+            const visibleCharts = [...document.querySelectorAll(
+              ".slide:not([hidden]) [data-chart], .slide:not([hidden]) [data-echart]",
+            )];
+            const deadline = performance.now() + 5000;
+            while (
+              visibleCharts.some((element) => element.dataset.chartReady !== "true")
+              && performance.now() < deadline
+            ) {
+              await new Promise((resolveWait) => setTimeout(resolveWait, 25));
+            }
+            if (visibleCharts.some((element) => element.dataset.chartReady !== "true")) {
+              throw new Error("visible chart readiness timed out after 5000ms");
+            }
+          });
+        } catch (error) {
+          browserErrors.push(`charts: readiness failed on slide ${index + 1}: ${error.message}`);
+        }
+      }
+      if (chartCount && captureMode) {
+        try {
+          await page.evaluate(() => window.niceDeckCharts.prepareVisible());
+        } catch (error) {
+          browserErrors.push(`charts: reset failed on slide ${index + 1}: ${error.message}`);
+        }
       }
       await page.evaluate(() => new Promise((resolveFrame) => {
         requestAnimationFrame(() => requestAnimationFrame(resolveFrame));
@@ -613,6 +702,34 @@ export async function previewDeck({
       if (slideCount > 1 && visibleSlides !== 1) {
         browserErrors.push(`visibility: expected 1 slide, found ${visibleSlides}`);
       }
+      const unreadyCharts = await page.locator(
+        `.slide:visible [data-echart]:not([data-chart-ready="true"]), `
+        + `.slide:visible [data-chart]:not([data-chart-ready="true"])`,
+      ).count();
+      if (unreadyCharts) {
+        browserErrors.push(
+          `charts: slide ${index + 1} has ${unreadyCharts} chart(s) without data-chart-ready="true"`,
+        );
+      }
+      const interactiveAudit = await page.evaluate((slideIndex) => {
+        const slide = document.querySelector(".slide:not([hidden])") ?? document.querySelector(".slide");
+        const findings = [];
+        for (const element of slide?.querySelectorAll("[data-chart], [data-echart]") ?? []) {
+          const rect = element.getBoundingClientRect();
+          const svg = element.querySelector("svg");
+          const marks = svg?.querySelectorAll("path, rect, circle, polygon").length ?? 0;
+          if (rect.width <= 0 || rect.height <= 0) findings.push("container has zero dimensions");
+          if (!svg || svg.getBoundingClientRect().width <= 0 || svg.getBoundingClientRect().height <= 0) {
+            findings.push("SVG is missing or zero-dimensional");
+          }
+          if (marks === 0) findings.push("SVG has no visible marks");
+          if (!element.dataset.visibleTakeaway) findings.push("visible takeaway metadata is missing");
+          if (!slide.querySelector("[data-citation]")) findings.push("visible citation is missing");
+          if (element.dataset.chartError === "true") findings.push("runtime error state is visible");
+        }
+        return findings.map((message) => ({ slide: slideIndex + 1, message }));
+      }, index);
+      chartAudit.push(...interactiveAudit);
 
       const audit = await auditContrast(page, index);
       contrast.push(...audit.failures);
@@ -626,8 +743,32 @@ export async function previewDeck({
       screenshots.push(screenshot);
     }
 
+    if (!captureMode && slideCount > 1 && runtimeReady) {
+      for (let index = slideCount - 1; index >= 0; index -= 1) {
+        await page.evaluate((slideIndex) => window.__niceDeck.goTo(slideIndex), index);
+        await page.evaluate(() => window.niceDeckCharts?.resize());
+        await page.evaluate(() => new Promise((resolveFrame) => {
+          requestAnimationFrame(() => requestAnimationFrame(resolveFrame));
+        }));
+        const returnIssues = await page.evaluate((slideIndex) => {
+          const slide = document.querySelector(".slide:not([hidden])");
+          return [...(slide?.querySelectorAll("[data-chart], [data-echart]") ?? [])]
+            .filter((element) => {
+              const rect = element.querySelector("svg")?.getBoundingClientRect();
+              return !rect || rect.width <= 0 || rect.height <= 0;
+            })
+            .map(() => ({ slide: slideIndex + 1, message: "chart failed after return navigation" }));
+        }, index);
+        chartAudit.push(...returnIssues);
+      }
+    }
+
     const result = {
-      ok: scan.length === 0 && contrast.length === 0 && browserErrors.length === 0,
+      ok: scan.length === 0
+        && contrast.length === 0
+        && browserErrors.length === 0
+        && chartAudit.length === 0
+        && runtimeIntegrity.length === 0,
       source,
       workspaceRoot: root,
       sourceHash,
@@ -637,6 +778,8 @@ export async function previewDeck({
       contrast,
       contrastUnverified,
       browserErrors,
+      chartAudit,
+      runtimeIntegrity,
     };
     const previewFile = join(outputRoot, "preview.json");
     await atomicWriteFile(previewFile, `${JSON.stringify(result, null, 2)}\n`);
@@ -670,6 +813,12 @@ function printResult(result) {
   if (result.browserErrors.length) {
     console.error("\nbrowser errors:");
     for (const error of result.browserErrors) console.error(`- ${error}`);
+  }
+  if (result.runtimeIntegrity.length) {
+    console.error("\nchart runtime integrity:");
+    for (const failure of result.runtimeIntegrity) {
+      console.error(`- ${failure.file}: ${failure.message}`);
+    }
   }
 }
 
