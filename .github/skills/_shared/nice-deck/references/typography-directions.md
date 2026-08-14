@@ -1,9 +1,9 @@
 # Typography direction references
 
-Each three-slide direction uses one coherent type system. The figure-heavy,
-text-heavy, and data-heavy probes within that direction share the same families,
-weights, scale, measure, casing, and rhythm. All six directions must be
-materially different from one another.
+Each direction uses one coherent type system. The figure-heavy, text-heavy, and
+all data-heavy probes within that direction share the same families, weights,
+scale, measure, casing, and rhythm. All six directions must be materially
+different from one another.
 
 Use [Beautiful Web Type](https://beautifulwebtype.com) as a specimen and pairing
 reference, not as a template library. Its catalog documents typeface weights,

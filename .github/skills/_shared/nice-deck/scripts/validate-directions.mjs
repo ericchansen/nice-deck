@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright";
 import { computeDeckSourceHash } from "./preview.mjs";
 
-const roles = ["figure-heavy", "text-heavy", "data-heavy"];
+const requiredRoles = ["figure-heavy", "text-heavy", "data-heavy"];
 const modalities = new Set(["data", "conceptual", "hybrid", "native"]);
 const approvalStatuses = new Set(["approved", "combine"]);
 
@@ -85,6 +85,17 @@ export async function validateDirectionMatrix({
 
   if (matrix.version !== 1) failures.push("Direction matrix version must be 1.");
   const content = matrix.content ?? {};
+  const declaredRoles = Object.keys(content);
+  const additionalRoles = declaredRoles.filter((role) => !requiredRoles.includes(role));
+  for (const role of additionalRoles) {
+    if (!/^data-heavy-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(role)) {
+      failures.push(`Additional content role ${role} must use the data-heavy-<chart-purpose> naming convention.`);
+    }
+  }
+  const roles = [
+    ...requiredRoles,
+    ...additionalRoles.filter((role) => !requiredRoles.includes(role)),
+  ];
   for (const role of roles) {
     const probe = content[role];
     if (!probe) {
@@ -242,7 +253,9 @@ export async function validateDirectionMatrix({
             role: attribute(tag, "data-probe-role"),
             contentId: attribute(tag, "data-content-id"),
           }));
-        if (declarations.length !== 3) failures.push(`${label}.treatment must contain exactly 3 slides.`);
+        if (declarations.length !== roles.length) {
+          failures.push(`${label}.treatment must contain exactly ${roles.length} slides.`);
+        }
         for (const role of roles) {
           const matches = declarations.filter((entry) => entry.role === role);
           if (matches.length !== 1 || matches[0].contentId !== content[role]?.id) {
@@ -269,7 +282,9 @@ export async function validateDirectionMatrix({
             const contracts = Array.isArray(contractDocument?.slides)
               ? contractDocument.slides
               : [];
-            if (contracts.length !== 3) failures.push(`${label} must declare exactly 3 slide contracts.`);
+            if (contracts.length !== roles.length) {
+              failures.push(`${label} must declare exactly ${roles.length} slide contracts.`);
+            }
             for (const role of roles) {
               const contract = contracts.find((entry) => entry.role === role);
               if (!contract) {
@@ -429,8 +444,8 @@ export async function validateDirectionMatrix({
             ));
             if (!localRule) failures.push(`${label} ${role} @font-face must resolve to a declared local font asset.`);
           }
-            if (typography.length !== 3 || typography.some((entry) => !entry)) {
-              failures.push(`${label} must expose display and text specimens on all 3 slides.`);
+            if (typography.length !== roles.length || typography.some((entry) => !entry)) {
+              failures.push(`${label} must expose display and text specimens on all ${roles.length} slides.`);
             } else {
               for (const entry of typography) {
                 if (primaryFamily(entry.displayFamily) !== normalizeFamily(typeSystem.displayFamily)) {
@@ -557,10 +572,10 @@ export async function validateDirectionMatrix({
       if (
         preview
         && (
-          previewScreenshots.length !== 3
+          previewScreenshots.length !== roles.length
           || previewScreenshots.some((path, index) => path !== declaredScreenshots[index])
           || !Array.isArray(preview.screenshotHashes)
-          || preview.screenshotHashes.length !== 3
+          || preview.screenshotHashes.length !== roles.length
           || preview.screenshotHashes.some(
             (hash, index) => hash !== direction.rendered?.screenshotSha256?.[roles[index]],
           )
@@ -572,7 +587,7 @@ export async function validateDirectionMatrix({
         direction.rendered?.inspection?.sourceHash !== currentSourceHash
         || !roles.every((role) => direction.rendered?.inspection?.inspectedRoles?.includes(role))
       ) {
-        failures.push(`${label} requires visual inspection of all 3 current screenshots.`);
+        failures.push(`${label} requires visual inspection of all ${roles.length} current screenshots.`);
       }
     }
   }

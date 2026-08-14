@@ -73,6 +73,10 @@ URLs. Internal extracts and workbooks remain non-linkable but traceable.
 The same content appears in every direction. Styling may change; wording,
 values, evidence, claim status, source IDs, and modality may not.
 
+Include one data-heavy proof for every chart archetype intended for the final
+deck. Name additional roles `data-heavy-<chart-purpose>` and keep the chart
+geometry and data identical across directions.
+
 | Probe role | Slide | Content ID | Why it stresses the system | Primary modality |
 |---|---|---|---|---|
 | Figure-heavy | | | Tests image language, atmosphere, composition, and authoritative overlays. | |
