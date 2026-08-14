@@ -15,7 +15,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright";
 import { exportPortable } from "./export-portable.mjs";
-import { previewDeck, startStaticServer } from "./preview.mjs";
+import { computeDeckSourceHash, previewDeck, startStaticServer } from "./preview.mjs";
 import { scanSource, scanWorkspace } from "./scan.mjs";
 import { syncRuntime } from "./sync-runtime.mjs";
 
@@ -107,6 +107,7 @@ try {
   assert.equal(first.workspaceRoot, await realpath(workspace));
   assert.equal(first.screenshots.length, 2);
   assert.match(first.sourceHash, /^[0-9a-f]{64}$/);
+  assert.equal(first.sourceHash, await computeDeckSourceHash({ sourcePath: probe }));
   await Promise.all(first.screenshots.map((file) => access(file)));
   assert.equal((await fetch(new URL("/.env", first.url))).status, 403);
   assert.equal((await fetch(new URL("/runtime/echarts.min.js", first.url))).status, 200);

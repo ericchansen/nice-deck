@@ -4,9 +4,10 @@ nice-deck turns a loose presentation brief into a graphical, web-native deck
 through collaborative art direction.
 
 You bring the gist, source material, and desired outcome. The AI helps shape
-the narrative, renders two or three real treatments of one representative
-slide, creates original graphics, and iterates with you before extending the
-chosen visual grammar across the deck.
+the narrative, freezes three representative content proofs, and renders six
+real visual directions across all three: one figure-heavy slide, one text-heavy
+slide, and one data-heavy slide. You react to the 18-slide comparison before
+the chosen or combined visual grammar is extended across the deck.
 
 It is not a template picker. Every deck discovers its visual world from the
 content and the user's reaction to rendered work.
@@ -45,11 +46,23 @@ The argument is ...
 The rough slide ideas are ...
 ```
 
-nice-deck creates the workspace outside this public repository, selects one
-representative slide, and renders two or three art-direction probes using real
-draft graphics when imagery is part of the direction. It inspects the
-screenshots and opens the exact cache-busted build in Browser Canvas before
-asking for your reaction.
+nice-deck creates the workspace outside this public repository and selects
+three representative slides. It keeps their content constant while rendering
+six materially different three-slide directions. Each set uses its own
+typographic system; image-led sets use real draft graphics and data-led proofs
+use the sanctioned ECharts SVG runtime. It inspects all 18 screenshots, opens
+the exact cache-busted treatments in Browser Canvas, and collects feedback
+before any direction propagates.
+
+Direction work is tracked in
+`directions/visual-direction-matrix.json`. Validate the authored matrix before
+review and again after feedback:
+
+```powershell
+cd skills\nice-deck
+npm run validate:directions -- $HOME\Documents\decks\my-deck --review
+npm run validate:directions -- $HOME\Documents\decks\my-deck --approved
+```
 
 To preview a deck directly:
 

@@ -6,15 +6,18 @@ deck's visual world.
 
 ## Collaboration
 
-- Bring two or three strong rendered directions, not a questionnaire about
+- Bring six strong rendered directions, each demonstrated on the same
+  figure-heavy, text-heavy, and data-heavy content—not a questionnaire about
   colors and fonts.
+- Keep the three proofs within a direction typographically coherent, while
+  making the six type systems materially different.
 - The central metaphor, mood, and graphic world are collaborative decisions.
 - React to feedback as design input. Do not defend an unsuccessful visual.
-- Make one representative slide excellent before producing the deck.
+- Make one representative three-slide system excellent before producing the deck.
 - When adapting an existing deck, preserve its titles, structure, and visual
   framing unless Eric explicitly asks for a redesign.
 - Ask whether Eric has visual references, but do not require them. Without
-  references, show two or three real paired narrative/data proofs.
+  references, show the full six-direction, three-role proof matrix.
 
 ## Slide voice
 

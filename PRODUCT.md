@@ -58,11 +58,16 @@ Start with the argument, audience, and desired reaction. Propose distinct art
 directions from that material and let the user react to visible evidence before
 committing to a deck grammar.
 
-### One loved slide before many acceptable slides
+Each direction must prove itself against the same three content stresses:
+figure-heavy, text-heavy, and data-heavy. Show six materially different
+three-slide directions so the user can compare visual systems rather than react
+to one lucky composition. Every direction uses a distinct typographic system.
 
-Develop one representative slide until the visual language feels right. Only
-then extend the system across the deck. A reaction is design input, not a late
-approval gate.
+### One loved system before many acceptable slides
+
+Develop the selected three-slide system until its imagery, typesetting, and
+chart grammar feel right. Only then extend it across the deck. A reaction is
+design input, not a late approval gate.
 
 ### Graphics carry meaning
 

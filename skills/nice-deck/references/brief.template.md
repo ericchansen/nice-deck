@@ -68,16 +68,47 @@ retrieval/extraction date, source type, optional public URL, safe locator or
 method, and confidentiality classification. Public sources require valid HTTPS
 URLs. Internal extracts and workbooks remain non-linkable but traceable.
 
-## Representative slide
+## Frozen direction-probe content
 
-- Slide:
-- Why it tests the visual language:
+The same content appears in every direction. Styling may change; wording,
+values, evidence, claim status, source IDs, and modality may not.
+
+| Probe role | Slide | Content ID | Why it stresses the system | Primary modality |
+|---|---|---|---|---|
+| Figure-heavy | | | Tests image language, atmosphere, composition, and authoritative overlays. | |
+| Text-heavy | | | Tests hierarchy, measure, density, pacing, and citation treatment. | |
+| Data-heavy | | | Tests chart grammar, direct labels, units, assumptions, and decision relevance. | data |
 
 ## Directions considered
 
-| Direction | Physical scene and medium | What it tests | User reaction |
-|---|---|---|---|
-| | | | |
+Record all six directions in `directions/visual-direction-matrix.json`.
+
+| Direction | Physical scene and medium | Type system | What it tests | User reaction |
+|---|---|---|---|---|
+| 1 | | | | |
+| 2 | | | | |
+| 3 | | | | |
+| 4 | | | | |
+| 5 | | | | |
+| 6 | | | | |
+
+For each type system record its display and text families, weights, scale,
+heading and body measure, casing, rhythm, specimen source, and local font assets
+with license and public source URL. Read
+`references/typography-directions.md` for contrast seeds and requirements.
+
+## Direction feedback gate
+
+- Review status: `pending`, `revise`, `approved`, or `combine`
+- Reaction to direction 1:
+- Reaction to direction 2:
+- Reaction to direction 3:
+- Reaction to direction 4:
+- Reaction to direction 5:
+- Reaction to direction 6:
+- Selected direction IDs:
+- Approved proof roles: figure-heavy, text-heavy, data-heavy
+- Combination instructions, if any:
 
 ## Selected art direction
 

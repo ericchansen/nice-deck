@@ -9,8 +9,9 @@
     "export:portable": "node scripts/export-portable.mjs",
     "preview": "node scripts/preview.mjs",
     "sync-runtime": "node scripts/sync-runtime.mjs",
+    "validate:directions": "node scripts/validate-directions.mjs",
     "setup": "playwright install chromium",
-    "test": "node scripts/preview.test.mjs"
+    "test": "node scripts/validate-directions.test.mjs && node scripts/preview.test.mjs"
   },
   "license": "MIT",
   "dependencies": {

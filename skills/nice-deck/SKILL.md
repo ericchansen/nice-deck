@@ -22,6 +22,7 @@ design decision.
 Read:
 
 - `references/principles.md`
+- `references/typography-directions.md`
 - `references/profile.hansen.md` when working for Eric Hansen
 - `references/brief.template.md` before creating a deck workspace
 
@@ -41,6 +42,7 @@ deck.js
 visual-manifest.json
 assets/
 directions/
+  visual-direction-matrix.json
 _renders/
 ```
 
@@ -92,33 +94,80 @@ timing, correlation, or absence in an extract into a causal event or launch
 claim. Speaker notes may add depth but may not introduce the reasoning required
 to understand the slide.
 
-Choose two representative slides for art-direction discovery: one narrative
-slide that tests tone, type, composition, and conceptual imagery; and one data
-slide that tests chart grammar, annotation, sourcing, interaction, and decision
-relevance. A title slide is not automatically representative.
+Choose three representative slides for art-direction discovery:
+
+- one figure-heavy slide that tests image language, atmosphere, composition,
+  and authoritative overlays;
+- one text-heavy slide that tests hierarchy, measure, density, pacing, and
+  citation treatment;
+- one data-heavy slide that tests chart grammar, annotation, sourcing,
+  interaction, assumptions, and decision relevance.
+
+A title slide is not automatically representative. Freeze the content contract
+for all three probes before styling: wording, values, evidence, decision
+relevance, caveat, claim status, source IDs, and primary modality remain
+identical across every direction.
 
 ### 3. Render art-direction probes
 
-Create two or three paired treatments under `directions/`. Keep each
-representative slide's content and data constant across treatments so the user
-is comparing visual and explanatory language rather than copy.
+Create exactly six three-slide treatments under `directions/`, for 18 rendered
+slides total. Each treatment applies one coherent visual direction to the same
+frozen figure-heavy, text-heavy, and data-heavy content. The user must be
+comparing visual systems rather than copy, evidence, or chart values.
 
-Each treatment is a self-contained HTML file. It may load `../deck.js` and
-public images or fonts under `../assets/`; inline its treatment-specific CSS and
-JavaScript. The preview server intentionally refuses arbitrary workspace files.
-It also blocks network requests, so download any required font or image into
-`assets/` instead of depending on a remote URL.
+Create `directions/visual-direction-matrix.json` before implementing the
+treatments. It declares the frozen content contracts, all six directions, their
+type systems, treatment paths, render hashes, screenshot paths, and feedback.
+Start from `references/visual-direction-matrix.template.json`, replacing its
+placeholders and changing its typography seeds when the brief supports a
+stronger set.
+Run:
+
+```powershell
+npm run validate:directions -- <workspace>
+```
+
+before implementing the treatments. Do not implement a probe until its primary
+visual modality is declared both in the matrix and in that treatment's
+`visual-manifest.json`.
+
+Each treatment lives in its own self-contained directory with `brief.md`,
+`treatment.html`, `slide-contracts.json`, `visual-manifest.json`,
+`sources.json`, local runtime, local fonts, generated assets, and provenance.
+The treatment-local slide contracts repeat the frozen matrix fields exactly;
+review validation rejects any rewritten question, answer, evidence, relevance,
+caveat, claim status, source IDs, or modality. The preview server intentionally
+refuses arbitrary workspace files and blocks network requests, so download
+fonts and images into the treatment instead of depending on remote URLs. Mark
+the visible question, answer, evidence, decision relevance, and caveat with
+`data-contract-field`; put claim status and source IDs on the slide as
+`data-claim-status` and `data-source-ids`. Review validation compares the
+rendered DOM to the frozen matrix.
 
 The treatments must differ in medium and composition, not merely palette.
 Derive each from the brief. Reject topic reflexes and their obvious
 second-order alternatives.
+
+Each treatment also uses a distinct typographic system across its three slides.
+The six systems must materially differ in display and text families, weight
+contrast, scale, heading and body measure, casing, and rhythm. Changing only
+font family, color, tracking, or one headline face is not a new direction.
+Use `references/typography-directions.md` and its Beautiful Web Type specimens
+as references when the brief does not provide stronger typographic objects.
+Package every font locally and record its license and public source URL.
+Declare the direction on the treatment with `data-type-system-id`. On every
+probe slide, mark one representative heading with `data-type-role="display"`
+and one representative reading or annotation element with
+`data-type-role="text"`. Review validation opens the treatment and confirms all
+three slides actually render the declared families and weights from local
+`@font-face` sources. Network font requests are blocked during validation.
 
 For each direction decide:
 
 - a one-sentence physical scene
 - three concrete voice words
 - color strategy
-- typographic object or reference
+- type system: families, weights, scale, measure, casing, rhythm, and specimen
 - composition and information hierarchy
 - graphic medium
 - motion behavior
@@ -141,35 +190,55 @@ visual foundation plus precise native labels and decision text.
 
 ### 4. Inspect before showing
 
-Run `nice_deck_preview` on every treatment. It produces a source hash,
-screenshots, and the exact cache-busted URL.
+Run `nice_deck_preview` on all six treatments. It produces six source hashes,
+18 screenshots, and six exact cache-busted URLs. Record the hashes and
+role-specific screenshot paths and SHA-256 hashes, preview record paths, and
+completed visual inspection roles and screenshot hashes in
+`visual-direction-matrix.json`, then run:
+
+```powershell
+npm run validate:directions -- <workspace> --review
+```
 
 Then:
 
-1. View every screenshot with an image-capable tool.
-2. Judge it against `references/principles.md`.
-3. Fix contrast, overflow, weak hierarchy, generic graphics, and obvious slop.
-4. Open or refresh the Browser Canvas to the exact URL returned by preview.
-5. Present the treatments together and ask for a reaction.
+1. View all 18 screenshots with an image-capable tool.
+2. Judge each three-slide system against `references/principles.md`.
+3. Fix contrast, overflow, weak hierarchy, generic graphics, chart failures,
+   typesetting collisions, and obvious slop.
+4. Open or refresh Browser Canvas to each exact treatment URL.
+5. Present a six-column by three-role comparison: figure-heavy, text-heavy, and
+   data-heavy remain aligned so differences are immediately legible.
+6. Ask for a reaction to every direction and whether to select one, combine
+   named parts, or revise.
 
 Do not return from a slide edit without a fresh inspected render and something
 new in Canvas. A clean scanner result is not visual inspection.
 
-Stop propagation until the user approves or combines both the narrative and data
-proofs. Record the reaction in `brief.md`.
+Stop propagation until the user approves all three proof roles and selects one
+direction or explicitly combines named directions. Record a reaction for all
+six directions in both `brief.md` and `visual-direction-matrix.json`. Then run:
+
+```powershell
+npm run validate:directions -- <workspace> --approved
+```
+
+An approval validation failure blocks propagation.
 
 ### 5. Commit the direction
 
-Record the selected direction and the user's reaction in `brief.md`, including:
+Record the selected or combined direction and the user's reaction in `brief.md`,
+including:
 
 - palette mechanics rather than just color values
-- typography and hierarchy
+- typography and hierarchy across figure, text, and data roles
 - composition rules
 - visual medium and reusable image-prompt recipe
 - motion behavior
 - what to avoid
 
-Refine the representative slide until the user wants the deck to continue.
+Refine the representative three-slide system until the user wants the deck to
+continue.
 Do not build the remaining slides while the visual language is unresolved.
 
 ### 6. Build in small batches

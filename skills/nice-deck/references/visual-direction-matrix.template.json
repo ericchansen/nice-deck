@@ -1,0 +1,367 @@
+{
+  "version": 1,
+  "content": {
+    "figure-heavy": {
+      "id": "figure-proof-v1",
+      "slideId": "",
+      "question": "",
+      "answer": "",
+      "evidence": "",
+      "decisionRelevance": "",
+      "caveat": "",
+      "claimStatus": "unverified",
+      "sourceIds": ["S1"],
+      "modality": "conceptual"
+    },
+    "text-heavy": {
+      "id": "text-proof-v1",
+      "slideId": "",
+      "question": "",
+      "answer": "",
+      "evidence": "",
+      "decisionRelevance": "",
+      "caveat": "",
+      "claimStatus": "unverified",
+      "sourceIds": ["S1"],
+      "modality": "native"
+    },
+    "data-heavy": {
+      "id": "data-proof-v1",
+      "slideId": "",
+      "question": "",
+      "answer": "",
+      "evidence": "",
+      "decisionRelevance": "",
+      "caveat": "",
+      "claimStatus": "unverified",
+      "sourceIds": ["S1"],
+      "modality": "data"
+    }
+  },
+  "directions": [
+    {
+      "id": "direction-1",
+      "name": "",
+      "physicalScene": "",
+      "voice": ["", "", ""],
+      "colorStrategy": "",
+      "typeSystem": {
+        "id": "archivo-black-lora",
+        "displayFamily": "Archivo Black",
+        "textFamily": "Lora",
+        "displayWeight": "900",
+        "textWeight": "400",
+        "scale": "",
+        "headingMeasure": "",
+        "bodyMeasure": "",
+        "casing": "",
+        "rhythm": "",
+        "specimenSource": "https://github.com/ubuwaits/beautiful-web-type/tree/master/content/pairings/archivo-black-and-lora",
+        "fontAssets": [
+          {
+            "path": "directions/direction-1/assets/fonts/archivo-black.woff2",
+            "license": "SIL Open Font License 1.1",
+            "sourceUrl": ""
+          },
+          {
+            "path": "directions/direction-1/assets/fonts/lora.woff2",
+            "license": "SIL Open Font License 1.1",
+            "sourceUrl": ""
+          }
+        ]
+      },
+      "composition": "",
+      "graphicMedium": "",
+      "motion": "",
+      "slopRisk": "",
+      "treatment": "direction-1/treatment.html",
+      "probes": [
+        { "role": "figure-heavy", "contentId": "figure-proof-v1" },
+        { "role": "text-heavy", "contentId": "text-proof-v1" },
+        { "role": "data-heavy", "contentId": "data-proof-v1" }
+      ],
+      "rendered": {
+        "sourceHash": "",
+        "previewFile": "",
+        "screenshots": { "figure-heavy": "", "text-heavy": "", "data-heavy": "" },
+        "screenshotSha256": { "figure-heavy": "", "text-heavy": "", "data-heavy": "" },
+        "inspection": {
+          "sourceHash": "",
+          "inspectedRoles": [],
+          "screenshotSha256": { "figure-heavy": "", "text-heavy": "", "data-heavy": "" }
+        }
+      }
+    },
+    {
+      "id": "direction-2",
+      "name": "",
+      "physicalScene": "",
+      "voice": ["", "", ""],
+      "colorStrategy": "",
+      "typeSystem": {
+        "id": "fraunces-libre-franklin",
+        "displayFamily": "Fraunces",
+        "textFamily": "Libre Franklin",
+        "displayWeight": "700",
+        "textWeight": "400",
+        "scale": "",
+        "headingMeasure": "",
+        "bodyMeasure": "",
+        "casing": "",
+        "rhythm": "",
+        "specimenSource": "https://github.com/ubuwaits/beautiful-web-type/tree/master/content/pairings/fraunces-and-libre-franklin",
+        "fontAssets": [
+          {
+            "path": "directions/direction-2/assets/fonts/fraunces.woff2",
+            "license": "SIL Open Font License 1.1",
+            "sourceUrl": ""
+          },
+          {
+            "path": "directions/direction-2/assets/fonts/libre-franklin.woff2",
+            "license": "SIL Open Font License 1.1",
+            "sourceUrl": ""
+          }
+        ]
+      },
+      "composition": "",
+      "graphicMedium": "",
+      "motion": "",
+      "slopRisk": "",
+      "treatment": "direction-2/treatment.html",
+      "probes": [
+        { "role": "figure-heavy", "contentId": "figure-proof-v1" },
+        { "role": "text-heavy", "contentId": "text-proof-v1" },
+        { "role": "data-heavy", "contentId": "data-proof-v1" }
+      ],
+      "rendered": {
+        "sourceHash": "",
+        "previewFile": "",
+        "screenshots": { "figure-heavy": "", "text-heavy": "", "data-heavy": "" },
+        "screenshotSha256": { "figure-heavy": "", "text-heavy": "", "data-heavy": "" },
+        "inspection": {
+          "sourceHash": "",
+          "inspectedRoles": [],
+          "screenshotSha256": { "figure-heavy": "", "text-heavy": "", "data-heavy": "" }
+        }
+      }
+    },
+    {
+      "id": "direction-3",
+      "name": "",
+      "physicalScene": "",
+      "voice": ["", "", ""],
+      "colorStrategy": "",
+      "typeSystem": {
+        "id": "libre-franklin-source-serif-pro",
+        "displayFamily": "Libre Franklin",
+        "textFamily": "Source Serif Pro",
+        "displayWeight": "800",
+        "textWeight": "400",
+        "scale": "",
+        "headingMeasure": "",
+        "bodyMeasure": "",
+        "casing": "",
+        "rhythm": "",
+        "specimenSource": "https://github.com/ubuwaits/beautiful-web-type/tree/master/content/pairings/libre-franklin-and-source-serif-pro",
+        "fontAssets": [
+          {
+            "path": "directions/direction-3/assets/fonts/libre-franklin.woff2",
+            "license": "SIL Open Font License 1.1",
+            "sourceUrl": ""
+          },
+          {
+            "path": "directions/direction-3/assets/fonts/source-serif-pro.woff2",
+            "license": "SIL Open Font License 1.1",
+            "sourceUrl": ""
+          }
+        ]
+      },
+      "composition": "",
+      "graphicMedium": "",
+      "motion": "",
+      "slopRisk": "",
+      "treatment": "direction-3/treatment.html",
+      "probes": [
+        { "role": "figure-heavy", "contentId": "figure-proof-v1" },
+        { "role": "text-heavy", "contentId": "text-proof-v1" },
+        { "role": "data-heavy", "contentId": "data-proof-v1" }
+      ],
+      "rendered": {
+        "sourceHash": "",
+        "previewFile": "",
+        "screenshots": { "figure-heavy": "", "text-heavy": "", "data-heavy": "" },
+        "screenshotSha256": { "figure-heavy": "", "text-heavy": "", "data-heavy": "" },
+        "inspection": {
+          "sourceHash": "",
+          "inspectedRoles": [],
+          "screenshotSha256": { "figure-heavy": "", "text-heavy": "", "data-heavy": "" }
+        }
+      }
+    },
+    {
+      "id": "direction-4",
+      "name": "",
+      "physicalScene": "",
+      "voice": ["", "", ""],
+      "colorStrategy": "",
+      "typeSystem": {
+        "id": "messapia-inter",
+        "displayFamily": "Messapia",
+        "textFamily": "Inter",
+        "displayWeight": "700",
+        "textWeight": "450",
+        "scale": "",
+        "headingMeasure": "",
+        "bodyMeasure": "",
+        "casing": "",
+        "rhythm": "",
+        "specimenSource": "https://github.com/ubuwaits/beautiful-web-type/tree/master/content/pairings/messapia-and-inter",
+        "fontAssets": [
+          {
+            "path": "directions/direction-4/assets/fonts/messapia.woff2",
+            "license": "SIL Open Font License 1.1",
+            "sourceUrl": ""
+          },
+          {
+            "path": "directions/direction-4/assets/fonts/inter.woff2",
+            "license": "SIL Open Font License 1.1",
+            "sourceUrl": ""
+          }
+        ]
+      },
+      "composition": "",
+      "graphicMedium": "",
+      "motion": "",
+      "slopRisk": "",
+      "treatment": "direction-4/treatment.html",
+      "probes": [
+        { "role": "figure-heavy", "contentId": "figure-proof-v1" },
+        { "role": "text-heavy", "contentId": "text-proof-v1" },
+        { "role": "data-heavy", "contentId": "data-proof-v1" }
+      ],
+      "rendered": {
+        "sourceHash": "",
+        "previewFile": "",
+        "screenshots": { "figure-heavy": "", "text-heavy": "", "data-heavy": "" },
+        "screenshotSha256": { "figure-heavy": "", "text-heavy": "", "data-heavy": "" },
+        "inspection": {
+          "sourceHash": "",
+          "inspectedRoles": [],
+          "screenshotSha256": { "figure-heavy": "", "text-heavy": "", "data-heavy": "" }
+        }
+      }
+    },
+    {
+      "id": "direction-5",
+      "name": "",
+      "physicalScene": "",
+      "voice": ["", "", ""],
+      "colorStrategy": "",
+      "typeSystem": {
+        "id": "oswald-source-serif-pro",
+        "displayFamily": "Oswald",
+        "textFamily": "Source Serif Pro",
+        "displayWeight": "600",
+        "textWeight": "400",
+        "scale": "",
+        "headingMeasure": "",
+        "bodyMeasure": "",
+        "casing": "",
+        "rhythm": "",
+        "specimenSource": "https://github.com/ubuwaits/beautiful-web-type/tree/master/content/pairings/oswald-and-source-serif-pro",
+        "fontAssets": [
+          {
+            "path": "directions/direction-5/assets/fonts/oswald.woff2",
+            "license": "SIL Open Font License 1.1",
+            "sourceUrl": ""
+          },
+          {
+            "path": "directions/direction-5/assets/fonts/source-serif-pro.woff2",
+            "license": "SIL Open Font License 1.1",
+            "sourceUrl": ""
+          }
+        ]
+      },
+      "composition": "",
+      "graphicMedium": "",
+      "motion": "",
+      "slopRisk": "",
+      "treatment": "direction-5/treatment.html",
+      "probes": [
+        { "role": "figure-heavy", "contentId": "figure-proof-v1" },
+        { "role": "text-heavy", "contentId": "text-proof-v1" },
+        { "role": "data-heavy", "contentId": "data-proof-v1" }
+      ],
+      "rendered": {
+        "sourceHash": "",
+        "previewFile": "",
+        "screenshots": { "figure-heavy": "", "text-heavy": "", "data-heavy": "" },
+        "screenshotSha256": { "figure-heavy": "", "text-heavy": "", "data-heavy": "" },
+        "inspection": {
+          "sourceHash": "",
+          "inspectedRoles": [],
+          "screenshotSha256": { "figure-heavy": "", "text-heavy": "", "data-heavy": "" }
+        }
+      }
+    },
+    {
+      "id": "direction-6",
+      "name": "",
+      "physicalScene": "",
+      "voice": ["", "", ""],
+      "colorStrategy": "",
+      "typeSystem": {
+        "id": "rakkas-vollkorn",
+        "displayFamily": "Rakkas",
+        "textFamily": "Vollkorn",
+        "displayWeight": "400",
+        "textWeight": "500",
+        "scale": "",
+        "headingMeasure": "",
+        "bodyMeasure": "",
+        "casing": "",
+        "rhythm": "",
+        "specimenSource": "https://github.com/ubuwaits/beautiful-web-type/tree/master/content/pairings/rakkas-and-vollkorn",
+        "fontAssets": [
+          {
+            "path": "directions/direction-6/assets/fonts/rakkas.woff2",
+            "license": "SIL Open Font License 1.1",
+            "sourceUrl": ""
+          },
+          {
+            "path": "directions/direction-6/assets/fonts/vollkorn.woff2",
+            "license": "SIL Open Font License 1.1",
+            "sourceUrl": ""
+          }
+        ]
+      },
+      "composition": "",
+      "graphicMedium": "",
+      "motion": "",
+      "slopRisk": "",
+      "treatment": "direction-6/treatment.html",
+      "probes": [
+        { "role": "figure-heavy", "contentId": "figure-proof-v1" },
+        { "role": "text-heavy", "contentId": "text-proof-v1" },
+        { "role": "data-heavy", "contentId": "data-proof-v1" }
+      ],
+      "rendered": {
+        "sourceHash": "",
+        "previewFile": "",
+        "screenshots": { "figure-heavy": "", "text-heavy": "", "data-heavy": "" },
+        "screenshotSha256": { "figure-heavy": "", "text-heavy": "", "data-heavy": "" },
+        "inspection": {
+          "sourceHash": "",
+          "inspectedRoles": [],
+          "screenshotSha256": { "figure-heavy": "", "text-heavy": "", "data-heavy": "" }
+        }
+      }
+    }
+  ],
+  "feedback": {
+    "status": "pending",
+    "selectedDirectionIds": [],
+    "approvedRoles": [],
+    "reactions": []
+  }
+}
