@@ -23,7 +23,7 @@ content and the user's reaction to rendered work.
 
 The skills share one toolkit for preview, chart rendering, image generation,
 validation, and export. Shared production rules live under
-`skills\_shared\nice-deck`; it is not a fourth user-facing skill.
+`.github\skills\_shared\nice-deck`; it is not a fourth user-facing skill.
 
 ## What it produces
 
@@ -38,13 +38,14 @@ PPTX is an optional lossy export and never drives the design.
 
 ## Local prototyping
 
-Open a Copilot session in this repository. The repo-local extension loads the
-co-direction workflow and registers `nice_deck_preview`.
+Open a Copilot session in this repository. Copilot discovers the three project
+skills from `.github\skills`, while the repo-local extension registers
+`nice_deck_preview` and the shared production contract.
 
 Install the preview dependency once:
 
 ```powershell
-cd skills\_shared\nice-deck
+cd .github\skills\_shared\nice-deck
 npm install
 npm run setup
 ```
@@ -72,7 +73,7 @@ Direction work is tracked in
 review and again after feedback:
 
 ```powershell
-cd skills\_shared\nice-deck
+cd .github\skills\_shared\nice-deck
 npm run validate:directions -- $HOME\Documents\decks\my-deck --review
 npm run validate:directions -- $HOME\Documents\decks\my-deck --approved
 ```
@@ -80,7 +81,7 @@ npm run validate:directions -- $HOME\Documents\decks\my-deck --approved
 To preview a deck directly:
 
 ```powershell
-cd skills\_shared\nice-deck
+cd .github\skills\_shared\nice-deck
 npm run preview -- $HOME\Documents\decks\my-deck\deck.html
 ```
 
@@ -89,7 +90,7 @@ Open the printed cache-busted URL; press `Ctrl+C` to stop the preview server.
 Export an email-safe PDF from those exact inspected renders:
 
 ```powershell
-cd skills\_shared\nice-deck
+cd .github\skills\_shared\nice-deck
 npm run export:pdf -- $HOME\Documents\decks\my-deck\deck.html
 ```
 
@@ -99,7 +100,7 @@ reported and omitted. The HTML remains the editable source of truth.
 
 ## Image generation
 
-`skills/_shared/nice-deck/scripts/image.py` calls an Azure OpenAI image deployment with
+`.github/skills/_shared/nice-deck/scripts/image.py` calls an Azure OpenAI image deployment with
 an Entra ID token from Azure CLI. Copy `.env.example` to `.env`, set the
 endpoint and deployment, then run:
 
@@ -112,9 +113,9 @@ generated dogfood deck belongs in this repository.
 
 ## Install as a plugin
 
-Public plugin packaging will be finalized after the repo-local workflows have
-been dogfooded. The three skills live under `skills`; the local extension is
-the development path.
+The three skills live under `.github/skills`, so repository sessions discover
+them automatically. Installed plugins use the same directory through
+`plugin.json`, making the skills available across repositories.
 
 ## License
 
