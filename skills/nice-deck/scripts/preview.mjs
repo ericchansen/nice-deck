@@ -554,6 +554,7 @@ export async function previewDeck({
   workspaceRoot,
   keepServer = false,
   captureMode = true,
+  browser: suppliedBrowser,
 } = {}) {
   if (!sourcePath) throw new Error("sourcePath is required");
 
@@ -608,12 +609,14 @@ export async function previewDeck({
   const contrast = [];
   const contrastUnverified = [];
   const screenshots = [];
-  let browser;
+  let browser = suppliedBrowser;
+  let context;
+  const ownsBrowser = !suppliedBrowser;
   let serverTransferred = false;
 
   try {
-    browser = await chromium.launch();
-    const context = await browser.newContext({
+    browser ??= await chromium.launch();
+    context = await browser.newContext({
       deviceScaleFactor: 1,
       reducedMotion: "reduce",
       serviceWorkers: "block",
@@ -806,7 +809,9 @@ export async function previewDeck({
     return { ...result, previewFile, ...(keepServer ? { server } : {}) };
   } finally {
     await Promise.all([
-      browser?.close() ?? Promise.resolve(),
+      ownsBrowser
+        ? (browser?.close() ?? Promise.resolve())
+        : (context?.close() ?? Promise.resolve()),
       serverTransferred ? Promise.resolve() : server.close(),
     ]);
   }
