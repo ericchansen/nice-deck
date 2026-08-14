@@ -644,7 +644,12 @@ export async function previewDeck({
       if (observedPages.has(observedPage)) return;
       observedPages.add(observedPage);
       observedPage.on("console", (message) => {
-        if (message.type() === "error") browserErrors.push(`console: ${message.text()}`);
+        if (message.type() !== "error") return;
+        const location = message.location();
+        const source = location.url
+          ? ` (${location.url}:${location.lineNumber}:${location.columnNumber})`
+          : "";
+        browserErrors.push(`console: ${message.text()}${source}`);
       });
       observedPage.on("pageerror", (error) => browserErrors.push(`page: ${error.message}`));
       observedPage.on("websocket", (webSocket) => {

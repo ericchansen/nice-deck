@@ -7,7 +7,7 @@ license: MIT
 # deck-explore-direction
 
 Develop the visual world of a deck through comparable rendered evidence. This
-skill ends with an approved or explicitly combined three-slide system; it does
+skill ends with an approved or explicitly combined proof system; it does
 not propagate that system through the full deck.
 
 ## Load before working
@@ -29,9 +29,14 @@ Confirm the argument, audience, setting, and desired reaction. Ask whether the
 user has visual references they already trust, but do not require them and do
 not ask the user to design the system.
 
-Freeze one figure-heavy, one text-heavy, and one data-heavy content contract.
-Each contract includes the full explanatory contract and primary modality from
-the shared foundation.
+Freeze one figure-heavy, one text-heavy, and at least one data-heavy content
+contract. Each contract includes the full explanatory contract and primary
+modality from the shared foundation.
+
+Use one data-heavy proof per chart archetype intended for the final deck. If the
+deck will use multiple chart forms, add roles named
+`data-heavy-<chart-purpose>` and include every role in every direction. Do not
+change chart form inside one frozen proof and call it styling.
 
 The wording, values, evidence, relevance, caveat, claim status, source IDs, and
 modality remain identical across every direction. The user must compare visual
@@ -40,7 +45,9 @@ systems rather than changing content.
 ## 2. Author the direction matrix
 
 When no reference determines a narrower exercise, create exactly six
-three-slide treatments for 18 rendered proofs.
+treatments. With one chart archetype, each treatment has three slides for 18
+rendered proofs. Each additional intended chart archetype adds one frozen
+data-heavy proof to every treatment.
 
 Create `directions/visual-direction-matrix.json` from the shared template
 before implementing any treatment. For every direction declare:
@@ -101,7 +108,7 @@ Mark visible question, answer, evidence, decision relevance, and caveat with
 Run `nice_deck_preview` for every treatment. Record each source hash, preview
 record, role-specific screenshot path, and screenshot SHA-256 in the matrix.
 
-View all screenshots. Judge each three-slide system as a unit and fix:
+View all screenshots. Judge each complete proof system as a unit and fix:
 
 - contrast, clipping, overflow, and projection-scale readability
 - weak hierarchy or unresolved empty space
@@ -116,15 +123,15 @@ Record completed visual-inspection roles and hashes, then run:
 npm run validate:directions -- <workspace> --review
 ```
 
-Refresh Browser Canvas to each exact cache-busted treatment URL. Present the
-comparison with figure-, text-, and data-heavy roles aligned.
+Refresh Browser Canvas to each exact cache-busted treatment URL. Present every
+direction together with all proof roles aligned.
 
 ## 5. Obtain direction approval
 
 Collect a reaction to every direction. Ask whether to select one, combine
 named parts, or revise. Do not defend an unsuccessful visual.
 
-Stop propagation until all three proof roles are approved. Record reactions,
+Stop propagation until all proof roles are approved. Record reactions,
 selected direction IDs, and combination instructions in both `brief.md` and
 the direction matrix.
 

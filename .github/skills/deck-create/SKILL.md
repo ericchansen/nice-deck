@@ -61,34 +61,36 @@ foundation. Delete filler, identify evidence gaps, and propose any material
 addition, removal, or reorder before silently changing the user's intended
 argument.
 
-Choose three representative slides:
+Choose a representative proof set:
 
 - a figure-heavy slide that tests image language and authoritative overlays
 - a text-heavy slide that tests hierarchy, measure, density, and citations
 - a data-heavy slide that tests chart grammar, assumptions, annotation, and
   decision relevance
+- one additional data-heavy slide for every other chart archetype intended for
+  the final deck
 
 A title slide is not automatically representative.
 
 ## 3. Establish the visual system
 
-Follow the complete `deck-explore-direction` workflow. The three representative
-content contracts remain identical across every treatment.
+Follow the complete `deck-explore-direction` workflow. Every representative
+content contract remains identical across every treatment.
 
 If the user supplied no trusted visual reference, render exactly six materially
-different three-slide directions. If the user supplied a reference, still
+different directions containing the full proof set. If the user supplied a reference, still
 produce multiple real paired treatments unless the user explicitly chooses to
 apply that reference directly.
 
 Do not propagate a direction until the user has reacted to every treatment,
-approved the figure-, text-, and data-heavy proofs, and selected one direction
+approved every proof role, and selected one direction
 or explicitly combined named parts.
 
 Record the approved system in `brief.md`:
 
 - physical viewing scene and three voice words
 - palette mechanics and color semantics
-- typography and hierarchy across all three proof roles
+- typography and hierarchy across all proof roles
 - composition rules
 - graphic medium and reusable image-prompt recipe
 - chart grammar

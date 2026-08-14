@@ -13,15 +13,16 @@ a passing scanner, or a screenshot from a different browser is not enough.
 ## Co-direction
 
 - Derive the visual world from the argument, audience, and desired reaction.
-- Freeze one figure-heavy, one text-heavy, and one data-heavy content proof.
-- Show six real three-slide directions with identical proof content before
-  committing to a grammar.
-- Give each direction its own coherent typesetting across all three proofs.
+- Freeze one figure-heavy, one text-heavy, and at least one data-heavy content
+  proof. Add a frozen data-heavy proof for every intended chart archetype.
+- Show six real directions with identical proof content and chart geometry
+  before committing to a grammar.
+- Give each direction its own coherent typesetting across all proofs.
   The six type systems must differ in family, weight contrast, scale, measure,
   casing, and rhythm—not just font name.
 - Do not choose the central metaphor, mood, or hero image unilaterally.
-- Get feedback on all 18 rendered slides, then make the selected or combined
-  three-slide system loved before making the remaining deck acceptable.
+- Get feedback on every rendered proof slide, then make the selected or combined
+  proof system loved before making the remaining deck acceptable.
 
 ## Absolute bans
 

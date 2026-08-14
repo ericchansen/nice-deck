@@ -10,7 +10,13 @@ import { validateDirectionMatrix } from "./validate-directions.mjs";
 const here = dirname(fileURLToPath(import.meta.url));
 const workspace = await mkdtemp(join(tmpdir(), "nice-deck-directions-"));
 const directionsRoot = join(workspace, "directions");
-const roles = ["figure-heavy", "text-heavy", "data-heavy"];
+const roles = [
+  "figure-heavy",
+  "text-heavy",
+  "data-heavy",
+  "data-heavy-normalization",
+  "data-heavy-economics",
+];
 const content = Object.fromEntries(roles.map((role) => [role, {
   id: `${role}-content`,
   slideId: role,
