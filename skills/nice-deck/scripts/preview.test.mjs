@@ -22,6 +22,7 @@ import { syncRuntime } from "./sync-runtime.mjs";
 const here = dirname(fileURLToPath(import.meta.url));
 const workspace = await mkdtemp(join(tmpdir(), "nice-deck-test-"));
 let liveServer;
+let browser;
 
 const sources = {
   version: 1,
@@ -86,6 +87,7 @@ async function configure(manifest) {
 }
 
 try {
+  browser = await chromium.launch();
   await writeFile(join(workspace, "brief.md"), "# Test deck\n");
   await cp(join(here, "..", "runtime", "deck.js"), join(workspace, "deck.js"));
   await syncRuntime({ workspaceRoot: workspace });
@@ -101,7 +103,7 @@ try {
 
   const probe = join(workspace, "probe.html");
   await writeFile(probe, nativeDocument("First"));
-  const first = await previewDeck({ sourcePath: probe, keepServer: true });
+  const first = await previewDeck({ sourcePath: probe, keepServer: true, browser });
   liveServer = first.server;
   assert.equal(first.ok, true);
   assert.equal(first.workspaceRoot, await realpath(workspace));
@@ -221,8 +223,8 @@ try {
     }),
   ]);
 
-  const chartFirst = await previewDeck({ sourcePath: chartPath });
-  const chartSecond = await previewDeck({ sourcePath: chartPath });
+  const chartFirst = await previewDeck({ sourcePath: chartPath, browser });
+  const chartSecond = await previewDeck({ sourcePath: chartPath, browser });
   assert.equal(chartFirst.ok, true);
   assert.equal(chartSecond.ok, true);
   assert.equal(
@@ -230,8 +232,7 @@ try {
     createHash("sha256").update(await readFile(chartSecond.screenshots[1])).digest("hex"),
   );
 
-  const directBrowser = await chromium.launch();
-  const directPage = await directBrowser.newPage({ viewport: { width: 1600, height: 900 } });
+  const directPage = await browser.newPage({ viewport: { width: 1600, height: 900 } });
   await directPage.goto(pathToFileURL(chartPath).href, { waitUntil: "networkidle" });
   await directPage.keyboard.press("ArrowRight");
   await directPage.waitForFunction(() => (
@@ -250,9 +251,9 @@ try {
   });
   assert(directState.width > 0 && directState.height > 0 && directState.marks > 0);
   assert.equal(directState.labels, true);
-  await directBrowser.close();
+  await directPage.close();
 
-  const interactive = await previewDeck({ sourcePath: chartPath, captureMode: false });
+  const interactive = await previewDeck({ sourcePath: chartPath, captureMode: false, browser });
   assert.equal(interactive.ok, true);
   assert.deepEqual(interactive.chartAudit, []);
 
@@ -261,7 +262,6 @@ try {
   assert.doesNotMatch(await readFile(portable.html, "utf8"), /\/__nice-deck\//);
   const staticServer = await startStaticServer(portable.root);
   liveServer = staticServer;
-  let browser = await chromium.launch();
   let page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
   await page.goto(staticServer.urlFor(portable.html), { waitUntil: "networkidle" });
   await page.keyboard.press("ArrowRight");
@@ -278,20 +278,19 @@ try {
     };
   });
   assert(portableState.width > 0 && portableState.height > 0 && portableState.marks > 0);
-  await browser.close();
+  await page.close();
   await staticServer.close();
   liveServer = undefined;
 
   await rm(join(portable.root, "runtime", "echarts.min.js"));
   const failureServer = await startStaticServer(portable.root);
   liveServer = failureServer;
-  browser = await chromium.launch();
   page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
   await page.goto(failureServer.urlFor(portable.html), { waitUntil: "networkidle" });
   await page.keyboard.press("ArrowRight");
   await page.waitForSelector(".nice-deck-chart-error");
   assert.match(await page.locator(".nice-deck-chart-error").innerText(), /Chart unavailable/);
-  await browser.close();
+  await page.close();
   await failureServer.close();
   liveServer = undefined;
 
@@ -305,5 +304,6 @@ try {
   console.log("nice-deck preview self-test passed");
 } finally {
   await liveServer?.close();
+  await browser?.close();
   await rm(workspace, { recursive: true, force: true });
 }
