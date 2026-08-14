@@ -1,7 +1,7 @@
 # nice-deck
 
-nice-deck turns a loose presentation brief into a graphical, web-native deck
-through collaborative art direction.
+nice-deck is a three-skill suite for creating, art-directing, and reviewing
+graphical, web-native presentations.
 
 You bring the gist, source material, and desired outcome. The AI helps shape
 the narrative, freezes three representative content proofs, and renders six
@@ -11,6 +11,19 @@ the chosen or combined visual grammar is extended across the deck.
 
 It is not a template picker. Every deck discovers its visual world from the
 content and the user's reaction to rendered work.
+
+## Skills
+
+- **`deck-create`** turns conversations, notes, documents, source material, or
+  existing slides into a polished deck.
+- **`deck-explore-direction`** renders comparable figure-, text-, and data-heavy
+  treatments so the user can approve or combine a visual system.
+- **`deck-review`** audits and improves an existing deck's argument, evidence,
+  visual design, accessibility, rendering, and delivery readiness.
+
+The skills share one toolkit for preview, chart rendering, image generation,
+validation, and export. Shared production rules live under
+`skills\_shared\nice-deck`; it is not a fourth user-facing skill.
 
 ## What it produces
 
@@ -31,7 +44,7 @@ co-direction workflow and registers `nice_deck_preview`.
 Install the preview dependency once:
 
 ```powershell
-cd skills\nice-deck
+cd skills\_shared\nice-deck
 npm install
 npm run setup
 ```
@@ -59,7 +72,7 @@ Direction work is tracked in
 review and again after feedback:
 
 ```powershell
-cd skills\nice-deck
+cd skills\_shared\nice-deck
 npm run validate:directions -- $HOME\Documents\decks\my-deck --review
 npm run validate:directions -- $HOME\Documents\decks\my-deck --approved
 ```
@@ -67,7 +80,7 @@ npm run validate:directions -- $HOME\Documents\decks\my-deck --approved
 To preview a deck directly:
 
 ```powershell
-cd skills\nice-deck
+cd skills\_shared\nice-deck
 npm run preview -- $HOME\Documents\decks\my-deck\deck.html
 ```
 
@@ -76,7 +89,7 @@ Open the printed cache-busted URL; press `Ctrl+C` to stop the preview server.
 Export an email-safe PDF from those exact inspected renders:
 
 ```powershell
-cd skills\nice-deck
+cd skills\_shared\nice-deck
 npm run export:pdf -- $HOME\Documents\decks\my-deck\deck.html
 ```
 
@@ -86,7 +99,7 @@ reported and omitted. The HTML remains the editable source of truth.
 
 ## Image generation
 
-`skills/nice-deck/scripts/image.py` calls an Azure OpenAI image deployment with
+`skills/_shared/nice-deck/scripts/image.py` calls an Azure OpenAI image deployment with
 an Entra ID token from Azure CLI. Copy `.env.example` to `.env`, set the
 endpoint and deployment, then run:
 
@@ -99,9 +112,9 @@ generated dogfood deck belongs in this repository.
 
 ## Install as a plugin
 
-Public plugin packaging will be finalized after the repo-local workflow has
-been dogfooded. The skill already lives under `skills/nice-deck`; the local
-extension is the development path.
+Public plugin packaging will be finalized after the repo-local workflows have
+been dogfooded. The three skills live under `skills`; the local extension is
+the development path.
 
 ## License
 

@@ -6,12 +6,12 @@ import { dirname } from "node:path";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "..", "..", "..");
-const skillRoot = join(repoRoot, "skills", "nice-deck");
-const previewModuleUrl = pathToFileURL(join(skillRoot, "scripts", "preview.mjs")).href;
+const toolkitRoot = join(repoRoot, "skills", "_shared", "nice-deck");
+const previewModuleUrl = pathToFileURL(join(toolkitRoot, "scripts", "preview.mjs")).href;
 const product = readFileSync(join(repoRoot, "PRODUCT.md"), "utf8");
-const workflow = readFileSync(join(skillRoot, "SKILL.md"), "utf8");
-const principles = readFileSync(join(skillRoot, "references", "principles.md"), "utf8");
-const profile = readFileSync(join(skillRoot, "references", "profile.hansen.md"), "utf8");
+const foundation = readFileSync(join(toolkitRoot, "references", "foundation.md"), "utf8");
+const principles = readFileSync(join(toolkitRoot, "references", "principles.md"), "utf8");
+const profile = readFileSync(join(toolkitRoot, "references", "profile.hansen.md"), "utf8");
 
 let workspaceRoot = repoRoot;
 let activeSource;
@@ -174,7 +174,7 @@ const session = await joinSession({
           "Art-direction approval requires paired narrative and data proofs. If no visual reference is supplied, show two or three real paired treatments and stop propagation until both proofs are approved or combined.",
           "Data treatments require direct labels, visible units, assumptions, takeaway, decision relevance, and source IDs. Unexplained legends, dashed reference lines, and silent empty chart regions block presentation.",
           product,
-          workflow,
+          foundation,
           principles,
           profile,
         ].join("\n\n"),

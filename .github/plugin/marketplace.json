@@ -4,15 +4,15 @@
     "name": "Eric Hansen"
   },
   "metadata": {
-    "description": "A co-directed deck engine that turns rough ideas into graphical web-native slides with original AI graphics and visually inspected previews.",
-    "version": "0.1.0"
+    "description": "A presentation skill suite for creating, art-directing, and reviewing graphical web-native decks.",
+    "version": "0.2.0"
   },
   "plugins": [
     {
       "name": "nice-deck",
       "source": ".",
-      "version": "0.1.0",
-      "description": "Create graphical web-native decks through collaborative art direction and original AI graphics."
+      "version": "0.2.0",
+      "description": "Create, art-direct, and review graphical web-native decks through three focused workflows."
     }
   ]
 }
