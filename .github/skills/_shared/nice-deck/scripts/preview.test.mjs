@@ -100,6 +100,11 @@ try {
     .nice-deck-chart-error { padding: 30px; background: #fff0f0; color: #8a001f; }
   `);
   await configure([contract("01"), contract("02")]);
+  const liveAssets = join(workspace, "assets", "live");
+  await mkdir(liveAssets, { recursive: true });
+  await writeFile(join(liveAssets, "index.html"), "<!doctype html><title>Live asset</title>");
+  await writeFile(join(liveAssets, "app.css"), "body { color: #111; }");
+  await writeFile(join(liveAssets, "app.js"), "document.documentElement.dataset.live = 'true';");
 
   const probe = join(workspace, "probe.html");
   await writeFile(probe, nativeDocument("First"));
@@ -114,6 +119,9 @@ try {
   assert.equal((await fetch(new URL("/.env", first.url))).status, 403);
   assert.equal((await fetch(new URL("/runtime/echarts.min.js", first.url))).status, 200);
   assert.equal((await fetch(new URL("/runtime/charts.js", first.url))).status, 200);
+  assert.equal((await fetch(new URL("/assets/live/index.html", first.url))).status, 200);
+  assert.equal((await fetch(new URL("/assets/live/app.css", first.url))).status, 200);
+  assert.equal((await fetch(new URL("/assets/live/app.js", first.url))).status, 200);
   assert.equal((await fetch(new URL("/__nice-deck/echarts.min.js", first.url))).status, 410);
   assert.equal((await fetch(new URL("/runtime/arbitrary.js", first.url))).status, 404);
   await liveServer.close();
@@ -138,7 +146,7 @@ try {
   await configure([contract("01"), contract("02")]);
 
   const assets = join(workspace, "assets");
-  await mkdir(assets);
+  await mkdir(assets, { recursive: true });
   const generatedAsset = join(assets, "concept.png");
   const generatedBytes = Buffer.from("generated fixture");
   await writeFile(generatedAsset, generatedBytes);

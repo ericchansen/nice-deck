@@ -190,7 +190,7 @@ async function listStaticFiles(root, source) {
     }
   }
 
-  await visitAssets(join(root, "assets"));
+  await visitAssets(join(root, "assets"), staticExtensions);
   await visitAssets(join(root, "runtime"), staticExtensions);
   return [...files].sort();
 }
