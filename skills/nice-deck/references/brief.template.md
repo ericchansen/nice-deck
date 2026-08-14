@@ -118,6 +118,8 @@ with license and public source URL. Read
 - Color semantics:
 - Typography:
 - Composition:
+- Citation treatment: inline `Label: content` fields with regular-weight,
+  lighter text; light hairline or subtle tonal-background separation
 - Graphic medium:
 - Motion:
 - Image-prompt recipe:
