@@ -13,10 +13,15 @@ a passing scanner, or a screenshot from a different browser is not enough.
 ## Co-direction
 
 - Derive the visual world from the argument, audience, and desired reaction.
-- Show two or three real treatments of one representative slide before
+- Freeze one figure-heavy, one text-heavy, and one data-heavy content proof.
+- Show six real three-slide directions with identical proof content before
   committing to a grammar.
+- Give each direction its own coherent typesetting across all three proofs.
+  The six type systems must differ in family, weight contrast, scale, measure,
+  casing, and rhythm—not just font name.
 - Do not choose the central metaphor, mood, or hero image unilaterally.
-- Make one slide loved before making many slides acceptable.
+- Get feedback on all 18 rendered slides, then make the selected or combined
+  three-slide system loved before making the remaining deck acceptable.
 
 ## Absolute bans
 

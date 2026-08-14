@@ -238,7 +238,21 @@ function hashSources(sources) {
     hash.update(contentLength);
     hash.update(source.content);
   }
+
   return hash.digest("hex");
+}
+
+export async function computeDeckSourceHash({ sourcePath, workspaceRoot } = {}) {
+  if (!sourcePath) throw new Error("sourcePath is required");
+  const source = await realpath(resolve(sourcePath));
+  const root = workspaceRoot
+    ? await realpath(resolve(workspaceRoot))
+    : await findWorkspaceRoot(source);
+  if (!isWithin(root, source)) {
+    throw new Error(`${source} is outside workspace root ${root}`);
+  }
+  const files = await listStaticFiles(root, source);
+  return hashSources(await readSources(root, files));
 }
 
 async function copySnapshot(sources, snapshotRoot) {
@@ -763,6 +777,9 @@ export async function previewDeck({
       }
     }
 
+    const screenshotHashes = await Promise.all(screenshots.map(async (screenshot) => (
+      createHash("sha256").update(await readFile(screenshot)).digest("hex")
+    )));
     const result = {
       ok: scan.length === 0
         && contrast.length === 0
@@ -774,6 +791,7 @@ export async function previewDeck({
       sourceHash,
       url,
       screenshots,
+      screenshotHashes,
       scan,
       contrast,
       contrastUnverified,
