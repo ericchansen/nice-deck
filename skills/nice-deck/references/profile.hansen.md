@@ -40,6 +40,9 @@ deck's visual world.
 - Use ECharts for measured or modeled data and generated imagery for primary
   conceptual visuals. Keep exact labels, values, formulas, citations, and
   recommendations native.
+- Do not add image or figure captions to abstract or generated imagery by
+  default. Use a visible caption only when it is necessary for evidence,
+  attribution, or comprehension.
 - Light or dark is a consequence of the viewing scene, not a default.
 - Minimal does not mean faint, empty, generic, or under-designed.
 - A deck may vary composition slide to slide while retaining one coherent voice.
