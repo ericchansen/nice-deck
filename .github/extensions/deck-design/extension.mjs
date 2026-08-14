@@ -6,7 +6,7 @@ import { dirname } from "node:path";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "..", "..", "..");
-const toolkitRoot = join(repoRoot, "skills", "_shared", "nice-deck");
+const toolkitRoot = join(repoRoot, ".github", "skills", "_shared", "nice-deck");
 const previewModuleUrl = pathToFileURL(join(toolkitRoot, "scripts", "preview.mjs")).href;
 const product = readFileSync(join(repoRoot, "PRODUCT.md"), "utf8");
 const foundation = readFileSync(join(toolkitRoot, "references", "foundation.md"), "utf8");

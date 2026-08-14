@@ -7,5 +7,5 @@
   },
   "repository": "https://github.com/ericchansen/nice-deck",
   "license": "MIT",
-  "skills": "skills/"
+  "skills": ".github/skills/"
 }
