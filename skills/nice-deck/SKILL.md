@@ -293,6 +293,23 @@ The generator is env-driven; see the repository `.env.example`.
 Every number, name, quote, URL, and command must be sourced in `brief.md`.
 Mark gaps as unverified and surface them. Never invent plausible specifics.
 
+### Reader-facing citations
+
+Keep the citation treatment minimal and subordinate to the main composition.
+Use regular-weight text in a lighter, WCAG-compliant color. Do not bold citation
+labels, source names, or links unless the user explicitly requests emphasis.
+
+Format each field inline as `Label: content`, not as a label on one line followed
+by content on the next. Prefer one compact citation strip over a multi-column
+ledger or a grid of labeled blocks. Include only the fields the slide needs:
+claim description, readable source names, and an optional calculation-record
+link. Material caveats and decision reasoning stay in the main slide content.
+
+Separate the citation area from the main slide with either a light one-pixel
+rule or a subtle background-color change. Both are valid art-direction choices.
+Never use a bold horizontal divider. If a citation wraps, use a hanging
+continuation that preserves the inline label.
+
 ## Visual manifest
 
 Every deck workspace includes `visual-manifest.json`. Each slide records its
@@ -302,10 +319,11 @@ declaration blocks preview.
 
 Each manifest slide also records `question`, `answer`, `decisionRelevance`,
 `claimStatus`, and `sourceIds`. Every source ID resolves through `sources.json`.
-Visible slide citations use short IDs such as `[S1]`, with public URLs clickable
-and non-linkable internal extracts described by safe human-readable locators.
-Never expose internal URLs, artifact IDs, subscription IDs, tokens, or private
-paths.
+Source IDs such as `[S1]` remain internal to validation data and are not shown to
+the audience. Visible citations use concise human-readable source names, with
+public URLs clickable and non-linkable internal extracts described by safe
+human-readable locators. Never expose internal URLs, artifact IDs, subscription
+IDs, tokens, or private paths.
 
 For `data` slides, include an ECharts selector and source summary. For
 `conceptual` and `hybrid` slides, include the generated asset and matching

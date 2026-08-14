@@ -79,6 +79,25 @@ a passing scanner, or a screenshot from a different browser is not enough.
 - Capture a landing or catalog page only after it has fully loaded; do not let a
   random detail page stand in for the whole product.
 
+## Citations
+
+- Keep citations visually subordinate to the slide. Use regular-weight text in
+  a lighter but WCAG-compliant color; do not bold labels, source names, or links
+  unless the user explicitly asks for emphasis.
+- Write each citation field on one line as `Label: content`. Do not stack a
+  section title above its content.
+- Prefer one compact citation strip containing only the fields the slide needs.
+  Human-readable source names and method links replace reader-facing source IDs.
+- Separate citations from the main composition with either a light one-pixel
+  rule or a subtle background-color change. Never use a bold horizontal divider.
+- A tonal citation background may replace the rule when it creates a clearer
+  main-slide and citation-area distinction without looking like a card.
+- Keep decision-changing caveats in the main slide content. Citation space is
+  for source identity, claim description, and optional calculation records, not
+  for reasoning that the audience needs to understand the slide.
+- If citations wrap, preserve the inline label and use a hanging continuation.
+  Do not turn the citation area into a grid of labeled blocks.
+
 ## Graphics
 
 - A graphic must explain, orient, or create intentional emotion.

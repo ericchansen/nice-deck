@@ -58,6 +58,12 @@ deck's visual world.
   scoped to what that product actually does.
 - Capture the canonical landing or catalog page, not a convenient subpage.
   Wait for the page to finish loading and use the intended theme.
+- Keep citation areas minimal: regular-weight, lighter text; compact
+  `Label: content` lines; and no bold labels unless Eric asks for them.
+- Separate citations from slide content with a light hairline or a subtle tonal
+  background change, never a bold horizontal divider.
+- Prefer one flowing citation strip over stacked section labels or a grid of
+  citation blocks.
 - On resource and marketplace slides, keep the linked title, a useful
   description, and the written canonical URL.
 - Omit a trailing slash from authored and displayed URLs unless the destination
