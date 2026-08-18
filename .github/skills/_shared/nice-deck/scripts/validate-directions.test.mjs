@@ -23,8 +23,6 @@ const content = Object.fromEntries(roles.map((role) => [role, {
   question: `What does the ${role} proof ask?`,
   answer: "The frozen answer.",
   evidence: "The frozen evidence.",
-  decisionRelevance: "The frozen relevance.",
-  caveat: "The frozen caveat.",
   claimStatus: "measured",
   sourceIds: ["S1"],
   modality: "native",
@@ -35,8 +33,6 @@ const typographyInspector = async ({ typeSystem, content: frozenContent, fontAss
     question: { text: frozenContent[role].question, visible: true },
     answer: { text: frozenContent[role].answer, visible: true },
     evidence: { text: frozenContent[role].evidence, visible: true },
-    decisionRelevance: { text: frozenContent[role].decisionRelevance, visible: true },
-    caveat: { text: frozenContent[role].caveat, visible: true },
     claimStatus: frozenContent[role].claimStatus,
     sourceIds: frozenContent[role].sourceIds,
     modality: frozenContent[role].modality,
@@ -68,6 +64,24 @@ const typographyInspector = async ({ typeSystem, content: frozenContent, fontAss
 
 try {
   await mkdir(directionsRoot);
+  const outlinePath = join(workspace, "outline.json");
+  await writeFile(outlinePath, `${JSON.stringify({
+    version: 1,
+    status: "approved",
+    approvedAt: "2026-08-14",
+    deck: { title: "Fixture deck" },
+    frames: roles.map((role) => ({
+      id: role,
+      title: `Frame ${role}`,
+      shows: "The frozen evidence.",
+      says: "The frozen answer.",
+      modality: "native",
+      section: "main",
+      sourceIds: ["S1"],
+      status: "ready",
+    })),
+    openEvidence: [],
+  }, null, 2)}\n`);
   const directions = [];
   for (let index = 1; index <= 6; index += 1) {
     const id = `direction-${index}`;
@@ -96,8 +110,7 @@ try {
           <h1 data-type-role="display" data-contract-field="question">${content[role].question}</h1>
           <p data-type-role="text" data-contract-field="answer">${content[role].answer}</p>
           <p data-contract-field="evidence">${content[role].evidence}</p>
-          <p data-contract-field="decisionRelevance">${content[role].decisionRelevance}</p>
-          <p data-contract-field="caveat">${content[role].caveat}</p>
+          <footer data-citation>Source: <a href="https://example.com/fixture-source">Fixture source</a></footer>
         </section>`
       )).join("\n")}
       <script src="deck.js"></script>
@@ -115,9 +128,10 @@ try {
         title: "Fixture source",
         publisher: "Test",
         date: "2026-08-14",
-        type: "measured-internal-extract",
+        type: "public-url",
+        url: "https://example.com/fixture-source",
         locator: "Fixture",
-        confidentiality: "test",
+        confidentiality: "public",
       }],
     }, null, 2)}\n`);
     await writeFile(join(folder, "visual-manifest.json"), `${JSON.stringify({
@@ -126,7 +140,6 @@ try {
         id: content[role].slideId,
         question: content[role].question,
         answer: content[role].answer,
-        decisionRelevance: content[role].decisionRelevance,
         claimStatus: content[role].claimStatus,
         sourceIds: content[role].sourceIds,
         modality: "native",
@@ -217,6 +230,79 @@ try {
   );
 
   assert.deepEqual(await validateDirectionMatrix({ workspaceRoot: workspace }), []);
+
+  const threeDirections = { ...matrix, directions: directions.slice(0, 3) };
+  await writeFile(
+    join(directionsRoot, "visual-direction-matrix.json"),
+    `${JSON.stringify(threeDirections, null, 2)}\n`,
+  );
+  assert.deepEqual(await validateDirectionMatrix({ workspaceRoot: workspace }), []);
+
+  const twoDirections = { ...matrix, directions: directions.slice(0, 2) };
+  await writeFile(
+    join(directionsRoot, "visual-direction-matrix.json"),
+    `${JSON.stringify(twoDirections, null, 2)}\n`,
+  );
+  assert((await validateDirectionMatrix({ workspaceRoot: workspace })).some(
+    (failure) => failure.includes("Between 3 and 6 directions"),
+  ));
+
+  const conceptualMatrix = structuredClone(matrix);
+  conceptualMatrix.content["figure-heavy"].modality = "conceptual";
+  await writeFile(
+    join(directionsRoot, "visual-direction-matrix.json"),
+    `${JSON.stringify(conceptualMatrix, null, 2)}\n`,
+  );
+  assert((await validateDirectionMatrix({ workspaceRoot: workspace })).some(
+    (failure) => failure.includes("imagery exploration is not approved"),
+  ));
+
+  // A probe may not invent content: its slideId has to be an approved main frame.
+  const inventedMatrix = structuredClone(matrix);
+  inventedMatrix.content["figure-heavy"].slideId = "never-approved";
+  await writeFile(
+    join(directionsRoot, "visual-direction-matrix.json"),
+    `${JSON.stringify(inventedMatrix, null, 2)}\n`,
+  );
+  assert((await validateDirectionMatrix({ workspaceRoot: workspace })).some(
+    (failure) => failure.includes("is not an approved main outline frame"),
+  ));
+
+  const draftOutline = {
+    version: 1,
+    status: "draft",
+    approvedAt: "",
+    deck: { title: "Fixture deck" },
+    frames: roles.map((role) => ({
+      id: role,
+      title: `Frame ${role}`,
+      shows: "The frozen evidence.",
+      says: "The frozen answer.",
+      modality: "native",
+      section: "main",
+      sourceIds: ["S1"],
+      status: "ready",
+    })),
+    openEvidence: [],
+  };
+  await writeFile(outlinePath, `${JSON.stringify(draftOutline, null, 2)}\n`);
+  await writeFile(
+    join(directionsRoot, "visual-direction-matrix.json"),
+    `${JSON.stringify(matrix, null, 2)}\n`,
+  );
+  assert((await validateDirectionMatrix({ workspaceRoot: workspace })).some(
+    (failure) => failure.includes("Direction work begins after the outline is approved"),
+  ));
+
+  await rm(outlinePath);
+  assert((await validateDirectionMatrix({ workspaceRoot: workspace })).some(
+    (failure) => failure.includes("outline.json is required"),
+  ));
+  await writeFile(
+    outlinePath,
+    `${JSON.stringify({ ...draftOutline, status: "approved", approvedAt: "2026-08-14" }, null, 2)}\n`,
+  );
+
   assert.deepEqual(await validateDirectionMatrix({
     workspaceRoot: workspace,
     phase: "review",

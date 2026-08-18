@@ -6,31 +6,38 @@ deck's visual world.
 
 ## Collaboration
 
-- Bring six strong rendered directions, each demonstrated on the same
+- Agree the content first. Bring plain outline frames — black text centered on
+  white, one line of what the slide shows and one line of what the speaker says
+  — and iterate there before anything is designed.
+- Then bring three strong rendered directions, each demonstrated on the same
   figure-heavy, text-heavy, and data-heavy content—not a questionnaire about
-  colors and fonts.
+  colors and fonts. Show more directions when Eric asks for more.
 - Add one data-heavy proof for every chart archetype intended for the deck.
+- Do not generate imagery to explore a direction. Probes are typography and
+  data; imagery comes after the content and the direction are settled.
 - Keep all proofs within a direction typographically coherent, while
-  making the six type systems materially different.
+  making the type systems materially different.
 - The central metaphor, mood, and graphic world are collaborative decisions.
 - React to feedback as design input. Do not defend an unsuccessful visual.
 - Make one representative proof system excellent before producing the deck.
 - When adapting an existing deck, preserve its titles, structure, and visual
   framing unless Eric explicitly asks for a redesign.
-- Ask whether Eric has visual references, but do not require them. Without
-  references, show the full six-direction proof matrix with every intended chart archetype.
+- Ask whether Eric has visual references, but do not require them.
 
 ## Slide voice
 
 - Graphical and minimal. Slides support a speaker; they are not documents to
   read aloud.
 - Dry and declarative. Short sentences, concrete nouns, no marketing gloss.
-- Evidence-led rather than commanding. Say what the evidence supports and what
-  would change the decision.
+- Show the evidence; do not print the reasoning. No decision-relevance line, no
+  caveat line, no "why this matters" strip. Those are spoken.
+- No conjecture. Do not write what a second observation would show or what a
+  number implies about intent. Eric's audience draws that conclusion with him.
 - Lead with the payoff when the material supports it.
 - Use the visual to explain or create emotion. Do not add copy to compensate for
   a weak composition.
-- Delete filler copy and slides that do not advance the argument.
+- Delete filler copy and slides that do not advance the argument. Fewer words is
+  the default.
 - Keep exact technical strings, names, URLs, and commands native and sourced.
 
 ## Visual preferences
@@ -53,8 +60,12 @@ deck's visual world.
   with an arbitrary narrow max-width.
 - Avoid repeated gray containers, dividers, and rules. A boundary must explain
   grouping or hierarchy.
-- Sparse slides still need a complete thought: answer, evidence, relevance, and
-  uncertainty may not be deferred to narration.
+- One slide, one grid. Regions are real elements; dividers sit on grid lines.
+  Two stacked bands with different column tracks produce boundaries that almost
+  line up, which Eric reads as a defect.
+- Sparse slides still need a complete visual thought: a clear title, real
+  evidence, and a linked citation. Sparse is not an excuse for unresolved
+  hierarchy.
 
 ## Evidence and links
 
@@ -62,6 +73,11 @@ deck's visual world.
   scoped to what that product actually does.
 - Capture the canonical landing or catalog page, not a convenient subpage.
   Wait for the page to finish loading and use the intended theme.
+- Every visible citation is a link. Public sources link to their canonical
+  HTTPS URL; internal extracts, queries, and calculations link to the in-deck
+  supporting slide that shows them. Plain-text source names are not acceptable.
+- Supporting material is a plain black-and-white section at the end of the same
+  deck: data, extracts, and methods only, no art direction, no narrative.
 - Keep citation areas minimal: regular-weight, lighter text; compact
   `Label: content` lines; and no bold labels unless Eric asks for them.
 - Separate citations from slide content with a light hairline or a subtle tonal
@@ -92,8 +108,13 @@ deck's visual world.
 - SaaS cards, glowing networks, dot-and-line filler, decorative glass, warm
   paper defaults, and generic corporate stock.
 - Walls of text, copied draft prose, undersized metadata, or low-contrast gray.
+- Printed reasoning: decision-relevance lines, caveat lines, and speculation
+  about what another observation would show.
+- Plain-text citations and `[S1]` markers on a slide.
 - Decorative dividers, repeated gray boxes, and arbitrary category colors.
+- Absolutely positioned strips that cannot align with the slide's grid.
 - Hand-built CSS/SVG pseudo-charts, rails, gates, and flow diagrams used as
   primary visuals.
+- Generating imagery before the content and the direction are agreed.
 - Showing a slide that has not been freshly rendered, inspected, and refreshed
   in Canvas.

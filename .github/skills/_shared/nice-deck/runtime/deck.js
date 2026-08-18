@@ -6,8 +6,19 @@
   const authoredDisplay = new Map(slides.map((slide) => [slide, slide.style.display]));
   const clamp = (index) => Math.max(0, Math.min(slides.length - 1, index));
 
+  // Accepts an index or a slide id so citation anchors such as #ptu-extract
+  // navigate the deck instead of resetting it to the first slide.
+  function indexOf(target) {
+    if (typeof target === "number") return clamp(target);
+    const text = String(target ?? "").replace(/^#/, "");
+    const byId = slides.findIndex((slide) => slide.id === text);
+    if (byId >= 0) return byId;
+    const number = Number(text);
+    return Number.isFinite(number) && text.trim() !== "" ? clamp(number - 1) : 0;
+  }
+
   function goTo(index) {
-    current = clamp(Number(index) || 0);
+    current = typeof index === "number" ? clamp(Number(index) || 0) : indexOf(index);
     slides.forEach((slide, slideIndex) => {
       const active = slideIndex === current;
       slide.hidden = !active;
@@ -21,7 +32,7 @@
       "--slide-progress",
       String((current + 1) / slides.length),
     );
-    history.replaceState(null, "", `#${current + 1}`);
+    history.replaceState(null, "", `#${slides[current].id || current + 1}`);
     dispatchEvent(new CustomEvent("nice-deck:slide", {
       detail: { index: current, count: slides.length },
     }));
@@ -42,12 +53,17 @@
     }
   });
 
+  addEventListener("hashchange", () => {
+    const target = indexOf(location.hash);
+    if (target !== current) goTo(target);
+  });
+
   window.__niceDeck = {
     count: slides.length,
     current: () => current,
     goTo,
+    indexOf,
   };
 
-  const initial = Number(location.hash.slice(1)) - 1;
-  goTo(Number.isInteger(initial) && initial >= 0 ? initial : 0);
+  goTo(location.hash ? indexOf(location.hash) : 0);
 })();

@@ -12,13 +12,19 @@ a passing scanner, or a screenshot from a different browser is not enough.
 
 ## Co-direction
 
+- Agree the content before the look. The outline brainstorm produces plain
+  frames — black text centered on white — and the user iterates there. Nothing
+  is styled and nothing is generated until those frames are approved.
 - Derive the visual world from the argument, audience, and desired reaction.
 - Freeze one figure-heavy, one text-heavy, and at least one data-heavy content
   proof. Add a frozen data-heavy proof for every intended chart archetype.
-- Show six real directions with identical proof content and chart geometry
-  before committing to a grammar.
+- Show three real directions with identical proof content and chart geometry
+  before committing to a grammar. Show more when the user asks for more.
+- Direction probes are typography and data. Generate no imagery until the
+  outline and the direction are both approved; front-loaded image generation
+  buys a look before the argument exists.
 - Give each direction its own coherent typesetting across all proofs.
-  The six type systems must differ in family, weight contrast, scale, measure,
+  The type systems must differ in family, weight contrast, scale, measure,
   casing, and rhythm—not just font name.
 - Do not choose the central metaphor, mood, or hero image unilaterally.
 - Get feedback on every rendered proof slide, then make the selected or combined
@@ -34,6 +40,11 @@ a passing scanner, or a screenshot from a different browser is not enough.
 - Cream, sand, paper, parchment, or ivory default backgrounds.
 - Text that clips or overflows at any supported viewport.
 - Content hidden by an animation trigger that may never run.
+- Printed decision-relevance lines, caveat lines, and "why this matters" strips.
+- Conjecture: speculation about cause, intent, or what another observation would
+  show.
+- Plain-text citations. Every visible citation is a link.
+- Absolutely positioned content regions inside a slide.
 
 ## Color
 
@@ -57,6 +68,11 @@ a passing scanner, or a screenshot from a different browser is not enough.
 ## Composition
 
 - Every slide has a job in the argument. Delete filler slides and filler copy.
+- One slide, one grid. Every visible region is a real element and a child of
+  that grid. Dividers are grid-line borders, never free-floating rules or
+  absolutely positioned strips.
+- Stacked bands share column tracks. Boundaries that almost line up read as a
+  defect, and they are the most common structural failure in a generated deck.
 - Containers, rules, and dividers must communicate grouping or hierarchy.
   Repeated gray boxes are not a default layout system.
 - A resource directory may be denser than a speaking slide, but its categories,
@@ -66,12 +82,16 @@ a passing scanner, or a screenshot from a different browser is not enough.
 
 ## Reasoning and tone
 
-- Every slide visibly answers a question with evidence, decision relevance, and
-  a caveat.
+- Every slide shows evidence for one idea. The reasoning that connects it to a
+  decision is the speaker's job, not a printed line.
+- No conjecture. Do not print what another observation would show, what a number
+  implies about cause or intent, or what the audience should conclude.
 - Do not turn timing, correlation, or absence into causal or event language.
 - Prefer evidence-led, collaborative recommendations over customer-facing
   commands.
-- Speaker notes deepen the argument; they do not supply missing slide logic.
+- Keep visible prose under 40 words per slide, outside the title, direct labels,
+  values, and the citation line. Less text is the default, not a stretch goal.
+- Speaker notes carry the argument, the caveats, and the decision relevance.
 
 ## Evidence
 
@@ -79,23 +99,28 @@ a passing scanner, or a screenshot from a different browser is not enough.
 - Use authoritative sources and canonical destinations.
 - Capture a landing or catalog page only after it has fully loaded; do not let a
   random detail page stand in for the whole product.
+- Supporting material lives in a plain black-and-white section at the end of the
+  deck: data, extracts, queries, and methods, with no art direction and no
+  narrative.
 
 ## Citations
 
+- Every visible citation is a link. Public sources link to a canonical HTTPS
+  URL; internal, derived, and calculated sources link to the in-deck supporting
+  slide that shows the extract or method.
+- Plain-text source names and `[S1]` markers do not belong on a slide.
 - Keep citations visually subordinate to the slide. Use regular-weight text in
   a lighter but WCAG-compliant color; do not bold labels, source names, or links
   unless the user explicitly asks for emphasis.
 - Write each citation field on one line as `Label: content`. Do not stack a
   section title above its content.
 - Prefer one compact citation strip containing only the fields the slide needs.
-  Human-readable source names and method links replace reader-facing source IDs.
 - Separate citations from the main composition with either a light one-pixel
   rule or a subtle background-color change. Never use a bold horizontal divider.
 - A tonal citation background may replace the rule when it creates a clearer
   main-slide and citation-area distinction without looking like a card.
-- Keep decision-changing caveats in the main slide content. Citation space is
-  for source identity, claim description, and optional calculation records, not
-  for reasoning that the audience needs to understand the slide.
+- Caveats and decision reasoning are spoken, not printed. Citation space is for
+  source identity and its link.
 - If citations wrap, preserve the inline label and use a hanging continuation.
   Do not turn the citation area into a grid of labeled blocks.
 
@@ -110,8 +135,9 @@ a passing scanner, or a screenshot from a different browser is not enough.
   tables, formulas, and accessibility fallbacks.
 - Hybrid composition is expected: a chart or generated visual carries the idea
   while native labels, values, citations, and recommendations preserve accuracy.
-- Real generated graphics belong in image-led direction probes. Placeholders do
-  not support an honest comparison.
+- Direction probes use typography and data. Generate imagery only after the
+  outline and the direction are approved, and only for a slide that cannot be
+  carried by a measurement or by exact text.
 - Generated imagery contains no authoritative text, values, logos, or
   fabricated product interfaces.
 - Every slide declares its primary visual modality before implementation.
@@ -127,8 +153,9 @@ a passing scanner, or a screenshot from a different browser is not enough.
 - No decision-critical fact exists only in a tooltip, filter, or hover state.
 - Direct labels are preferred to legends. Reference lines carry inline labels,
   units, and meaning; unexplained dashed lines are banned.
-- Data slides show units, a visible takeaway, assumptions, source IDs, and why
-  the evidence matters to the decision.
+- Data slides show units, direct labels, a visible takeaway, and a linked
+  citation. Assumptions and method belong on the supporting slide the citation
+  links to.
 
 ## Slop test
 

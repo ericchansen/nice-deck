@@ -34,6 +34,7 @@ const sources = {
       date: "2026-08-12",
       type: "measured-internal-extract",
       locator: "Fixture values",
+      deckAnchor: "fixture-extract",
       confidentiality: "test",
     },
     {
@@ -53,7 +54,6 @@ const contract = (id, overrides = {}) => ({
   id,
   question: "What does the fixture show?",
   answer: "The fixture has a supported answer.",
-  decisionRelevance: "The fixture changes the capacity decision.",
   claimStatus: "measured",
   sourceIds: ["S1"],
   captureState: "Authored default state.",
@@ -63,13 +63,22 @@ const contract = (id, overrides = {}) => ({
   ...overrides,
 });
 
+const citation = '<footer data-citation>Source: <a href="#fixture-extract">Fixture extract</a></footer>';
+
 const nativeDocument = (content) => `<!doctype html>
 <html><head><link rel="stylesheet" href="deck.css"></head><body>
   <section class="slide" data-slide-id="01" data-visual-modality="native">
     <h1>${content}</h1>
+    ${citation}
   </section>
   <section class="slide" data-slide-id="02" data-visual-modality="native">
     <h1>Second</h1>
+    ${citation}
+  </section>
+  <section class="slide" id="fixture-extract" data-slide-id="03"
+    data-visual-modality="native" data-section="supporting">
+    <h1>Fixture extract</h1>
+    <footer data-citation>Extract of record. Method: <a href="https://example.com/source">Fixture documentation</a></footer>
   </section>
   <script src="deck.js"></script>
 </body></html>`;
@@ -99,12 +108,13 @@ try {
     .chart { width: 900px; height: 500px; }
     .nice-deck-chart-error { padding: 30px; background: #fff0f0; color: #8a001f; }
   `);
-  await configure([contract("01"), contract("02")]);
+  await configure([contract("01"), contract("02"), contract("03")]);
   const liveAssets = join(workspace, "assets", "live");
   await mkdir(liveAssets, { recursive: true });
   await writeFile(join(liveAssets, "index.html"), "<!doctype html><title>Live asset</title>");
   await writeFile(join(liveAssets, "app.css"), "body { color: #111; }");
   await writeFile(join(liveAssets, "app.js"), "document.documentElement.dataset.live = 'true';");
+
 
   const probe = join(workspace, "probe.html");
   await writeFile(probe, nativeDocument("First"));
@@ -112,7 +122,7 @@ try {
   liveServer = first.server;
   assert.equal(first.ok, true);
   assert.equal(first.workspaceRoot, await realpath(workspace));
-  assert.equal(first.screenshots.length, 2);
+  assert.equal(first.screenshots.length, 3);
   assert.match(first.sourceHash, /^[0-9a-f]{64}$/);
   assert.equal(first.sourceHash, await computeDeckSourceHash({ sourcePath: probe }));
   await Promise.all(first.screenshots.map((file) => access(file)));
@@ -143,7 +153,131 @@ try {
   assert((await scanWorkspace({ root: workspace, sourcePath: badManifest })).some(
     ({ name }) => name === "unresolved-source",
   ));
-  await configure([contract("01"), contract("02")]);
+  await configure([contract("01"), contract("02"), contract("03")]);
+
+  const rulesPath = join(workspace, "rules.html");
+  // Every fixture deck gets the same supporting slide, so each case only has to
+  // write the slide under test while sources.json's deckAnchor still resolves.
+  const supportingFixture = '<section class="slide" id="fixture-extract" data-slide-id="99"'
+    + ' data-visual-modality="native" data-section="supporting"><h1>Fixture extract</h1>'
+    + '<footer data-citation>Method: <a href="https://example.com/source">Fixture documentation</a></footer>'
+    + "</section>";
+  const scanRules = async (body, manifest, styles = "") => {
+    await writeFile(rulesPath, body + supportingFixture);
+    await configure([...manifest, contract("99")]);
+    return (await scanWorkspace({ root: workspace, sourcePath: rulesPath, styles }))
+      .map(({ name }) => name);
+  };
+
+  assert((await scanRules(
+    '<section class="slide" data-slide-id="01" data-visual-modality="native">'
+    + "<footer data-citation>Source: Fixture extract</footer></section>",
+    [contract("01")],
+  )).includes("citation-not-linked"));
+
+  assert((await scanRules(
+    '<section class="slide" data-slide-id="01" data-visual-modality="native">'
+    + '<footer data-citation>Source: <a href="#missing-slide">Fixture extract</a></footer>'
+    + "</section>",
+    [contract("01")],
+  )).includes("citation-unresolved"));
+
+  // A main slide may not cite another main slide as if it were evidence.
+  assert((await scanRules(
+    '<section class="slide" id="other-main" data-slide-id="01" data-visual-modality="native">'
+    + '<footer data-citation>Method: <a href="https://example.com/source">Docs</a></footer></section>'
+    + '<section class="slide" data-slide-id="02" data-visual-modality="native">'
+    + '<footer data-citation>Source: <a href="#other-main">Not evidence</a></footer></section>',
+    [contract("01"), contract("02")],
+  )).includes("citation-target-not-supporting"));
+
+  // A non-data slide still has to show where its evidence came from.
+  assert((await scanRules(
+    '<section class="slide" data-slide-id="01" data-visual-modality="native">'
+    + "<h1>No citation anywhere</h1></section>",
+    [contract("01")],
+  )).includes("visible-citation-missing"));
+
+  // ...unless it declares itself evidence-free.
+  assert(!(await scanRules(
+    '<section class="slide" data-slide-id="01" data-visual-modality="native" data-citation-exempt>'
+    + "<h1>Section divider</h1></section>",
+    [contract("01")],
+  )).includes("visible-citation-missing"));
+
+  assert((await scanRules(
+    '<section class="slide" data-slide-id="01" data-visual-modality="native">'
+    + "<p>One month cannot distinguish evaluation from the start of a migration.</p>"
+    + "</section>",
+    [contract("01")],
+  )).includes("slide-conjecture"));
+
+  assert((await scanRules(
+    '<section class="slide" data-slide-id="01" data-visual-modality="native">'
+    + `<p>${"word ".repeat(45)}</p></section>`,
+    [contract("01")],
+  )).includes("slide-text-budget"));
+
+  assert((await scanRules(
+    '<section class="slide" data-slide-id="01" data-visual-modality="native">'
+    + "<p>Measured in July [S1].</p></section>",
+    [contract("01")],
+  )).includes("visible-source-id"));
+
+  assert((await scanRules(
+    '<section class="slide" data-slide-id="01" data-visual-modality="native">'
+    + '<div class="band-top" data-region="top"></div>'
+    + '<div class="band-bottom" data-region="bottom"></div></section>',
+    [contract("01")],
+    ".band-top { grid-template-columns: 1fr 1fr; }\n"
+    + ".band-bottom { grid-template-columns: 0.8fr 2.1fr; }",
+  )).includes("grid-track-mismatch"));
+
+  assert(scanSource(".contract-strip { position: absolute; display: grid; }").some(
+    ({ name }) => name === "absolute-region",
+  ));
+
+  // The slide root and the documented layout.md exceptions are not content
+  // regions, so the static rule must skip them exactly as the render does.
+  for (const exempt of [
+    ".slide { position: absolute; display: grid; }",
+    '.slide[data-section="supporting"] { position: absolute; display: grid; }',
+    "[data-bleed] { position: absolute; display: flex; }",
+    ".sr-only { position: absolute; display: grid; }",
+  ]) {
+    assert(
+      !scanSource(exempt).some(({ name }) => name === "absolute-region"),
+      `expected no absolute-region for ${exempt}`,
+    );
+  }
+
+  assert(scanSource('<p class="caveat">Anything</p>').some(
+    ({ name }) => name === "printed-reasoning",
+  ));
+
+  assert((await scanRules(
+    '<section class="slide" id="extract" data-slide-id="01" data-visual-modality="native"'
+    + ' data-section="supporting"><h1>Extract</h1>'
+    + '<footer data-citation>Method: <a href="https://example.com/source">Docs</a></footer></section>'
+    + '<section class="slide" data-slide-id="02" data-visual-modality="native">'
+    + '<h1>Main</h1>'
+    + '<footer data-citation>Source: <a href="#extract">Extract</a></footer></section>',
+    [contract("01"), contract("02")],
+  )).includes("supporting-order"));
+
+  assert.deepEqual(
+    await scanRules(
+      '<section class="slide" data-slide-id="01" data-visual-modality="native">'
+      + "<h1>Measured volume</h1>"
+      + '<footer data-citation>Source: <a href="#fixture-extract">Fixture extract</a></footer>'
+      + "</section>",
+      [contract("01")],
+    ),
+    [],
+  );
+
+  await rm(rulesPath, { force: true });
+  await configure([contract("01"), contract("02"), contract("03")]);
 
   const assets = join(workspace, "assets");
   await mkdir(assets, { recursive: true });
@@ -163,14 +297,20 @@ try {
   const conceptualPath = join(workspace, "conceptual.html");
   await writeFile(
     conceptualPath,
-    '<section class="slide" data-slide-id="01" data-visual-modality="conceptual"></section>',
+    '<section class="slide" data-slide-id="01" data-visual-modality="conceptual">'
+    + '<footer data-citation>Source: <a href="#fixture-extract">Fixture extract</a></footer>'
+    + "</section>"
+    + '<section class="slide" id="fixture-extract" data-slide-id="99"'
+    + ' data-visual-modality="native" data-section="supporting"><h1>Fixture extract</h1>'
+    + '<footer data-citation>Method: <a href="https://example.com/source">Fixture documentation</a></footer>'
+    + "</section>",
   );
   await configure([contract("01", {
     modality: "conceptual",
     renderer: "generated-image",
     generatedAsset: "assets/concept.png",
     provenance: "assets/concept.png.provenance.json",
-  })]);
+  }), contract("99")]);
   assert.equal((await scanWorkspace({
     root: workspace,
     sourcePath: conceptualPath,
@@ -188,17 +328,23 @@ try {
   </head><body>
     <section class="slide" data-slide-id="01" data-visual-modality="native">
       <h1>Question first</h1>
+      <footer data-citation>Method: <a href="https://example.com/source">Fixture documentation</a></footer>
     </section>
     <section class="slide" data-slide-id="02" data-visual-modality="data">
       <h1>Deterministic chart</h1>
       <div id="fixture-chart" class="chart" data-chart
         data-chart-units="requests"
         data-visible-takeaway="March reaches 42"
-        data-decision-relevance="Peak shape changes capacity"
         data-claim-status="measured"
         data-direct-labels="true"></div>
       <p>Visible takeaway: March reaches 42.</p>
-      <footer data-citation>[S1] Fixture extract, 2026-08-12</footer>
+      <footer data-citation>Source: <a href="#fixture-extract">Fixture extract</a></footer>
+    </section>
+    <section class="slide" id="fixture-extract" data-slide-id="03"
+      data-visual-modality="native" data-section="supporting">
+      <h1>Fixture extract</h1>
+      <table><tr><th>Month</th><th>Requests</th></tr><tr><td>Mar</td><td>42</td></tr></table>
+      <footer data-citation>Method: <a href="https://example.com/source">Fixture documentation</a></footer>
     </section>
     <script src="runtime/echarts.min.js"></script>
     <script src="runtime/charts.js"></script>
@@ -229,10 +375,21 @@ try {
       visibleTakeaway: "March reaches 42.",
       chartArchetype: "comparison",
     }),
+    contract("03"),
   ]);
 
   const chartFirst = await previewDeck({ sourcePath: chartPath, browser });
   const chartSecond = await previewDeck({ sourcePath: chartPath, browser });
+  assert.deepEqual(
+    {
+      scan: chartFirst.scan,
+      layout: chartFirst.layoutIssues,
+      contrast: chartFirst.contrast,
+      browser: chartFirst.browserErrors,
+      chart: chartFirst.chartAudit,
+    },
+    { scan: [], layout: [], contrast: [], browser: [], chart: [] },
+  );
   assert.equal(chartFirst.ok, true);
   assert.equal(chartSecond.ok, true);
   assert.equal(
@@ -264,6 +421,7 @@ try {
   const interactive = await previewDeck({ sourcePath: chartPath, captureMode: false, browser });
   assert.equal(interactive.ok, true);
   assert.deepEqual(interactive.chartAudit, []);
+
 
   const portableRoot = join(workspace, "portable");
   const portable = await exportPortable({ sourcePath: chartPath, outputDir: portableRoot });
@@ -303,7 +461,10 @@ try {
   liveServer = undefined;
 
   const missingCitation = (await readFile(chartPath, "utf8"))
-    .replace('<footer data-citation>[S1] Fixture extract, 2026-08-12</footer>', "");
+    .replace(
+      '<footer data-citation>Source: <a href="#fixture-extract">Fixture extract</a></footer>',
+      "",
+    );
   await writeFile(chartPath, missingCitation);
   assert((await scanWorkspace({ root: workspace, sourcePath: chartPath })).some(
     ({ name }) => name === "visible-citation-missing",

@@ -1,6 +1,6 @@
 ---
 name: deck-explore-direction
-description: Explore and obtain approval for a presentation's visual direction by rendering multiple coherent treatments of the same representative figure-heavy, text-heavy, and data-heavy slides. Use when the user asks to explore styles, art-direct, choose a look, compare visual directions, create design options, or establish a deck system.
+description: Explore and obtain approval for a presentation's visual direction by rendering multiple coherent treatments of the same representative figure-heavy, text-heavy, and data-heavy slides. Use when the user asks to explore styles, art-direct, choose a look, compare visual directions, create design options, or establish a deck system. Requires an approved outline from deck-outline first.
 license: MIT
 ---
 
@@ -9,6 +9,9 @@ license: MIT
 Develop the visual world of a deck through comparable rendered evidence. This
 skill ends with an approved or explicitly combined proof system; it does
 not propagate that system through the full deck.
+
+It is the second brainstorm. The first is `deck-outline`, which agrees the
+content. Do not start here until `outline.json` records `status: "approved"`.
 
 ## Load before working
 
@@ -26,29 +29,35 @@ Use the shared runtime and scripts under `../_shared/nice-deck/`.
 
 ## 1. Freeze comparable proof content
 
-Confirm the argument, audience, setting, and desired reaction. Ask whether the
-user has visual references they already trust, but do not require them and do
-not ask the user to design the system.
+Confirm the outline is approved. Choose proof content from approved frames; do
+not invent new content here. Ask whether the user has visual references they
+already trust, but do not require them and do not ask the user to design the
+system.
 
 Freeze one figure-heavy, one text-heavy, and at least one data-heavy content
-contract. Each contract includes the full explanatory contract and primary
-modality from the shared foundation.
+contract. Each contract includes the authoring contract and primary modality
+from the shared foundation.
 
 Use one data-heavy proof per chart archetype intended for the final deck. If the
 deck will use multiple chart forms, add roles named
 `data-heavy-<chart-purpose>` and include every role in every direction. Do not
 change chart form inside one frozen proof and call it styling.
 
-The wording, values, evidence, relevance, caveat, claim status, source IDs, and
-modality remain identical across every direction. The user must compare visual
-systems rather than changing content.
+The wording, values, evidence, claim status, source IDs, and modality remain
+identical across every direction. The user must compare visual systems rather
+than changing content.
 
 ## 2. Author the direction matrix
 
-When no reference determines a narrower exercise, create exactly six
-treatments. With one chart archetype, each treatment has three slides for 18
-rendered proofs. Each additional intended chart archetype adds one frozen
-data-heavy proof to every treatment.
+Create three treatments by default. With one chart archetype, each treatment
+has three slides for nine rendered proofs. Each additional intended chart
+archetype adds one frozen data-heavy proof to every treatment. Produce up to
+six treatments when the user asks for a wider comparison.
+
+Probes are typography and data. Do not generate imagery to explore a direction:
+it is slow, it buys a look before the argument is settled, and it makes the
+comparison about one lucky picture. If the user explicitly wants image-led
+directions, record `"imageryApproved": true` in the matrix first.
 
 Create `directions/visual-direction-matrix.json` from the shared template
 before implementing any treatment. For every direction declare:
@@ -57,7 +66,7 @@ before implementing any treatment. For every direction declare:
 - three concrete voice words
 - color strategy and semantics
 - a distinct type system
-- composition and information hierarchy
+- composition, grid, and information hierarchy
 - graphic medium
 - chart grammar
 - motion behavior
@@ -95,14 +104,18 @@ assets/
 runtime/
 ```
 
-Use real draft generated imagery for conceptual and hybrid probes. Do not use
-placeholders. Use the sanctioned ECharts SVG runtime for measured or modeled
-data. Keep authoritative overlays native.
+Use the sanctioned ECharts SVG runtime for measured or modeled data. Keep
+authoritative overlays native.
 
-Mark visible question, answer, evidence, decision relevance, and caveat with
-`data-contract-field`. Add `data-claim-status`, `data-source-ids`, and
-`data-type-system-id`. Mark representative display and text elements with
-`data-type-role`.
+Every treatment follows the shared slide-structure rule: one grid per layout,
+regions as real `data-region` elements, dividers on grid lines, and no
+absolutely positioned content strips.
+
+Mark visible question, answer, and evidence with `data-contract-field`. Add
+`data-claim-status`, `data-source-ids`, and `data-type-system-id`. Mark
+representative display and text elements with `data-type-role`.
+
+Do not print decision-relevance or caveat lines, and do not write conjecture.
 
 ## 4. Render and inspect all proofs
 
@@ -113,10 +126,11 @@ View all screenshots. Judge each complete proof system as a unit and fix:
 
 - contrast, clipping, overflow, and projection-scale readability
 - weak hierarchy or unresolved empty space
+- misaligned region boundaries reported by the layout audit
 - generic or decorative graphics
 - typographic collisions and improperly loaded local fonts
-- chart failures, legends, units, assumptions, labels, and silent regions
-- missing evidence, relevance, caveats, or citations
+- chart failures, legends, units, labels, and silent regions
+- missing evidence or unlinked citations
 
 Record completed visual-inspection roles and hashes, then run:
 

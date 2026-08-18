@@ -26,6 +26,7 @@ import {
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright";
 import { formatFindings, scanSource, scanWorkspace } from "./scan.mjs";
+import { proseBudget } from "./text-rules.mjs";
 
 const scannedExtensions = new Set([".html", ".css"]);
 const here = dirname(fileURLToPath(import.meta.url));
@@ -204,7 +205,8 @@ async function readSources(root, files) {
   return sources.sort((first, second) => first.path.localeCompare(second.path));
 }
 
-async function validateSanctionedRuntime(sources) {
+async function validateSanctionedRuntime(sources, { required = true } = {}) {
+  if (!required) return [];
   const manifest = JSON.parse(
     await readFile(join(sanctionedRuntimeRoot, sanctionedRuntimeManifest), "utf8"),
   );
@@ -420,6 +422,112 @@ export async function startStaticServer(root) {
   };
 }
 
+async function auditLayout(page, slideIndex) {
+  return page.evaluate(({ index, budget }) => {
+    if (document.documentElement.dataset.deckKind === "outline") return [];
+    const slide = document.querySelector(".slide:not([hidden])")
+      ?? document.querySelector(".slide");
+    if (!slide) return [];
+
+    const findings = [];
+    const add = (name, message) => findings.push({ slide: index + 1, name, message });
+    const round = (value) => Math.round(value * 100) / 100;
+    const label = (element) => (
+      element.dataset?.region
+      || (typeof element.className === "string" ? element.className : "")
+      || element.tagName.toLowerCase()
+    );
+
+    const regions = [...slide.querySelectorAll("[data-region]")]
+      .filter((element) => !element.hasAttribute("data-grid-exception"))
+      .map((element) => ({
+        element,
+        rect: element.getBoundingClientRect(),
+        label: label(element),
+      }))
+      .filter(({ rect }) => rect.width > 0 && rect.height > 0);
+
+    // Boundaries that almost line up read as a defect. Fix the grid, not the offset.
+    for (const edge of ["left", "right"]) {
+      for (let first = 0; first < regions.length; first += 1) {
+        for (let second = first + 1; second < regions.length; second += 1) {
+          const a = regions[first];
+          const b = regions[second];
+          const vertical = a.rect.bottom <= b.rect.top + 1 || b.rect.bottom <= a.rect.top + 1;
+          if (!vertical) continue;
+          const delta = Math.abs(a.rect[edge] - b.rect[edge]);
+          if (delta > 1 && delta <= 12) {
+            add(
+              "region-misaligned",
+              `${a.label} and ${b.label} ${edge} edges differ by ${round(delta)}px; share one grid or declare data-grid-exception`,
+            );
+          }
+        }
+      }
+    }
+
+    for (const element of slide.querySelectorAll("*")) {
+      if (!(element instanceof HTMLElement)) continue;
+      if (element.hasAttribute("data-grid-exception")) continue;
+      // Chart runtimes position their own internals; the rule is about authored
+      // regions. data-bleed is the declared full-bleed escape from layout.md.
+      if (element.closest("[data-chart], [data-echart], svg, pre, code, [data-bleed]")) continue;
+      const style = getComputedStyle(element);
+      if (style.position !== "absolute" && style.position !== "fixed") continue;
+      const rect = element.getBoundingClientRect();
+      // Visually hidden helpers (sr-only and friends) are absolute by design.
+      if (rect.width * rect.height <= 16) continue;
+      const text = element.textContent?.trim() ?? "";
+      if (text.length < 12) continue;
+      add(
+        "absolute-region",
+        `${label(element)} is positioned ${style.position}; content regions belong to the slide grid`,
+      );
+    }
+
+    const citations = [...slide.querySelectorAll("[data-citation]")];
+    for (const citation of citations) {
+      if (!citation.textContent?.trim()) continue;
+      const links = [...citation.querySelectorAll("a[href]")];
+      if (!links.length) {
+        add("citation-not-linked", "citation prints a source without a link");
+        continue;
+      }
+      for (const link of links) {
+        const href = link.getAttribute("href") ?? "";
+        if (href.startsWith("#")) {
+          const target = href.slice(1);
+          if (/^\d+$/.test(target)) {
+            add("citation-index-anchor", `citation links to slide index ${href}; use the supporting slide's stable id`);
+          } else if (!document.getElementById(target)) {
+            add("citation-broken-anchor", `citation links to ${href}, which is not a slide in this deck`);
+          }
+        } else if (!/^https:\/\//i.test(href)) {
+          add("citation-broken-anchor", `citation link ${href.slice(0, 60)} is neither an in-deck anchor nor HTTPS`);
+        }
+      }
+    }
+
+    if (slide.dataset.section !== "supporting") {
+      const clone = slide.cloneNode(true);
+      for (const removed of clone.querySelectorAll(
+        "h1, h2, h3, h4, h5, h6, svg, table, pre, code, figcaption, [data-citation], [data-chart], [data-echart]",
+      )) {
+        removed.remove();
+      }
+      const words = (clone.textContent ?? "").trim().split(/\s+/).filter(Boolean).length;
+      if (words > budget) {
+        add(
+          "slide-text-budget",
+          `${words} words of prose exceed the ${budget}-word budget; cut it, chart it, or move it to a supporting slide`,
+        );
+      }
+    }
+
+    return findings;
+  }, { index: slideIndex, budget: proseBudget });
+}
+
 async function auditContrast(page, slideIndex) {
   return page.evaluate((index) => {
     const canvas = document.createElement("canvas");
@@ -576,7 +684,10 @@ export async function previewDeck({
   );
   const files = await listStaticFiles(root, source);
   const sources = await readSources(root, files);
-  const runtimeIntegrity = await validateSanctionedRuntime(sources);
+  const isOutline = /<html\b[^>]*\bdata-deck-kind=["']outline["']/i.test(
+    sources.find(({ file }) => file === source)?.content.toString("utf8") ?? "",
+  );
+  const runtimeIntegrity = await validateSanctionedRuntime(sources, { required: !isOutline });
   const sourceHash = hashSources(sources);
   const shortHash = sourceHash.slice(0, 12);
   const renderDirectory = await ensureDirectory(
@@ -588,14 +699,16 @@ export async function previewDeck({
   await ensureSnapshot(renderDirectory, snapshotRoot, sources);
 
   const sourceRecord = sources.find(({ file }) => file === source);
+  const cssSources = sources.filter(
+    ({ file }) => extname(file).toLowerCase() === ".css",
+  );
   const scan = await scanWorkspace({
     root,
     sourcePath: source,
     source: sourceRecord.content.toString("utf8"),
+    styles: cssSources.map(({ content }) => content.toString("utf8")).join("\n"),
   });
-  for (const scanned of sources.filter(
-    ({ file }) => extname(file).toLowerCase() === ".css",
-  )) {
+  for (const scanned of cssSources) {
     for (const finding of scanSource(scanned.content.toString("utf8"))) {
       scan.push({ file: scanned.path, ...finding });
     }
@@ -830,6 +943,7 @@ export async function previewDeck({
         return [...new Set(findings)].slice(0, 12).map((message) => ({ slide: slideIndex + 1, message }));
       }, index);
       layoutIssues.push(...layoutFindings);
+      layoutIssues.push(...await auditLayout(page, index));
 
       const audit = await auditContrast(page, index);
       contrast.push(...audit.failures);
@@ -921,6 +1035,12 @@ function printResult(result) {
   if (result.browserErrors.length) {
     console.error("\nbrowser errors:");
     for (const error of result.browserErrors) console.error(`- ${error}`);
+  }
+  if (result.layoutIssues?.length) {
+    console.error("\nlayout:");
+    for (const issue of result.layoutIssues) {
+      console.error(`- slide ${issue.slide}: ${issue.name ? `[${issue.name}] ` : ""}${issue.message}`);
+    }
   }
   if (result.runtimeIntegrity.length) {
     console.error("\nchart runtime integrity:");

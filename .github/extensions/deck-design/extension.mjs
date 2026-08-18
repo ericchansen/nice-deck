@@ -12,6 +12,8 @@ const product = readFileSync(join(repoRoot, "PRODUCT.md"), "utf8");
 const foundation = readFileSync(join(toolkitRoot, "references", "foundation.md"), "utf8");
 const principles = readFileSync(join(toolkitRoot, "references", "principles.md"), "utf8");
 const profile = readFileSync(join(toolkitRoot, "references", "profile.hansen.md"), "utf8");
+const supporting = readFileSync(join(toolkitRoot, "references", "supporting.md"), "utf8");
+const layout = readFileSync(join(toolkitRoot, "references", "layout.md"), "utf8");
 
 let workspaceRoot = repoRoot;
 let activeSource;
@@ -115,7 +117,9 @@ function resultText(result) {
       designScan: [...new Set(result.scan.map(({ name }) => name))],
       browser: [...new Set(result.browserErrors.map((error) => error.split(":")[0]))],
       chartLifecycle: [...new Set((result.chartAudit ?? []).map(({ message }) => message))],
-      layout: (result.layoutIssues ?? []).map(({ slide, message }) => `slide ${slide}: ${message}`),
+      layout: (result.layoutIssues ?? []).map(
+        ({ slide, name, message }) => `slide ${slide}: ${name ? `[${name}] ` : ""}${message}`,
+      ),
     },
     next: [
       "View every screenshot path with an image-capable tool.",
@@ -171,13 +175,20 @@ const session = await joinSession({
           "nice-deck repo-local prototyping is active.",
           "For any deck task, follow the product and workflow below.",
           "After editing a slide, use nice_deck_preview, view its exact screenshots, and refresh Browser Canvas to its exact URL before replying.",
-          "Do not autonomously implement a slide until its primary visual modality is declared in brief.md and visual-manifest.json. Data uses the sanctioned ECharts SVG runtime; conceptual and hybrid visuals require generated assets with valid provenance.",
-          "Every slide must declare its question, supported answer, visible evidence, decision relevance, caveat, claim status, source IDs, and transition. Do not convert timing or absence into causal event language, use customer-facing commands, or rely on notes to supply missing reasoning.",
-          "Art-direction approval requires paired narrative and data proofs. If no visual reference is supplied, show two or three real paired treatments and stop propagation until both proofs are approved or combined.",
-          "Data treatments require direct labels, visible units, assumptions, takeaway, decision relevance, and source IDs. Unexplained legends, dashed reference lines, and silent empty chart regions block presentation.",
+          "Agree the content before the look. Produce plain outline frames first and iterate with the user; outline.json must record an approved status before direction work or production begins.",
+          "Do not autonomously implement a slide until its primary visual modality is declared in brief.md and visual-manifest.json. Data uses the sanctioned ECharts SVG runtime. Generate no imagery until the outline and the direction are both approved, and only for a slide that no measurement or exact text can carry.",
+          "The visible slide carries its title, its evidence with direct labels and units, and a linked citation. Question, answer, claim status, source IDs, and transition are authoring fields. Never print a decision-relevance line, a caveat line, or a why-this-matters strip; those are spoken.",
+          "Print no conjecture. Do not state what another observation would show, what a number implies about cause or intent, or what the audience should conclude. Do not convert timing or absence into causal event language. Keep visible prose under 40 words per slide.",
+          "Every visible citation is a link: public sources to their canonical HTTPS URL, internal and derived sources to the in-deck supporting slide anchor. Plain-text source names and [S1] markers on a slide are failures.",
+          "Supporting material is a plain black-and-white section at the end of the same deck: data, extracts, and methods only, with no art direction, imagery, motion, or narrative.",
+          "One slide, one grid. Every visible region is a real data-region element and a child of that grid, dividers sit on grid lines, stacked bands share column tracks, and content regions are never positioned absolutely. A slide is a fixed box with hidden overflow, so preview measures rendered geometry: escaped elements, overlapping text, and boundaries that are close but unequal all block presentation.",
+          "Art-direction approval requires paired narrative and data proofs. Render three typography-and-data directions by default, expand only when the user asks, and stop propagation until every proof role is approved or explicitly combined.",
+          "Data treatments require direct labels, visible units, a takeaway, and a linked citation. Unexplained legends, dashed reference lines, and silent empty chart regions block presentation.",
           product,
           foundation,
           principles,
+          layout,
+          supporting,
           profile,
         ].join("\n\n"),
       };
