@@ -11,6 +11,37 @@ const modalities = new Set(["data", "conceptual", "hybrid", "native"]);
 const sections = new Set(["main", "supporting"]);
 const frameStatuses = new Set(["draft", "needs-evidence", "ready"]);
 
+// Finer grain sorts lower. A frame may never present a coarser period than its
+// dataset provides without saying why: the finer series is already available.
+const grainRank = new Map([
+  ["request", 0],
+  ["minute", 1],
+  ["hour", 2],
+  ["day", 3],
+  ["week", 4],
+  ["month", 5],
+  ["quarter", 6],
+  ["year", 7],
+  ["snapshot", 8],
+]);
+const framePeriods = [
+  [/\b(?:per[- ]request|request[- ]level|by request)\b/i, "request"],
+  [/\b(?:per[- ]minute|minute[- ]level|by minute|rpm)\b/i, "minute"],
+  [/\b(?:hourly|per[- ]hour|by hour)\b/i, "hour"],
+  [/\b(?:daily|per[- ]day|by day)\b/i, "day"],
+  [/\b(?:weekly|per[- ]week|by week)\b/i, "week"],
+  [/\b(?:monthly|per[- ]month|by month)\b/i, "month"],
+  [/\b(?:quarterly|per[- ]quarter|by quarter)\b/i, "quarter"],
+  [/\b(?:yearly|annual|per[- ]year|by year)\b/i, "year"],
+];
+
+function framePeriod(text) {
+  for (const [pattern, grain] of framePeriods) {
+    if (pattern.test(String(text ?? ""))) return grain;
+  }
+  return null;
+}
+
 async function exists(path) {
   try {
     await access(path);
@@ -37,12 +68,68 @@ export async function readOutline(workspaceRoot) {
   return { path, outline: JSON.parse(await readFile(path, "utf8")) };
 }
 
+// The data inventory answers "what can we actually query?" before any frame
+// claims what a slide shows. Writing frames first is how invented content and
+// understated grain get in.
+function validateInventory(outline, failures) {
+  const available = outline?.available;
+  const datasets = new Map();
+
+  if (!available || typeof available !== "object") {
+    failures.push("outline.json requires an available block recording the data inventory.");
+    return datasets;
+  }
+  if (!Array.isArray(available.notAvailable)) {
+    failures.push("available.notAvailable must be an array; record what you looked for and could not get.");
+  }
+
+  const entries = Array.isArray(available.datasets) ? available.datasets : [];
+  if (!entries.length) {
+    failures.push("available.datasets must record at least one dataset you can actually query.");
+    return datasets;
+  }
+
+  for (const [index, dataset] of entries.entries()) {
+    const label = `Dataset ${index + 1}${dataset?.id ? ` (${dataset.id})` : ""}`;
+    for (const field of ["id", "name", "location", "range", "grain", "scope"]) {
+      if (typeof dataset?.[field] !== "string" || !dataset[field].trim()) {
+        failures.push(`${label} requires ${field}.`);
+      }
+    }
+    if (!grainRank.has(dataset?.grain)) {
+      failures.push(
+        `${label} grain must be one of: ${[...grainRank.keys()].join(", ")}. `
+        + "Record the finest grain the source actually provides.",
+      );
+    }
+    if (!Array.isArray(dataset?.dimensions) || !dataset.dimensions.length) {
+      failures.push(`${label} requires the dimensions you can group by.`);
+    }
+    if (!Array.isArray(dataset?.extracts)) {
+      failures.push(`${label} extracts must be an array of files already pulled, even if empty.`);
+    }
+    if (typeof dataset?.id === "string" && dataset.id.trim()) {
+      if (datasets.has(dataset.id)) failures.push(`${label} id is duplicated.`);
+      else datasets.set(dataset.id, dataset);
+    }
+  }
+
+  return datasets;
+}
+
 export function validateOutline(outline, { phase = "draft" } = {}) {
   const failures = [];
   if (outline?.version !== 1) failures.push("outline.json version must be 1.");
 
+  const datasets = validateInventory(outline, failures);
   const frames = Array.isArray(outline?.frames) ? outline.frames : [];
   if (!frames.length) failures.push("outline.json requires at least one frame.");
+  if (!datasets.size && frames.length) {
+    failures.push(
+      "Frames may not be written before the data inventory is recorded. "
+      + "Fill available.datasets first: what you can query, over what range, at what grain.",
+    );
+  }
 
   const seen = new Set();
   let sawSupporting = false;
@@ -86,6 +173,30 @@ export function validateOutline(outline, { phase = "draft" } = {}) {
       }
     }
 
+    if (datasets.size && (frame?.modality === "data" || frame?.modality === "hybrid")) {
+      const dataset = datasets.get(frame?.dataset);
+      if (!dataset) {
+        failures.push(
+          `${label} is a ${frame.modality} frame and must name a dataset from available.datasets.`,
+        );
+      } else {
+        const period = framePeriod(frame?.shows);
+        const frameGrain = grainRank.get(period);
+        const sourceGrain = grainRank.get(dataset.grain);
+        if (
+          period
+          && Number.isInteger(frameGrain)
+          && Number.isInteger(sourceGrain)
+          && frameGrain > sourceGrain
+        ) {
+          failures.push(
+            `${label} shows ${period} data, but ${dataset.id} provides ${dataset.grain} grain. `
+            + "Use the finer series or state why the coarser one is the point.",
+          );
+        }
+      }
+    }
+
     if (frame?.section === "supporting") sawSupporting = true;
     else if (sawSupporting) {
       failures.push(`${label} is a main frame after a supporting frame; supporting frames come last.`);
@@ -113,6 +224,9 @@ export function validateOutline(outline, { phase = "draft" } = {}) {
 export function renderOutlineHtml(outline) {
   const frames = outline.frames ?? [];
   const deck = outline.deck ?? {};
+  const available = outline.available ?? {};
+  const datasets = Array.isArray(available.datasets) ? available.datasets : [];
+  const notAvailable = Array.isArray(available.notAvailable) ? available.notAvailable : [];
   const title = deck.title || "Deck outline";
   const cover = [
     '<section class="slide" data-frame-kind="cover">',
@@ -125,6 +239,30 @@ export function renderOutlineHtml(outline) {
     "</section>",
   ].filter(Boolean).join("\n");
 
+  const inventory = [
+    '<section class="slide" data-frame-kind="inventory">',
+    '  <div class="frame">',
+    '    <p class="meta">What we can actually query</p>',
+    "    <h1>Data inventory</h1>",
+    ...datasets.map((dataset) => [
+      '    <p class="shows">',
+      `      <span>${escapeHtml(dataset.id ?? "")}</span>`,
+      `      ${escapeHtml(dataset.name ?? "")} &middot; ${escapeHtml(dataset.location ?? "")}<br>`,
+      `      ${escapeHtml(dataset.range ?? "")} at ${escapeHtml(dataset.grain ?? "")} grain<br>`,
+      `      by ${escapeHtml((dataset.dimensions ?? []).join(", "))}<br>`,
+      `      scope: ${escapeHtml(dataset.scope ?? "")}`,
+      dataset.extracts?.length
+        ? `      <br>pulled: ${escapeHtml(dataset.extracts.join(", "))}`
+        : "",
+      "    </p>",
+    ].filter(Boolean).join("\n")),
+    notAvailable.length
+      ? `    <p class="meta">Not available: ${notAvailable.map((item) => escapeHtml(item)).join(" &middot; ")}</p>`
+      : '    <p class="meta">Nothing recorded as unavailable.</p>',
+    "  </div>",
+    "</section>",
+  ].join("\n");
+
   const slides = frames.map((frame, index) => [
     `<section class="slide" id="${escapeHtml(frame.id)}" data-frame-section="${escapeHtml(frame.section)}">`,
     '  <div class="frame">',
@@ -132,7 +270,7 @@ export function renderOutlineHtml(outline) {
     `    <h1>${escapeHtml(frame.title)}</h1>`,
     `    <p class="shows"><span>Shows</span>${escapeHtml(frame.shows)}</p>`,
     `    <p class="says"><span>Says</span>${escapeHtml(frame.says)}</p>`,
-    `    <p class="meta">${frame.sourceIds?.length ? `Sources: ${escapeHtml(frame.sourceIds.join(", "))}` : "Sources: none recorded"}</p>`,
+    `    <p class="meta">${frame.dataset ? `Data: ${escapeHtml(frame.dataset)} &middot; ` : ""}${frame.sourceIds?.length ? `Sources: ${escapeHtml(frame.sourceIds.join(", "))}` : "Sources: none recorded"}</p>`,
     "  </div>",
     "</section>",
   ].join("\n")).join("\n");
@@ -179,6 +317,10 @@ export function renderOutlineHtml(outline) {
   }
   .says { color: #3a3a3a; }
   .meta { color: #5a5a5a; font-size: 14px; }
+  [data-frame-kind="inventory"] .frame { max-width: 96ch; text-align: left; gap: 14px; }
+  [data-frame-kind="inventory"] h1 { text-align: center; }
+  [data-frame-kind="inventory"] .shows { font-size: 16px; line-height: 1.45; }
+  [data-frame-kind="inventory"] .meta { text-align: center; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.001ms !important;
@@ -189,6 +331,7 @@ export function renderOutlineHtml(outline) {
 </head>
 <body>
 ${cover}
+${inventory}
 ${slides}
 <script src="deck.js"></script>
 </body>

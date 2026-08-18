@@ -44,7 +44,24 @@ question at a time:
 Do not ask about fonts, colors, layouts, or chart styles. That is the second
 brainstorm.
 
-## 2. Write the frames
+## 2. Inventory the data before writing anything
+
+Find how the data was actually retrieved. Read the prior sessions, the query,
+the notebook, the export script, and any files already on disk. Do not accept a
+summary of the data as a substitute for the data.
+
+Record in `outline.json` under `available.datasets`, for each source: `id`,
+`name`, `location`, `range`, the **finest** `grain` it provides, `dimensions`,
+`measures`, `extracts` already pulled, and `scope`. Record what you could not
+get in `available.notAvailable`.
+
+Report the inventory to the user before writing frames. It routinely contains
+more than the previous deck used — a longer range, a finer grain, an unqueried
+dimension — and that is exactly the material worth a slide.
+
+`validate:outline` refuses to accept frames until this block is filled.
+
+## 3. Write the frames
 
 Create `outline.json` from
 `../_shared/nice-deck/references/outline.template.json`.
@@ -58,12 +75,15 @@ Every frame declares:
 - `says` — one line of what the speaker says over it
 - `modality` — `data`, `native`, `hybrid`, or `conceptual`
 - `section` — `main` or `supporting`
+- `dataset` — for `data` and `hybrid` frames, the inventory id it draws from
 - `sourceIds` — may be empty while evidence is still being gathered
 - `status` — `draft`, `needs-evidence`, or `ready`
 
 Rules:
 
 - Lead with data. Prefer a measurement over a statement about a measurement.
+- Use the finest grain the inventory offers unless the coarser view is the
+  actual point. Validation rejects a monthly frame drawn from a daily table.
 - One idea per frame. If `says` needs two sentences, it is two frames.
 - Name the evidence you actually have. Mark a frame `needs-evidence` instead of
   writing a confident line the sources do not support.
@@ -76,7 +96,7 @@ Rules:
   `../_shared/nice-deck/references/supporting.md`.
 - Prefer fewer frames. Cutting a frame is a stronger edit than improving it.
 
-## 3. Render and iterate
+## 4. Render and iterate
 
 Generate the plain frames:
 
@@ -94,7 +114,7 @@ Present the frames as a sequence and ask what is missing, what is filler, and
 what is out of order. Reorder, merge, split, and delete in `outline.json`, then
 regenerate and show the frames again.
 
-## 4. Approve the outline
+## 5. Approve the outline
 
 The outline is approved when every frame is `ready` or explicitly accepted as
 `needs-evidence`, and the user says the argument is right.

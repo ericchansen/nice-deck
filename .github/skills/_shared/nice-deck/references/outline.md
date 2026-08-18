@@ -11,6 +11,36 @@ font, no color, no chart, no image, and no typographic system.
 
 The plainness is the point. A frame the user likes is liked for its content.
 
+## Inventory the data first
+
+No frame may be written before `available.datasets` is filled in. Writing
+frames first is how invented content gets in: a frame says "monthly volume"
+because that is what came to mind, not because monthly is what the source
+provides.
+
+Find how the data was actually retrieved — the query, the model, the notebook,
+the export — and record what it can answer:
+
+| Field | Required | Meaning |
+|---|---|---|
+| `id` | yes | Short stable id a frame can point at. |
+| `name` | yes | The dataset, model, table, or file as it is actually named. |
+| `location` | yes | Where it lives: workspace, database, repository, path. |
+| `range` | yes | The period the data actually covers. |
+| `grain` | yes | The **finest** grain available: `request`, `minute`, `hour`, `day`, `week`, `month`, `quarter`, `year`, or `snapshot`. |
+| `dimensions` | yes | What you can group by. |
+| `measures` | no | The columns or measures available. |
+| `extracts` | yes | Files already pulled. Empty array if none. |
+| `scope` | yes | What the data does and does not cover — which account, tenant, subscription, or population. |
+
+Record `available.notAvailable` too: what you looked for and could not get. An
+empty list claims nothing is missing, so leave it empty only when that is true.
+
+Every `data` and `hybrid` frame names its `dataset`. Validation rejects a frame
+that presents a coarser period than its dataset provides — a frame showing
+monthly totals from a daily table is caught, because the finer series is
+already available and almost always more interesting.
+
 ## Frame fields
 
 | Field | Required | Meaning |
@@ -21,6 +51,7 @@ The plainness is the point. A frame the user likes is liked for its content.
 | `says` | yes | One line of what the speaker says over it. |
 | `modality` | yes | `data`, `native`, `hybrid`, or `conceptual`. |
 | `section` | yes | `main` or `supporting`. |
+| `dataset` | for `data` and `hybrid` | The `available.datasets` id this frame draws from. |
 | `sourceIds` | yes | Array. May be empty while evidence is outstanding. |
 | `status` | yes | `draft`, `needs-evidence`, or `ready`. |
 | `notes` | no | Anything that belongs to the speaker rather than the slide. |
@@ -28,9 +59,10 @@ The plainness is the point. A frame the user likes is liked for its content.
 ## Writing rules
 
 - Lead with data. A measurement beats a sentence about a measurement.
+- Use the finest grain the source provides unless the coarser view is the point.
 - One idea per frame. Two sentences in `says` means two frames.
-- `shows` names a thing, not a feeling. "Monthly token volume, Jan–Jul, billions"
-  is a frame. "Context on our usage" is not.
+- `shows` names a thing, not a feeling. "Daily cache hit rate, Jul 1-31, percent
+  of input tokens" is a frame. "Context on our usage" is not.
 - Never write conjecture. Do not state what another observation would show,
   what a number implies about intent, or what the audience should conclude
   beyond the evidence. Interpretation belongs to the speaker.

@@ -59,9 +59,15 @@ for a redesign.
 
 Run the complete `deck-outline` workflow before any design work.
 
-Produce `outline.json`, generate the plain frames, render them, and iterate with
-the user until the argument, order, and evidence are right. Lead with data,
-keep one idea per frame, and cut rather than improve a weak frame.
+Inventory the data first. Find how it was actually retrieved and record what it
+can answer — range, finest grain, dimensions, scope, and what is missing — in
+`outline.json` under `available`. Report that inventory to the user before
+writing frames; it routinely contains more than a previous deck used.
+
+Then produce the frames, generate the plain slides, render them, and iterate
+with the user until the argument, order, and evidence are right. Lead with data,
+use the finest grain the source provides, keep one idea per frame, and cut
+rather than improve a weak frame.
 
 Record supporting frames for every internal source that a main frame will cite.
 

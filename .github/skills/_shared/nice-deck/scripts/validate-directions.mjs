@@ -4,6 +4,7 @@ import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright";
 import { computeDeckSourceHash } from "./preview.mjs";
+import { validateOutline } from "./outline.mjs";
 
 const requiredRoles = ["figure-heavy", "text-heavy", "data-heavy"];
 const modalities = new Set(["data", "conceptual", "hybrid", "native"]);
@@ -94,11 +95,8 @@ export async function validateDirectionMatrix({
   } else {
     try {
       const outline = JSON.parse(await readFile(outlinePath, "utf8"));
-      if (outline.status !== "approved") {
-        failures.push(
-          `outline.json status is "${outline.status ?? "missing"}". `
-          + "Direction work begins after the outline is approved.",
-        );
+      for (const failure of validateOutline(outline, { phase: "approved" })) {
+        failures.push(`outline.json: ${failure}`);
       }
       // Supporting frames are never proof content, so only main frames are
       // eligible.
