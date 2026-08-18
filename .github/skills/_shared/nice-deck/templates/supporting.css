@@ -1,0 +1,65 @@
+/* nice-deck supporting section.
+   Deliberately plain: black on white, one system stack, tables and grayscale
+   charts. Do not art-direct this file. */
+
+.slide[data-section="supporting"] {
+  --supporting-ink: #111111;
+  --supporting-muted: #4a4a4a;
+  --supporting-rule: #c9c9c9;
+  background: #ffffff;
+  color: var(--supporting-ink);
+  font-family: ui-sans-serif, "Segoe UI", system-ui, sans-serif;
+}
+
+.slide[data-section="supporting"] h1 {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.slide[data-section="supporting"] h2 {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.slide[data-section="supporting"] p,
+.slide[data-section="supporting"] li,
+.slide[data-section="supporting"] td,
+.slide[data-section="supporting"] th {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.slide[data-section="supporting"] table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.slide[data-section="supporting"] th,
+.slide[data-section="supporting"] td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--supporting-rule);
+  text-align: left;
+  vertical-align: top;
+}
+
+.slide[data-section="supporting"] th {
+  font-weight: 700;
+}
+
+.slide[data-section="supporting"] code,
+.slide[data-section="supporting"] pre {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.slide[data-section="supporting"] .supports {
+  color: var(--supporting-muted);
+  font-size: 13px;
+}
+
+.slide[data-section="supporting"] a {
+  color: var(--supporting-ink);
+}

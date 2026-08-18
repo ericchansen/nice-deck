@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { access, readFile, realpath } from "node:fs/promises";
 import { dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { conjecturePattern, countWords, proseBudget } from "./text-rules.mjs";
 
 const sourceRules = [
   {
@@ -33,6 +34,11 @@ const sourceRules = [
     name: "manual-primary-visual",
     pattern: /class=["'][^"']*(?:growth-bar|scenario-channel|flow-gate|capacity-flow|decision-flow|econ-bar)[^"']*["']/i,
     message: "Primary bars, rails, gates, and flow diagrams must use ECharts or generated imagery.",
+  },
+  {
+    name: "printed-reasoning",
+    pattern: /class=["'][^"']*(?:decision-relevance|why-this-matters|so-what|caveat|uncertainty|contract-strip)[^"']*["']/i,
+    message: "Decision relevance and caveats are spoken, not printed. Move them to speaker notes.",
   },
 ];
 const modalities = new Set(["data", "conceptual", "hybrid", "native"]);
@@ -71,6 +77,17 @@ const privatePatterns = [
 
 function finding(name, message, sample = "") {
   return { name, message, sample };
+}
+
+// Mirrors the rendered audit's exemptions so the static and rendered checks
+// cannot disagree: the slide root itself, visually hidden helpers, declared
+// full-bleed layers, and elements that manage their own geometry.
+function exemptFromAbsoluteRule(selector) {
+  if (/\bdata-bleed\b|\bsr-only\b|\bdata-grid-exception\b/i.test(selector)) return true;
+  if (/(?:^|,)\s*(?:pre|code)\b/i.test(selector)) return true;
+  return selector
+    .split(",")
+    .some((part) => /(?:^|\s)\.slide(?:\[[^\]]*\]|[:.][\w-]+)*\s*$/i.test(part.trim()));
 }
 
 function isWithin(root, path) {
@@ -113,6 +130,23 @@ export function scanSource(source) {
     if (match) findings.push(finding(rule.name, rule.message, match[0].trim().slice(0, 80)));
   }
 
+  for (const block of source.matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
+    const [, selector, body] = block;
+    if (!/position\s*:\s*absolute/i.test(body)) continue;
+    if (!/grid-template-columns|display\s*:\s*(?:grid|flex)/i.test(body)) continue;
+    // The rule is about content regions. The slide root establishes the
+    // positioning context, and layout.md rule 2 exempts visually hidden
+    // helpers and declared full-bleed layers; the rendered audit skips the
+    // same set, so the two checks must agree.
+    if (exemptFromAbsoluteRule(selector)) continue;
+    findings.push(finding(
+      "absolute-region",
+      "Content regions must be children of the slide grid. An absolutely positioned band cannot align with the rows above it.",
+      selector.trim().slice(0, 80),
+    ));
+    break;
+  }
+
   for (const rule of privatePatterns) {
     const match = source.match(rule.pattern);
     if (match) {
@@ -137,11 +171,55 @@ export function scanSource(source) {
   return findings;
 }
 
+function stripTags(markup) {
+  return markup
+    .replace(/<(script|style|svg)\b[^>]*>[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&[a-z]+;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Prose the audience reads, excluding the title, direct labels, values, and
+// the citation strip. Those are measured by their own rules.
+function slideProse(body) {
+  return stripTags(
+    body
+      .replace(/<h[1-6]\b[\s\S]*?<\/h[1-6]>/gi, " ")
+      .replace(/<(footer|aside)\b[^>]*data-citation[\s\S]*?<\/\1>/gi, " ")
+      .replace(/<[^>]*\bdata-citation\b[^>]*>[\s\S]*?<\/[a-z]+>/gi, " ")
+      .replace(/<(table|figcaption|code|pre)\b[\s\S]*?<\/\1>/gi, " "),
+  );
+}
+
+function gridTracks(styles, slideBody) {
+  const classes = new Set(
+    [...slideBody.matchAll(/class=["']([^"']+)["']/g)]
+      .flatMap(([, value]) => value.split(/\s+/))
+      .filter(Boolean),
+  );
+  const tracks = new Map();
+  for (const block of styles.replace(/\/\*[\s\S]*?\*\//g, " ").matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
+    const [, selector, declarations] = block;
+    const columns = declarations.match(/grid-template-columns\s*:\s*([^;]+)/i)?.[1]?.trim();
+    if (!columns) continue;
+    if (/\bdata-grid-exception\b/.test(selector)) continue;
+    const selectorClasses = [...selector.matchAll(/\.([a-zA-Z0-9_-]+)/g)].map(([, name]) => name);
+    if (!selectorClasses.length || !selectorClasses.every((name) => classes.has(name))) continue;
+    tracks.set(selector.trim(), columns.replace(/\s+/g, " "));
+  }
+  return tracks;
+}
+
 function slideDeclarations(source) {
   return [...source.matchAll(/(<section\b[^>]*class=["'][^"']*\bslide\b[^"']*["'][^>]*>)([\s\S]*?)<\/section>/gi)]
     .map(([, tag, body]) => ({
-      id: tag.match(/\bdata-slide-id=["']([^"']+)["']/i)?.[1],
+      id: tag.match(/\bdata-slide-id=["']([^"']+)["']/i)?.[1]
+        ?? tag.match(/\bid=["']([^"']+)["']/i)?.[1],
       modality: tag.match(/\bdata-visual-modality=["']([^"']+)["']/i)?.[1],
+      section: tag.match(/\bdata-section=["']([^"']+)["']/i)?.[1] ?? "main",
+      anchor: tag.match(/\bid=["']([^"']+)["']/i)?.[1],
       body,
       tag,
     }));
@@ -203,10 +281,185 @@ function validateSources(sourcesDocument, findings) {
         "nonpublic-source-url",
         `Non-public source ${source.id} must use a safe locator instead of a URL.`,
       ));
+    } else if (!source.deckAnchor) {
+      findings.push(finding(
+        "internal-source-anchor",
+        `Source ${source.id} requires a deckAnchor naming the supporting slide that shows it.`,
+      ));
     }
     sources.set(source.id, source);
   }
   return sources;
+}
+
+function linkTargets(sources) {
+  const urls = new Set();
+  for (const source of sources.values()) {
+    if (source.url) urls.add(source.url.replace(/\/$/, ""));
+  }
+  return { urls };
+}
+
+function validateCitations(declarations, sources, findings) {
+  const slideAnchors = new Set(
+    declarations.map(({ anchor }) => anchor).filter(Boolean),
+  );
+  const supportingAnchors = new Set(
+    declarations
+      .filter(({ section }) => section === "supporting")
+      .map(({ anchor }) => anchor)
+      .filter(Boolean),
+  );
+  const { urls } = linkTargets(sources);
+
+  // A declared anchor is only useful if it lands on a supporting slide that
+  // actually exists in this deck.
+  for (const source of sources.values()) {
+    if (!source.deckAnchor) continue;
+    const anchor = source.deckAnchor.replace(/^#/, "");
+    if (supportingAnchors.has(anchor)) continue;
+    findings.push(finding(
+      "internal-source-anchor",
+      slideAnchors.has(anchor)
+        ? `Source ${source.id} deckAnchor #${anchor} is a main slide. Point it at the supporting slide that shows the evidence.`
+        : `Source ${source.id} deckAnchor #${anchor} does not resolve to a supporting slide in this deck.`,
+    ));
+  }
+
+  for (const declaration of declarations) {
+    const citations = [...declaration.body.matchAll(
+      /<([a-z]+)\b[^>]*\bdata-citation\b[^>]*>([\s\S]*?)<\/\1>/gi,
+    )];
+    if (!citations.length) continue;
+
+    for (const [, , inner] of citations) {
+      if (!stripTags(inner)) continue;
+      const links = [...inner.matchAll(/<a\b[^>]*href=["']([^"']+)["']/gi)].map(([, href]) => href);
+      if (!links.length) {
+        findings.push(finding(
+          "citation-not-linked",
+          `Slide ${declaration.id ?? "(unidentified)"} prints a citation without a link. Link public sources to their canonical URL and internal sources to their supporting slide.`,
+          stripTags(inner).slice(0, 80),
+        ));
+        continue;
+      }
+      for (const href of links) {
+        if (href.startsWith("#")) {
+          const target = href.slice(1);
+          if (/^\d+$/.test(target)) {
+            findings.push(finding(
+              "citation-index-anchor",
+              `Slide ${declaration.id ?? "(unidentified)"} cites slide index ${href}. Link the supporting slide's stable id so the citation survives reordering.`,
+            ));
+          } else if (!slideAnchors.has(target)) {
+            findings.push(finding(
+              "citation-unresolved",
+              `Slide ${declaration.id ?? "(unidentified)"} cites #${target}, which is not a slide in this deck.`,
+            ));
+          } else if (declaration.section !== "supporting" && !supportingAnchors.has(target)) {
+            // A supporting slide may link back to the main slide it supports;
+            // a main slide citing another main slide is not evidence.
+            findings.push(finding(
+              "citation-target-not-supporting",
+              `Slide ${declaration.id ?? "(unidentified)"} cites #${target}, which is a main slide. Internal citations point at the supporting slide that shows the extract or method.`,
+            ));
+          }
+          continue;
+        }
+        if (!/^https:\/\//i.test(href)) {
+          findings.push(finding(
+            "citation-unresolved",
+            `Slide ${declaration.id ?? "(unidentified)"} citation link ${href.slice(0, 60)} is neither an in-deck anchor nor an HTTPS URL.`,
+          ));
+          continue;
+        }
+        if (urls.size && !urls.has(href.replace(/\/$/, ""))) {
+          findings.push(finding(
+            "citation-unresolved",
+            `Slide ${declaration.id ?? "(unidentified)"} citation link ${href.slice(0, 60)} does not match any public source in sources.json.`,
+          ));
+        }
+      }
+    }
+  }
+}
+
+function validateSlideText(declarations, findings) {
+  for (const declaration of declarations) {
+    if (declaration.section === "supporting") continue;
+    const prose = slideProse(declaration.body);
+    const visibleText = stripTags(declaration.body);
+    const conjecture = prose.match(conjecturePattern)?.[0];
+    if (conjecture) {
+      findings.push(finding(
+        "slide-conjecture",
+        `Slide ${declaration.id ?? "(unidentified)"} states conjecture. Interpretation is spoken, not printed.`,
+        conjecture,
+      ));
+    }
+    const sourceId = visibleText.match(/\[S\d+\]/);
+    if (sourceId) {
+      findings.push(finding(
+        "visible-source-id",
+        `Slide ${declaration.id ?? "(unidentified)"} prints an authoring source ID. Link the citation instead.`,
+        sourceId[0],
+      ));
+    }
+    const words = countWords(prose);
+    if (words > proseBudget) {
+      findings.push(finding(
+        "slide-text-budget",
+        `Slide ${declaration.id ?? "(unidentified)"} shows ${words} words of prose; the budget is ${proseBudget}. Cut it, chart it, or move it to a supporting slide.`,
+      ));
+    }
+  }
+}
+
+function validateSupporting(declarations, styles, findings) {
+  for (const declaration of declarations.filter(({ section }) => section === "supporting")) {
+    if (!declaration.anchor) {
+      findings.push(finding(
+        "supporting-anchor-missing",
+        `Supporting slide ${declaration.id ?? "(unidentified)"} requires an id so citations can link to it.`,
+      ));
+    }
+    if (/<img\b|background-image\s*:/i.test(declaration.body)) {
+      findings.push(finding(
+        "supporting-imagery",
+        `Supporting slide ${declaration.id ?? declaration.anchor} must contain data, not imagery.`,
+      ));
+    }
+    const saturated = declaration.body.match(
+      /(?:color|background(?:-color)?)\s*:\s*(?:#(?![0-9a-f]{0,8}$)|rgb|hsl)[^;"']*/i,
+    );
+    if (saturated) {
+      findings.push(finding(
+        "supporting-color",
+        `Supporting slide ${declaration.id ?? declaration.anchor} is black and white only.`,
+        saturated[0].slice(0, 60),
+      ));
+    }
+  }
+  if (
+    declarations.some(({ section }) => section === "supporting")
+    && /\[data-section=["']supporting["'][^{]*\{[^}]*(?:animation|transition)\s*:/i.test(styles)
+  ) {
+    findings.push(finding(
+      "supporting-motion",
+      "The supporting section is static. Remove animation and transition from supporting slides.",
+    ));
+  }
+  const mainAfterSupporting = declarations
+    .findIndex(({ section }) => section === "supporting");
+  if (
+    mainAfterSupporting >= 0
+    && declarations.slice(mainAfterSupporting).some(({ section }) => section !== "supporting")
+  ) {
+    findings.push(finding(
+      "supporting-order",
+      "Supporting slides are the last slides in the deck.",
+    ));
+  }
 }
 
 async function validateGeneratedAsset(root, entry, findings) {
@@ -263,11 +516,19 @@ async function validateGeneratedAsset(root, entry, findings) {
   }
 }
 
-export async function scanWorkspace({ root, sourcePath, source } = {}) {
+export async function scanWorkspace({ root, sourcePath, source, styles = "" } = {}) {
   const workspaceRoot = await realpath(resolve(root ?? dirname(sourcePath)));
   const htmlPath = await realpath(resolve(sourcePath));
   const html = source ?? await readFile(htmlPath, "utf8");
   const findings = scanSource(html);
+
+  // outline.html is generated, deliberately unstyled, and has no deck contract.
+  if (/<html\b[^>]*\bdata-deck-kind=["']outline["']/i.test(html)) return findings;
+
+  const allStyles = [
+    styles,
+    ...[...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map(([, css]) => css),
+  ].join("\n");
   const manifestPath = join(workspaceRoot, "visual-manifest.json");
   const sourcesPath = join(workspaceRoot, "sources.json");
 
@@ -291,6 +552,28 @@ export async function scanWorkspace({ root, sourcePath, source } = {}) {
       "visual-manifest-count",
       `Manifest declares ${manifest.slides.length} slides, but HTML contains ${declarations.length}.`,
     ));
+  }
+
+  validateCitations(declarations, sources, findings);
+  validateSlideText(declarations, findings);
+  validateSupporting(declarations, allStyles, findings);
+
+  for (const declaration of declarations) {
+    const tracks = gridTracks(allStyles, declaration.body);
+    const distinct = new Set(tracks.values());
+    if (distinct.size > 1) {
+      findings.push(finding(
+        "grid-track-mismatch",
+        `Slide ${declaration.id ?? "(unidentified)"} stacks bands on ${distinct.size} different column track sets, so their boundaries cannot align. Share one grid or mark a deliberate exception with data-grid-exception.`,
+        [...tracks.keys()].join(", ").slice(0, 80),
+      ));
+    }
+    if (tracks.size > 1 && !/\bdata-region\b/.test(declaration.body)) {
+      findings.push(finding(
+        "region-undeclared",
+        `Slide ${declaration.id ?? "(unidentified)"} builds multiple bands without data-region elements, so the render cannot measure whether their boundaries align.`,
+      ));
+    }
   }
 
   for (const declaration of declarations) {
@@ -333,17 +616,29 @@ export async function scanWorkspace({ root, sourcePath, source } = {}) {
         `Slide ${id} requires captureState and accessibility summaries.`,
       ));
     }
+    // Every slide that carries evidence shows where it came from, whatever its
+    // modality. A divider or title slide opts out explicitly in the markup.
+    const slide = declarations.find((item) => item.id === id);
+    if (
+      slide
+      && !/\bdata-citation-exempt\b/i.test(slide.tag)
+      && !/\bdata-citation(?![\w-])/i.test(slide.body)
+    ) {
+      findings.push(finding(
+        "visible-citation-missing",
+        `Slide ${id} requires a linked citation. Mark a divider or title slide data-citation-exempt if it carries no evidence.`,
+      ));
+    }
     if (
       !entry.question
       || !entry.answer
-      || !entry.decisionRelevance
       || !claimStatuses.has(entry.claimStatus)
       || !Array.isArray(entry.sourceIds)
       || entry.sourceIds.length === 0
     ) {
       findings.push(finding(
         "slide-contract-incomplete",
-        `Slide ${id} requires question, answer, decisionRelevance, claimStatus, and sourceIds.`,
+        `Slide ${id} requires question, answer, claimStatus, and sourceIds.`,
       ));
     }
     for (const sourceId of entry.sourceIds ?? []) {
@@ -386,22 +681,12 @@ export async function scanWorkspace({ root, sourcePath, source } = {}) {
       if (
         !/\bdata-chart-units=["'][^"']+["']/i.test(chartTag)
         || !/\bdata-visible-takeaway=["'][^"']+["']/i.test(chartTag)
-        || !/\bdata-decision-relevance=["'][^"']+["']/i.test(chartTag)
         || !/\bdata-claim-status=["'][^"']+["']/i.test(chartTag)
         || !/\bdata-direct-labels=["']true["']/i.test(chartTag)
       ) {
         findings.push(finding(
           "chart-contract-missing",
-          `Slide ${id} chart container requires units, visible takeaway, decision relevance, claim status, and direct-label declarations.`,
-        ));
-      }
-      const visibleIds = new Set(
-        [...(declaration?.body ?? "").matchAll(/\[S\d+\]/g)].map((match) => match[0].slice(1, -1)),
-      );
-      if (!(entry.sourceIds ?? []).some((sourceId) => visibleIds.has(sourceId))) {
-        findings.push(finding(
-          "visible-citation-missing",
-          `Data slide ${id} requires a visible [S#] citation matching its manifest sourceIds.`,
+          `Slide ${id} chart container requires units, visible takeaway, claim status, and direct-label declarations.`,
         ));
       }
     }

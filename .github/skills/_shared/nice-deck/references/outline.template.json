@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "status": "draft",
+  "approvedAt": "",
+  "deck": {
+    "title": "",
+    "audience": "",
+    "setting": "",
+    "argument": "",
+    "durationMinutes": 0
+  },
+  "frames": [
+    {
+      "id": "",
+      "title": "",
+      "shows": "",
+      "says": "",
+      "modality": "data",
+      "section": "main",
+      "sourceIds": [],
+      "status": "draft",
+      "notes": ""
+    },
+    {
+      "id": "",
+      "title": "",
+      "shows": "",
+      "says": "",
+      "modality": "native",
+      "section": "supporting",
+      "sourceIds": [],
+      "status": "draft",
+      "notes": ""
+    }
+  ],
+  "openEvidence": []
+}

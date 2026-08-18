@@ -84,6 +84,32 @@ export async function validateDirectionMatrix({
   }
 
   if (matrix.version !== 1) failures.push("Direction matrix version must be 1.");
+
+  // The outline gate runs first: probe content is chosen from approved frames,
+  // so the approved frame set has to exist before the probes are checked.
+  const outlinePath = resolve(workspace, "outline.json");
+  const proofFrameIds = new Set();
+  if (!await exists(outlinePath)) {
+    failures.push("outline.json is required. Agree the content before exploring directions.");
+  } else {
+    try {
+      const outline = JSON.parse(await readFile(outlinePath, "utf8"));
+      if (outline.status !== "approved") {
+        failures.push(
+          `outline.json status is "${outline.status ?? "missing"}". `
+          + "Direction work begins after the outline is approved.",
+        );
+      }
+      // Supporting frames are never proof content, so only main frames are
+      // eligible.
+      for (const frame of outline.frames ?? []) {
+        if (frame?.id && frame.section !== "supporting") proofFrameIds.add(frame.id);
+      }
+    } catch (error) {
+      failures.push(`outline.json is invalid: ${error.message}`);
+    }
+  }
+
   const content = matrix.content ?? {};
   const declaredRoles = Object.keys(content);
   const additionalRoles = declaredRoles.filter((role) => !requiredRoles.includes(role));
@@ -108,14 +134,25 @@ export async function validateDirectionMatrix({
       "question",
       "answer",
       "evidence",
-      "decisionRelevance",
-      "caveat",
       "claimStatus",
     ]) {
       requireString(probe[field], `Content ${role}.${field}`, failures);
     }
+    if (proofFrameIds.size && typeof probe.slideId === "string" && probe.slideId.trim()
+      && !proofFrameIds.has(probe.slideId)) {
+      failures.push(
+        `Content ${role}.slideId "${probe.slideId}" is not an approved main outline frame. `
+        + "Proof content is chosen from approved frames, not invented here.",
+      );
+    }
     if (!modalities.has(probe.modality)) {
       failures.push(`Content ${role}.modality must be data, conceptual, hybrid, or native.`);
+    }
+    if (probe.modality === "conceptual" && matrix.imageryApproved !== true) {
+      failures.push(
+        `Content ${role} is conceptual, but imagery exploration is not approved. `
+        + "Direction probes are typography and data until the user approves imagery.",
+      );
     }
     if (!Array.isArray(probe.sourceIds) || probe.sourceIds.length === 0) {
       failures.push(`Content ${role}.sourceIds must contain at least one source ID.`);
@@ -123,7 +160,12 @@ export async function validateDirectionMatrix({
   }
 
   const directions = Array.isArray(matrix.directions) ? matrix.directions : [];
-  if (directions.length !== 6) failures.push(`Exactly 6 directions are required; found ${directions.length}.`);
+  if (directions.length < 3 || directions.length > 6) {
+    failures.push(
+      `Between 3 and 6 directions are required; found ${directions.length}. `
+      + "Three is the default; produce more only when the user asks.",
+    );
+  }
   for (const duplicate of duplicateValues(directions.map(({ id }) => id))) {
     failures.push(`Direction ID ${duplicate} is duplicated.`);
   }
@@ -297,8 +339,6 @@ export async function validateDirectionMatrix({
                 "question",
                 "answer",
                 "evidence",
-                "decisionRelevance",
-                "caveat",
                 "claimStatus",
                 "sourceIds",
                 "modality",
@@ -403,8 +443,6 @@ export async function validateDirectionMatrix({
                       question: field("question"),
                       answer: field("answer"),
                       evidence: field("evidence"),
-                      decisionRelevance: field("decisionRelevance"),
-                      caveat: field("caveat"),
                       claimStatus: slide?.dataset.claimStatus,
                       sourceIds: (slide?.dataset.sourceIds ?? "").split(/[\s,]+/).filter(Boolean),
                       modality: slide?.dataset.visualModality,
@@ -481,8 +519,6 @@ export async function validateDirectionMatrix({
               "question",
               "answer",
               "evidence",
-              "decisionRelevance",
-              "caveat",
             ]) {
               if (renderedContract[field]?.visible !== true) {
                 failures.push(`${label} ${role} ${field} must be visibly rendered.`);

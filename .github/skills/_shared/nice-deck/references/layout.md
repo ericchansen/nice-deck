@@ -24,10 +24,15 @@ a flow problem. Anything that cannot shrink will collide with something else.
 
 ### 1. One grid per slide, one column definition
 
-The default for a content slide is a single CSS grid with four rows — head,
-body, contract strip, citation — where every one of those regions shares the
-same `grid-template-columns`. A vertical division at the top then lands on the
-same x as one at the bottom by construction, not by coincidence.
+The default for a content slide is a single CSS grid with three rows — head,
+body, citation — where every one of those regions shares the same
+`grid-template-columns`. A vertical division at the top then lands on the same
+x as one at the bottom by construction, not by coincidence.
+
+Mark each region with `data-region`. Preview measures the rendered edges of
+those elements and reports sibling boundaries that are close but unequal, which
+is the failure this rule exists to prevent. A region that genuinely needs its
+own tracks declares `data-grid-exception`.
 
 Title, full-bleed, and image-led slides may use a different composition. What
 does not change is the rule beneath: whatever regions a slide has, they belong
@@ -98,8 +103,18 @@ passes with its headings and `data-contract-field` text inflated by 1.8x.
 
 ## Verification
 
-`nice_deck_preview` fails the deck when any element escapes the slide's padding
-box or when two text elements overlap, reported as `issueCounts.layout`.
+`nice_deck_preview` fails the deck on any rendered layout failure, reported as
+`issueCounts.layout`:
+
+- an element escapes the slide's padding box
+- two text elements overlap
+- sibling `data-region` boundaries are close but unequal
+- a content region is positioned absolutely
+- a citation prints without a link, or links to an anchor that is not a slide
+- visible prose exceeds the per-slide budget
+
+The static workspace scan catches the source-level form of the last three
+before a render happens; the render is what catches the geometry.
 
 For headroom, run the stress check from the toolkit directory:
 

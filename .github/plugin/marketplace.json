@@ -4,7 +4,7 @@
     "name": "Eric Hansen"
   },
   "metadata": {
-    "description": "A presentation skill suite for creating, art-directing, and reviewing graphical web-native decks.",
+    "description": "A presentation skill suite for outlining, creating, art-directing, and reviewing graphical web-native decks.",
     "version": "0.2.0"
   },
   "plugins": [
@@ -12,7 +12,7 @@
       "name": "nice-deck",
       "source": ".",
       "version": "0.2.0",
-      "description": "Create, art-direct, and review graphical web-native decks through three focused workflows."
+      "description": "Outline, create, art-direct, and review graphical web-native decks through four focused workflows."
     }
   ]
 }
