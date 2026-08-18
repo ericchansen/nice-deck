@@ -8,13 +8,35 @@ import { generateOutline, renderOutlineHtml, validateOutline } from "./outline.m
 function frame(overrides = {}) {
   return {
     id: "measured-volume",
-    title: "Measured monthly token volume",
-    shows: "Monthly token volume, Jan-Jul 2026, billions of tokens.",
-    says: "Volume tripled between January and July.",
+    title: "Daily token volume",
+    shows: "Daily token volume, Jul 1-31 2026, billions of tokens.",
+    says: "Volume ranges from one to nine billion tokens a day.",
     modality: "data",
     section: "main",
+    dataset: "tokens",
     sourceIds: ["S1"],
     status: "ready",
+    ...overrides,
+  };
+}
+
+function available(overrides = {}) {
+  return {
+    inventoriedAt: "2026-08-18",
+    datasets: [
+      {
+        id: "tokens",
+        name: "fact_tokens_usage_daily",
+        location: "Power BI workspace: Unified Data",
+        range: "2026-01-01 through 2026-07-31",
+        grain: "day",
+        dimensions: ["date", "subscription", "model"],
+        measures: ["ContextT", "CachedTokens"],
+        extracts: ["data/daily-total.csv"],
+        scope: "One subscription only.",
+      },
+    ],
+    notAvailable: ["request-level grain"],
     ...overrides,
   };
 }
@@ -25,6 +47,7 @@ function outline(overrides = {}) {
     status: "draft",
     approvedAt: "",
     deck: { title: "Evidence review" },
+    available: available(),
     frames: [frame()],
     openEvidence: [],
     ...overrides,
@@ -51,6 +74,64 @@ test("conjecture in a frame fails validation", () => {
     frames: [frame({ says: "One month cannot distinguish evaluation from migration." })],
   }));
   assert.ok(failures.some((failure) => failure.includes("conjecture")));
+});
+
+test("frames are blocked until the data inventory exists", () => {
+  const failures = validateOutline(outline({ available: undefined }));
+  assert.ok(failures.some((failure) => failure.includes("requires an available block")));
+  assert.ok(failures.some((failure) => failure.includes("before the data inventory is recorded")));
+});
+
+test("a dataset must record range, grain, dimensions, and scope", () => {
+  const failures = validateOutline(outline({
+    available: available({
+      datasets: [{ id: "tokens", name: "fact_tokens_usage_daily", location: "Unified Data" }],
+    }),
+  }));
+  assert.ok(failures.some((failure) => failure.includes("requires range")));
+  assert.ok(failures.some((failure) => failure.includes("requires scope")));
+  assert.ok(failures.some((failure) => failure.includes("grain must be one of")));
+  assert.ok(failures.some((failure) => failure.includes("requires the dimensions")));
+});
+
+test("notAvailable must be recorded even when empty", () => {
+  const failures = validateOutline(outline({
+    available: available({ notAvailable: undefined }),
+  }));
+  assert.ok(failures.some((failure) => failure.includes("notAvailable must be an array")));
+});
+
+test("a data frame must name a dataset from the inventory", () => {
+  const failures = validateOutline(outline({
+    frames: [frame({ dataset: "missing-dataset" })],
+  }));
+  assert.ok(failures.some((failure) => failure.includes("must name a dataset")));
+});
+
+test("a monthly frame drawn from a daily table is rejected", () => {
+  const failures = validateOutline(outline({
+    frames: [frame({ shows: "Monthly token volume, Jan-Jul 2026, billions of tokens." })],
+  }));
+  assert.ok(failures.some((failure) => (
+    failure.includes("shows month data") && failure.includes("provides day grain")
+  )));
+});
+
+test("a daily frame drawn from a daily table is accepted", () => {
+  assert.deepEqual(validateOutline(outline()), []);
+});
+
+test("a monthly frame is accepted when the source is monthly", () => {
+  const failures = validateOutline(outline({
+    available: available({
+      datasets: [{
+        ...available().datasets[0],
+        grain: "month",
+      }],
+    }),
+    frames: [frame({ shows: "Monthly token volume, Jan-Jul 2026, billions of tokens." })],
+  }));
+  assert.deepEqual(failures, []);
 });
 
 test("says must be one sentence", () => {
@@ -97,8 +178,24 @@ test("rendered frames are plain and carry stable ids", () => {
   const html = renderOutlineHtml(outline());
   assert.match(html, /data-deck-kind="outline"/);
   assert.match(html, /id="measured-volume"/);
-  assert.match(html, /Measured monthly token volume/);
+  assert.match(html, /Daily token volume/);
   assert.doesNotMatch(html, /#(?![0-9a-f]{0,6}\b)[0-9a-f]{6}\b/i);
+});
+
+test("the rendered outline shows the data inventory", () => {
+  const html = renderOutlineHtml(outline());
+  assert.match(html, /data-frame-kind="inventory"/);
+  assert.match(html, /fact_tokens_usage_daily/);
+  assert.match(html, /2026-01-01 through 2026-07-31 at day grain/);
+  assert.match(html, /Not available: request-level grain/);
+});
+
+test("inventory separators are not double-escaped", () => {
+  const html = renderOutlineHtml(outline({
+    available: available({ notAvailable: ["first gap", "second gap"] }),
+  }));
+  assert.match(html, /first gap &middot; second gap/);
+  assert.doesNotMatch(html, /&amp;middot;/);
 });
 
 test("generate writes outline.html and the navigation runtime", async () => {

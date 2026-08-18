@@ -9,6 +9,23 @@
     "argument": "",
     "durationMinutes": 0
   },
+  "available": {
+    "inventoriedAt": "",
+    "datasets": [
+      {
+        "id": "",
+        "name": "",
+        "location": "",
+        "range": "",
+        "grain": "day",
+        "dimensions": [],
+        "measures": [],
+        "extracts": [],
+        "scope": ""
+      }
+    ],
+    "notAvailable": []
+  },
   "frames": [
     {
       "id": "",
@@ -17,6 +34,7 @@
       "says": "",
       "modality": "data",
       "section": "main",
+      "dataset": "",
       "sourceIds": [],
       "status": "draft",
       "notes": ""

@@ -70,6 +70,21 @@ try {
     status: "approved",
     approvedAt: "2026-08-14",
     deck: { title: "Fixture deck" },
+    available: {
+      inventoriedAt: "2026-08-14",
+      datasets: [{
+        id: "fixture",
+        name: "fixture_table",
+        location: "Fixture warehouse",
+        range: "2026-01-01 through 2026-07-31",
+        grain: "day",
+        dimensions: ["date"],
+        measures: ["value"],
+        extracts: [],
+        scope: "Fixture rows only.",
+      }],
+      notAvailable: [],
+    },
     frames: roles.map((role) => ({
       id: role,
       title: `Frame ${role}`,
@@ -273,6 +288,21 @@ try {
     status: "draft",
     approvedAt: "",
     deck: { title: "Fixture deck" },
+    available: {
+      inventoriedAt: "2026-08-14",
+      datasets: [{
+        id: "fixture",
+        name: "fixture_table",
+        location: "Fixture warehouse",
+        range: "2026-01-01 through 2026-07-31",
+        grain: "day",
+        dimensions: ["date"],
+        measures: ["value"],
+        extracts: [],
+        scope: "Fixture rows only.",
+      }],
+      notAvailable: [],
+    },
     frames: roles.map((role) => ({
       id: role,
       title: `Frame ${role}`,
@@ -291,7 +321,18 @@ try {
     `${JSON.stringify(matrix, null, 2)}\n`,
   );
   assert((await validateDirectionMatrix({ workspaceRoot: workspace })).some(
-    (failure) => failure.includes("Direction work begins after the outline is approved"),
+    (failure) => failure.includes('status must be "approved"'),
+  ));
+
+  // An outline with no data inventory is not an approved outline.
+  await writeFile(
+    outlinePath,
+    `${JSON.stringify({
+      ...draftOutline, status: "approved", approvedAt: "2026-08-14", available: undefined,
+    }, null, 2)}\n`,
+  );
+  assert((await validateDirectionMatrix({ workspaceRoot: workspace })).some(
+    (failure) => failure.includes("requires an available block"),
   ));
 
   await rm(outlinePath);
