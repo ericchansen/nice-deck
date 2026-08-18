@@ -532,7 +532,7 @@ export async function validateDirectionMatrix({
           || preview.sourceHash !== currentSourceHash
           || !preview.source
           || await realpath(preview.source) !== await realpath(treatmentPath)
-          || ["scan", "contrast", "browserErrors", "chartAudit", "runtimeIntegrity"]
+          || ["scan", "contrast", "browserErrors", "chartAudit", "layoutIssues", "runtimeIntegrity"]
             .some((field) => !Array.isArray(preview[field]) || preview[field].length > 0)
         )
       ) {

@@ -13,7 +13,7 @@ workflow; this file owns the production contract.
 - Do not use a fixed theme or template library. Derive the visual grammar from
   the argument, audience, setting, source material, and user reaction.
 
-Read `principles.md` before working on a deck. Read `profile.hansen.md` when
+Read `principles.md` and `layout.md` before working on a deck. Read `profile.hansen.md` when
 working for Eric Hansen.
 
 ## Explanatory contract

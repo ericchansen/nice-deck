@@ -109,11 +109,13 @@ function resultText(result) {
       contrastNeedsVisualReview: result.contrastUnverified.length,
       browser: result.browserErrors.length,
       chartLifecycle: result.chartAudit?.length ?? 0,
+      layout: result.layoutIssues?.length ?? 0,
     },
     issueCodes: {
       designScan: [...new Set(result.scan.map(({ name }) => name))],
       browser: [...new Set(result.browserErrors.map((error) => error.split(":")[0]))],
       chartLifecycle: [...new Set((result.chartAudit ?? []).map(({ message }) => message))],
+      layout: (result.layoutIssues ?? []).map(({ slide, message }) => `slide ${slide}: ${message}`),
     },
     next: [
       "View every screenshot path with an image-capable tool.",
