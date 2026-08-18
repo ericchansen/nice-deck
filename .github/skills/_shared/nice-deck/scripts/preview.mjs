@@ -606,6 +606,7 @@ export async function previewDeck({
   const url = `${server.urlFor(snapshotSource, shortHash)}${captureMode ? "&capture=1" : ""}`;
   const browserErrors = [];
   const chartAudit = [];
+  const layoutIssues = [];
   const contrast = [];
   const contrastUnverified = [];
   const screenshots = [];
@@ -688,6 +689,9 @@ export async function previewDeck({
       if (runtimeReady) {
         await page.evaluate((slideIndex) => window.__niceDeck.goTo(slideIndex), index);
       }
+      // A slide revealed for the first time can start loading a font it is the
+      // first to use. Measuring before that resolves yields fallback metrics.
+      await page.evaluate(() => document.fonts?.ready);
       if (chartCount) {
         try {
           await page.evaluate(async () => {
@@ -753,6 +757,80 @@ export async function previewDeck({
       }, index);
       chartAudit.push(...interactiveAudit);
 
+      const layoutFindings = await page.evaluate((slideIndex) => {
+        const slide = document.querySelector(".slide:not([hidden])") ?? document.querySelector(".slide");
+        if (!slide) return [];
+        const style = getComputedStyle(slide);
+        const slideRect = slide.getBoundingClientRect();
+        const box = {
+          left: slideRect.left + Number.parseFloat(style.paddingLeft),
+          right: slideRect.right - Number.parseFloat(style.paddingRight),
+          top: slideRect.top + Number.parseFloat(style.paddingTop),
+          bottom: slideRect.bottom - Number.parseFloat(style.paddingBottom),
+        };
+        // charts and preformatted blocks manage their own internal geometry
+        const exempt = (element) => element.closest("[data-chart], [data-echart], svg, pre, code");
+        // A full-bleed background is allowed to escape the padding box, but it
+        // has to say so. Overlap checking still applies to it.
+        const bleeds = (element) => element.closest("[data-bleed]");
+        const label = (element) => {
+          const cls = (element.className || "").toString().trim().split(/\s+/)[0];
+          const text = (element.textContent || "").replace(/\s+/g, " ").trim().slice(0, 40);
+          return `${element.tagName.toLowerCase()}${cls ? "." + cls : ""}${text ? ` "${text}"` : ""}`;
+        };
+        const findings = [];
+
+        for (const element of slide.querySelectorAll("*")) {
+          if (exempt(element) || bleeds(element)) continue;
+          const rect = element.getBoundingClientRect();
+          if (rect.width < 2 || rect.height < 2) continue;
+          const escapes = [];
+          if (rect.right > box.right + 1) escapes.push(`right by ${Math.round(rect.right - box.right)}px`);
+          if (rect.left < box.left - 1) escapes.push(`left by ${Math.round(box.left - rect.left)}px`);
+          if (rect.bottom > box.bottom + 1) escapes.push(`bottom by ${Math.round(rect.bottom - box.bottom)}px`);
+          if (rect.top < box.top - 1) escapes.push(`top by ${Math.round(box.top - rect.top)}px`);
+          if (escapes.length) findings.push(`overflows the slide ${escapes.join(" and ")}: ${label(element)}`);
+        }
+
+        // Any element that renders its own text, regardless of tag. A hard-coded
+        // tag list silently misses small, em, figcaption and text-bearing divs.
+        const ownsText = (element) => [...element.childNodes]
+          .some((node) => node.nodeType === 3 && node.textContent.trim());
+        const texts = [...slide.querySelectorAll("*")]
+          .filter((element) => !exempt(element) && ownsText(element));
+        // Per-line boxes, not the bounding rect. An inline element that wraps
+        // has a bounding rect spanning every line it touches, which would
+        // falsely "overlap" anything else on those lines. Measuring once per
+        // element also keeps getClientRects out of the O(n^2) inner loop.
+        const measured = texts
+          .map((element) => ({
+            element,
+            boxes: [...element.getClientRects()].filter((line) => line.width > 2 && line.height > 2),
+          }))
+          .filter((entry) => entry.boxes.length);
+        for (let a = 0; a < measured.length; a += 1) {
+          for (let b = a + 1; b < measured.length; b += 1) {
+            if (measured[a].element.contains(measured[b].element)
+              || measured[b].element.contains(measured[a].element)) continue;
+            let worst = null;
+            for (const first of measured[a].boxes) {
+              for (const second of measured[b].boxes) {
+                const width = Math.min(first.right, second.right) - Math.max(first.left, second.left);
+                const height = Math.min(first.bottom, second.bottom) - Math.max(first.top, second.top);
+                if (width > 2 && height > 2 && (!worst || width * height > worst.width * worst.height)) {
+                  worst = { width, height };
+                }
+              }
+            }
+            if (worst) {
+              findings.push(`text overlaps by ${Math.round(worst.width)}x${Math.round(worst.height)}px: ${label(measured[a].element)} over ${label(measured[b].element)}`);
+            }
+          }
+        }
+        return [...new Set(findings)].slice(0, 12).map((message) => ({ slide: slideIndex + 1, message }));
+      }, index);
+      layoutIssues.push(...layoutFindings);
+
       const audit = await auditContrast(page, index);
       contrast.push(...audit.failures);
       contrastUnverified.push(...audit.unverified);
@@ -793,6 +871,7 @@ export async function previewDeck({
         && contrast.length === 0
         && browserErrors.length === 0
         && chartAudit.length === 0
+        && layoutIssues.length === 0
         && runtimeIntegrity.length === 0,
       source,
       workspaceRoot: root,
@@ -805,6 +884,7 @@ export async function previewDeck({
       contrastUnverified,
       browserErrors,
       chartAudit,
+      layoutIssues,
       runtimeIntegrity,
     };
     const previewFile = join(outputRoot, "preview.json");

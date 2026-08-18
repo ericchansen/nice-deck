@@ -20,6 +20,7 @@ Read:
 
 - `../_shared/nice-deck/references/foundation.md`
 - `../_shared/nice-deck/references/principles.md`
+- `../_shared/nice-deck/references/layout.md`
 - `../_shared/nice-deck/references/profile.hansen.md` when working for Eric
   Hansen
 - `../_shared/nice-deck/references/brief.template.md`
