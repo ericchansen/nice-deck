@@ -18,8 +18,18 @@ function escapeHtml(value) {
 function exportDocument(slides) {
   const scaleX = pageSize.width / viewport.width;
   const scaleY = pageSize.height / viewport.height;
-  const pages = slides.map((slide) => {
+  // In-deck citation anchors survive as internal PDF links when both ends live
+  // in the printed document, so map each slide id to its printed page.
+  const pageForSlideId = new Map(
+    slides.map((slide, index) => [slide.slideId, `nd-page-${index + 1}`]).filter(([id]) => id),
+  );
+  const pages = slides.map((slide, index) => {
     const links = slide.links.map((link) => {
+      const target = link.href.startsWith("#")
+        ? pageForSlideId.get(link.href.slice(1))
+        : null;
+      if (link.href.startsWith("#") && !target) return "";
+      const href = target ? `#${target}` : link.href;
       const left = Math.max(0, Math.min(viewport.width, link.x));
       const top = Math.max(0, Math.min(viewport.height, link.y));
       const right = Math.max(0, Math.min(viewport.width, link.x + link.width));
@@ -27,9 +37,9 @@ function exportDocument(slides) {
       const width = (right - left) * scaleX;
       const height = (bottom - top) * scaleY;
       if (width <= 0 || height <= 0) return "";
-      return `<a href="${escapeHtml(link.href)}" style="left:${left * scaleX}px;top:${top * scaleY}px;width:${width}px;height:${height}px"></a>`;
+      return `<a href="${escapeHtml(href)}" style="left:${left * scaleX}px;top:${top * scaleY}px;width:${width}px;height:${height}px"></a>`;
     }).join("");
-    return `<section><img src="data:image/png;base64,${slide.image}">${links}</section>`;
+    return `<section id="nd-page-${index + 1}"><img src="data:image/png;base64,${slide.image}">${links}</section>`;
   }).join("");
 
   return `<!doctype html>
@@ -94,30 +104,30 @@ export async function exportDeck({ sourcePath, outputPath } = {}) {
       await page.evaluate(() => new Promise((resolveFrame) => {
         requestAnimationFrame(() => requestAnimationFrame(resolveFrame));
       }));
-      const linkData = await page.locator(".slide:visible a[href]").evaluateAll((anchors) => {
+      const linkData = await page.locator(".slide:visible").evaluateAll((elements) => {
+        const slide = elements[0];
+        const slideIds = new Set(
+          [...document.querySelectorAll(".slide[id]")].map((element) => element.id),
+        );
         const links = [];
         const skipped = [];
-        for (const anchor of anchors) {
+        for (const anchor of slide?.querySelectorAll("a[href]") ?? []) {
           const href = anchor.getAttribute("href").trim();
-          if (!/^(?:https?:|mailto:)/i.test(href)) {
+          const internal = href.startsWith("#") && slideIds.has(href.slice(1));
+          if (!/^(?:https?:|mailto:)/i.test(href) && !internal) {
             skipped.push(href);
             continue;
           }
           const rect = anchor.getBoundingClientRect();
-          links.push({
-            href: anchor.getAttribute("href"),
-            x: rect.x,
-            y: rect.y,
-            width: rect.width,
-            height: rect.height,
-          });
+          links.push({ href, x: rect.x, y: rect.y, width: rect.width, height: rect.height });
         }
-        return { links, skipped };
+        return { links, skipped, slideId: slide?.id ?? "" };
       });
       skippedLinks.push(...linkData.skipped);
       slides.push({
         image: (await readFile(preview.screenshots[index])).toString("base64"),
         links: linkData.links,
+        slideId: linkData.slideId,
       });
     }
 
