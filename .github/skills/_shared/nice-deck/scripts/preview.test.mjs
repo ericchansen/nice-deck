@@ -15,6 +15,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright";
 import { exportPortable } from "./export-portable.mjs";
+import { exportDeck } from "./export-pdf.mjs";
 import { computeDeckSourceHash, previewDeck, startStaticServer } from "./preview.mjs";
 import { scanSource, scanWorkspace } from "./scan.mjs";
 import { syncRuntime } from "./sync-runtime.mjs";
@@ -115,6 +116,11 @@ try {
   await writeFile(join(liveAssets, "app.css"), "body { color: #111; }");
   await writeFile(join(liveAssets, "app.js"), "document.documentElement.dataset.live = 'true';");
 
+  const dataDirectory = join(workspace, "data");
+  await mkdir(dataDirectory, { recursive: true });
+  await writeFile(join(dataDirectory, "figures.js"), "window.fixtureFigures = { value: 42 };");
+  await writeFile(join(dataDirectory, "extract.csv"), "Date,Value\n2026-07-01,42\n");
+  await writeFile(join(dataDirectory, "extract.tsv"), "Date\tValue\n2026-07-01\t42\n");
 
   const probe = join(workspace, "probe.html");
   await writeFile(probe, nativeDocument("First"));
@@ -132,6 +138,12 @@ try {
   assert.equal((await fetch(new URL("/assets/live/index.html", first.url))).status, 200);
   assert.equal((await fetch(new URL("/assets/live/app.css", first.url))).status, 200);
   assert.equal((await fetch(new URL("/assets/live/app.js", first.url))).status, 200);
+  assert.equal((await fetch(new URL("/data/figures.js", first.url))).status, 200);
+  // A documented extract has to be reachable and hashed, not just the derived JS.
+  const csv = await fetch(new URL("/data/extract.csv", first.url));
+  assert.equal(csv.status, 200);
+  assert.match(csv.headers.get("content-type"), /text\/csv/);
+  assert.equal((await fetch(new URL("/data/extract.tsv", first.url))).status, 200);
   assert.equal((await fetch(new URL("/__nice-deck/echarts.min.js", first.url))).status, 410);
   assert.equal((await fetch(new URL("/runtime/arbitrary.js", first.url))).status, 404);
   await liveServer.close();
@@ -422,6 +434,15 @@ try {
   assert.equal(interactive.ok, true);
   assert.deepEqual(interactive.chartAudit, []);
 
+  // Citations to supporting slides must survive as internal PDF destinations,
+  // otherwise the linked-citation contract dies in the delivered format.
+  const pdfPath = join(workspace, "deck.pdf");
+  const pdf = await exportDeck({ sourcePath: chartPath, outputPath: pdfPath });
+  assert.deepEqual(pdf.skippedLinks, []);
+  assert.equal(pdf.pages, 3);
+  assert(pdf.links >= 1);
+  const pdfText = (await readFile(pdfPath)).toString("latin1");
+  assert.match(pdfText, /\/Dest \/nd-page-3/);
 
   const portableRoot = join(workspace, "portable");
   const portable = await exportPortable({ sourcePath: chartPath, outputDir: portableRoot });

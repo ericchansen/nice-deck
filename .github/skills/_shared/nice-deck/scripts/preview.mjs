@@ -38,6 +38,7 @@ const sanctionedRuntimeFiles = [
 const sanctionedRuntimeManifest = "chart-runtime.manifest.json";
 const mimeTypes = new Map([
   [".css", "text/css; charset=utf-8"],
+  [".csv", "text/csv; charset=utf-8"],
   [".gif", "image/gif"],
   [".html", "text/html; charset=utf-8"],
   [".jpeg", "image/jpeg"],
@@ -46,6 +47,7 @@ const mimeTypes = new Map([
   [".json", "application/json; charset=utf-8"],
   [".png", "image/png"],
   [".svg", "image/svg+xml"],
+  [".tsv", "text/tab-separated-values; charset=utf-8"],
   [".webp", "image/webp"],
   [".woff", "font/woff"],
   [".woff2", "font/woff2"],
@@ -192,6 +194,7 @@ async function listStaticFiles(root, source) {
   }
 
   await visitAssets(join(root, "assets"), staticExtensions);
+  await visitAssets(join(root, "data"), staticExtensions);
   await visitAssets(join(root, "runtime"), staticExtensions);
   return [...files].sort();
 }
