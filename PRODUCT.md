@@ -56,6 +56,7 @@ enough to revise until the result holds up.
   that decorate without clarifying.
 - Front-loaded image generation that buys a look before the argument exists.
 - Low-contrast, undersized, clipped, stale, or uninspected output.
+- Horizontal rules used as decoration, rhythm, or a substitute for spacing.
 
 ## Design Principles
 
@@ -106,9 +107,12 @@ visible failure state.
 ### Structure is designed, not improvised
 
 Each slide layout declares one grid. Every visible region is a real element and
-a child of that grid, and dividers sit on grid lines. Two stacked bands with
-different column tracks produce boundaries that almost line up, which reads as a
-defect. Content regions are never positioned absolutely.
+a child of that grid. Main-slide content normally avoids horizontal dividers;
+use spacing, alignment, typography, or background change to establish hierarchy.
+The default horizontal rule is a light separator above the citation area. A
+purposeful exception must carry meaning and sit on a grid line. Two stacked
+bands with different column tracks produce boundaries that almost line up, which
+reads as a defect. Content regions are never positioned absolutely.
 
 ### The slide shows; the speaker reasons
 

@@ -157,8 +157,9 @@ with license and public source URL. Read
 - Color strategy:
 - Color semantics:
 - Typography:
-- Composition and grid: one grid per layout, regions as real elements, dividers
-  on grid lines, shared column tracks across stacked bands
+- Composition and grid: one grid per layout, regions as real elements,
+  horizontal rules avoided by default, purposeful exceptions recorded and
+  placed on grid lines, shared column tracks across stacked bands
 - Citation treatment: linked, inline `Label: content` fields with
   regular-weight, lighter text; light hairline or subtle tonal-background
   separation

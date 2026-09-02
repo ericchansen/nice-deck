@@ -58,11 +58,13 @@ deck's visual world.
   colors for distinct categories, and never cycle colors decoratively.
 - Let headings use the available width. Do not force a title or subtitle to wrap
   with an arbitrary narrow max-width.
-- Avoid repeated gray containers, dividers, and rules. A boundary must explain
-  grouping or hierarchy.
-- One slide, one grid. Regions are real elements; dividers sit on grid lines.
-  Two stacked bands with different column tracks produce boundaries that almost
-  line up, which Eric reads as a defect.
+- Avoid repeated gray containers and rules. Main-slide content normally avoids
+  horizontal dividers; spacing, alignment, typography, or background change
+  carries the hierarchy. The standard horizontal rule is a light citation
+  separator; a purposeful exception must carry meaning.
+- One slide, one grid. Regions are real elements; any necessary boundary sits on
+  a grid line. Two stacked bands with different column tracks produce boundaries
+  that almost line up, which Eric reads as a defect.
 - Sparse slides still need a complete visual thought: a clear title, real
   evidence, and a linked citation. Sparse is not an excuse for unresolved
   hierarchy.
@@ -81,7 +83,7 @@ deck's visual world.
 - Keep citation areas minimal: regular-weight, lighter text; compact
   `Label: content` lines; and no bold labels unless Eric asks for them.
 - Separate citations from slide content with a light hairline or a subtle tonal
-  background change, never a bold horizontal divider.
+  background change. This is the standard horizontal divider.
 - Prefer one flowing citation strip over stacked section labels or a grid of
   citation blocks.
 - On resource and marketplace slides, keep the linked title, a useful
@@ -111,7 +113,8 @@ deck's visual world.
 - Printed reasoning: decision-relevance lines, caveat lines, and speculation
   about what another observation would show.
 - Plain-text citations and `[S1]` markers on a slide.
-- Decorative dividers, repeated gray boxes, and arbitrary category colors.
+- Routine horizontal rules in main-slide content, repeated gray boxes, and
+  arbitrary category colors.
 - Absolutely positioned strips that cannot align with the slide's grid.
 - Hand-built CSS/SVG pseudo-charts, rails, gates, and flow diagrams used as
   primary visuals.

@@ -69,12 +69,15 @@ a passing scanner, or a screenshot from a different browser is not enough.
 
 - Every slide has a job in the argument. Delete filler slides and filler copy.
 - One slide, one grid. Every visible region is a real element and a child of
-  that grid. Dividers are grid-line borders, never free-floating rules or
-  absolutely positioned strips.
+  that grid.
+- Avoid horizontal rules as decoration, pacing, or routine division in
+  main-slide content. Establish hierarchy with spacing, alignment, typography,
+  or background change. A purposeful exception must carry meaning and be a
+  grid-child border.
 - Stacked bands share column tracks. Boundaries that almost line up read as a
   defect, and they are the most common structural failure in a generated deck.
-- Containers, rules, and dividers must communicate grouping or hierarchy.
-  Repeated gray boxes are not a default layout system.
+- Containers and boundaries must communicate grouping or hierarchy. Repeated
+  gray boxes and rules are not a default layout system.
 - A resource directory may be denser than a speaking slide, but its categories,
   descriptions, and canonical URLs must remain scannable and consistent.
 - Empty space is intentional only when the hierarchy, evidence, and conclusion
@@ -115,8 +118,8 @@ a passing scanner, or a screenshot from a different browser is not enough.
 - Write each citation field on one line as `Label: content`. Do not stack a
   section title above its content.
 - Prefer one compact citation strip containing only the fields the slide needs.
-- Separate citations from the main composition with either a light one-pixel
-  rule or a subtle background-color change. Never use a bold horizontal divider.
+- A light one-pixel rule above the citation area is the standard horizontal
+  divider. A subtle background-color change may replace it.
 - A tonal citation background may replace the rule when it creates a clearer
   main-slide and citation-area distinction without looking like a card.
 - Caveats and decision reasoning are spoken, not printed. Citation space is for
