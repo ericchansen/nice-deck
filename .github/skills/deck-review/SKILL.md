@@ -69,7 +69,8 @@ Judge the whole deck and each slide:
 - meaningful use of color and consistent category semantics
 - typography, line length, wrapping, clipping, and overflow
 - whether graphics explain, orient, or create intentional emotion
-- whether empty space completes rather than avoids the thought
+- whether every element earns its place
+- whether empty space is used confidently rather than filled reflexively
 - keyboard navigation, reduced motion, and WCAG AA contrast
 
 Reject generic SaaS cards, repeated gray containers, decorative glass,

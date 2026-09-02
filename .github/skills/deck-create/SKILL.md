@@ -130,6 +130,10 @@ conceptual or hybrid modality, and only after the direction is approved. Keep
 exact technical strings, citations, values, formulas, and links native and
 selectable.
 
+Make every visible element earn its place. Do not fill open space reflexively:
+one meaningful image, value, phrase, or chart may carry an otherwise blank slide
+when it completes the thought and preserves required sourcing.
+
 Print no decision-relevance lines, no caveat lines, and no conjecture. Keep
 visible prose under the shared budget.
 

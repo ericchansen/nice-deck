@@ -129,9 +129,10 @@ Recommendation language is collaborative and evidence-led. State what becomes
 supportable when named evidence is available instead of issuing commands to the
 audience.
 
-Empty space is complete only when the remaining composition still carries a
-complete thought. Sparse is not a substitute for unresolved hierarchy,
-annotation, or sourcing.
+Every visible element must earn its place. Do not add a second element because
+empty space feels unfinished. One meaningful image, value, phrase, or chart can
+carry a slide when it completes the thought. Minimalism does not excuse missing
+evidence or sourcing.
 
 ### Citations are navigable
 

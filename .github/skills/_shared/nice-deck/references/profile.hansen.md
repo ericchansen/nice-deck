@@ -56,6 +56,9 @@ deck's visual world.
 - A deck may vary composition slide to slide while retaining one coherent voice.
 - Reusing a color asserts shared meaning. Use one color for peers, distinct
   colors for distinct categories, and never cycle colors decoratively.
+- Every visible element must earn its place. Eric welcomes extreme restraint:
+  one meaningful image, value, phrase, or chart can carry an otherwise blank
+  slide. Do not add structure or decoration merely to occupy space.
 - Let headings use the available width. Do not force a title or subtitle to wrap
   with an arbitrary narrow max-width.
 - Avoid repeated gray containers and rules. Main-slide content normally avoids
@@ -65,9 +68,8 @@ deck's visual world.
 - One slide, one grid. Regions are real elements; any necessary boundary sits on
   a grid line. Two stacked bands with different column tracks produce boundaries
   that almost line up, which Eric reads as a defect.
-- Sparse slides still need a complete visual thought: a clear title, real
-  evidence, and a linked citation. Sparse is not an excuse for unresolved
-  hierarchy.
+- A sparse slide still carries a complete thought and the sourcing its evidence
+  requires. It does not need additional visual matter to look finished.
 
 ## Evidence and links
 

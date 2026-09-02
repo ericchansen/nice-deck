@@ -127,7 +127,8 @@ record, role-specific screenshot path, and screenshot SHA-256 in the matrix.
 View all screenshots. Judge each complete proof system as a unit and fix:
 
 - contrast, clipping, overflow, and projection-scale readability
-- weak hierarchy or unresolved empty space
+- elements that do not earn their place, timid space-filling, or unresolved
+  empty space
 - misaligned region boundaries reported by the layout audit
 - generic or decorative graphics
 - typographic collisions and improperly loaded local fonts
