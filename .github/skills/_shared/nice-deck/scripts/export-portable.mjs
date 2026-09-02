@@ -11,10 +11,12 @@ import {
   basename,
   extname,
   join,
+  relative,
   resolve,
 } from "node:path";
 import { pathToFileURL } from "node:url";
-import { findWorkspaceRoot } from "./preview.mjs";
+import { findWorkspaceRoot, previewDeck } from "./preview.mjs";
+import { validateReview } from "./review.mjs";
 import { scanWorkspace } from "./scan.mjs";
 
 const rootFiles = new Set([
@@ -49,53 +51,80 @@ function assertDirectFileHtml(source) {
   }
 }
 
-export async function exportPortable({ sourcePath, outputDir } = {}) {
+function draftOutputDirectory(path) {
+  return path.endsWith(".draft") ? path : `${path}.draft`;
+}
+
+export async function exportPortable({ sourcePath, outputDir, draft = false } = {}) {
   if (!sourcePath || !outputDir) throw new Error("sourcePath and outputDir are required");
-  const source = resolve(sourcePath);
+  const source = await realpath(resolve(sourcePath));
   const root = await findWorkspaceRoot(source);
-  const destination = resolve(outputDir);
-  await rm(destination, { recursive: true, force: true });
-  await mkdir(destination, { recursive: true });
-
-  for (const entry of await readdir(root, { withFileTypes: true })) {
-    const path = join(root, entry.name);
-    if (entry.isDirectory() && entry.name === "assets") {
-      await copyIfPresent(path, join(destination, "assets"));
-    } else if (
-      entry.isFile()
-      && (rootFiles.has(entry.name) || extname(entry.name).toLowerCase() === ".js")
-    ) {
-      await cp(path, join(destination, entry.name), { force: true });
+  const requestedDestination = resolve(outputDir);
+  const destination = draft ? draftOutputDirectory(requestedDestination) : requestedDestination;
+  let preview;
+  let exportRoot = root;
+  let exportSource = source;
+  try {
+    if (!draft) {
+      preview = await previewDeck({ sourcePath: source, keepServer: true });
+      if (!preview.ok) throw new Error(`preview failed; inspect ${preview.previewFile}`);
+      await validateReview({ workspace: root, previewRecord: preview });
+      exportRoot = preview.server.root;
+      exportSource = join(exportRoot, relative(root, source));
     }
+    await rm(destination, { recursive: true, force: true });
+    await mkdir(destination, { recursive: true });
+
+    for (const entry of await readdir(exportRoot, { withFileTypes: true })) {
+      const path = join(exportRoot, entry.name);
+      if (entry.isDirectory() && ["assets", "data"].includes(entry.name)) {
+        await copyIfPresent(path, join(destination, entry.name));
+      } else if (
+        entry.isFile()
+        && (rootFiles.has(entry.name) || extname(entry.name).toLowerCase() === ".js")
+      ) {
+        await cp(path, join(destination, entry.name), { force: true });
+      }
+    }
+
+    const outputHtml = join(destination, basename(source));
+    const sourceHtml = await readFile(exportSource, "utf8");
+    assertDirectFileHtml(sourceHtml);
+    await cp(exportSource, outputHtml, { force: true });
+    await copyIfPresent(join(exportRoot, "runtime"), join(destination, "runtime"));
+
+    const residual = (await readFile(outputHtml, "utf8")).match(/\/__nice-deck\//g);
+    if (residual) throw new Error("portable HTML still contains extension-only runtime paths");
+    const findings = await scanWorkspace({
+      root: destination,
+      sourcePath: outputHtml,
+    });
+    if (findings.length) {
+      throw new Error(`portable package scan failed: ${findings.map(({ name }) => name).join(", ")}`);
+    }
+
+    return {
+      root: await realpath(destination),
+      html: await realpath(outputHtml),
+      draft,
+    };
+  } finally {
+    await preview?.server.close();
   }
-
-  const outputHtml = join(destination, basename(source));
-  const sourceHtml = await readFile(source, "utf8");
-  assertDirectFileHtml(sourceHtml);
-  await cp(source, outputHtml, { force: true });
-  await copyIfPresent(join(root, "runtime"), join(destination, "runtime"));
-
-  const residual = (await readFile(outputHtml, "utf8")).match(/\/__nice-deck\//g);
-  if (residual) throw new Error("portable HTML still contains extension-only runtime paths");
-  const findings = await scanWorkspace({
-    root: destination,
-    sourcePath: outputHtml,
-  });
-  if (findings.length) {
-    throw new Error(`portable package scan failed: ${findings.map(({ name }) => name).join(", ")}`);
-  }
-
-  return { root: await realpath(destination), html: await realpath(outputHtml) };
 }
 
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
+  const draft = process.argv.includes("--draft");
+  const positional = process.argv.slice(2).filter((argument) => argument !== "--draft");
   try {
     const result = await exportPortable({
-      sourcePath: process.argv[2],
-      outputDir: process.argv[3],
+      sourcePath: positional[0],
+      outputDir: positional[1],
+      draft,
     });
     console.log(`portable root: ${result.root}`);
     console.log(`portable html: ${result.html}`);
+    if (result.draft) console.log("draft: non-deliverable");
   } catch (error) {
     console.error(`portable export failed: ${error.message}`);
     process.exitCode = 1;

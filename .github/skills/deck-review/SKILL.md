@@ -21,6 +21,7 @@ Read:
 - `../_shared/nice-deck/references/principles.md`
 - `../_shared/nice-deck/references/layout.md`
 - `../_shared/nice-deck/references/supporting.md`
+- `../_shared/nice-deck/references/adversarial-review.md`
 - `../_shared/nice-deck/references/profile.hansen.md` when working for Eric
   Hansen
 
@@ -86,7 +87,10 @@ units, takeaway, deterministic capture state, and useful no-hover default.
 Explain or remove legends, dashed reference lines, and silent empty regions.
 
 For conceptual and hybrid slides, verify the generated visual and matching
-provenance sidecar. Keep authoritative content native.
+provenance sidecar. When image text is integrated, compare every rendered string
+with the declared `bakedText`, reject extra pseudo-text, and judge the image at
+its actual on-slide size. Do not add redundant native labels. Keep citations,
+source IDs, URLs, and provenance native and linked.
 
 ## 4. Review citations and supporting material
 
@@ -111,6 +115,11 @@ slide.
 After every slide change, follow the shared rendered-truth loop. Re-review
 adjacent slides when the change affects narrative pacing or visual continuity.
 
+Run four independent screenshot-first adversarial roles: cold read, art
+direction, image-text proof, and geometry/citations. Record findings against the
+exact source, screenshot, and generated-asset hashes. Drafts may render before
+approval; presentation and delivery may not.
+
 Do not call a redesign complete without paired figure-, text-, and data-heavy
 proofs approved through `deck-explore-direction`, and do not restructure the
 argument without going back through `deck-outline`.
@@ -126,6 +135,7 @@ Inspect the final complete deck and confirm:
 - canonical URLs and working links, including in-deck anchors
 - coherent narrative and visual grammar
 - crisp generated graphics without garbled text
+- a current approved adversarial review
 - direct-file, static-server, and sanctioned-preview behavior
 
 When delivery is requested, synchronize the pinned runtime and follow the

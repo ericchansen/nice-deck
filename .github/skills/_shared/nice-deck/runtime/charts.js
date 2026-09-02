@@ -292,6 +292,7 @@
   });
 
   global.addEventListener("resize", resizeVisible);
+  global.addEventListener("nice-deck:resize", resizeVisible);
   global.addEventListener("nice-deck:slide", resizeVisible);
   global.addEventListener("nice-deck:capture", prepareCapture);
   global.__NICE_DECK_CHARTS_READY__ = Promise.resolve(true);

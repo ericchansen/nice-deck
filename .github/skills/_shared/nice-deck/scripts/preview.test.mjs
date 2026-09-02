@@ -15,8 +15,13 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright";
 import { exportPortable } from "./export-portable.mjs";
-import { exportDeck } from "./export-pdf.mjs";
+import { exportDeck, reviewedScreenshotBuffers } from "./export-pdf.mjs";
 import { computeDeckSourceHash, previewDeck, startStaticServer } from "./preview.mjs";
+import {
+  initReview,
+  requiredReviewRoles,
+  validateReview,
+} from "./review.mjs";
 import { scanSource, scanWorkspace } from "./scan.mjs";
 import { syncRuntime } from "./sync-runtime.mjs";
 
@@ -126,8 +131,17 @@ try {
   await writeFile(probe, nativeDocument("First"));
   const first = await previewDeck({ sourcePath: probe, keepServer: true, browser });
   liveServer = first.server;
-  assert.equal(first.ok, true);
+  assert.equal(first.ok, true, JSON.stringify({
+    scan: first.scan,
+    contrast: first.contrast,
+    browserErrors: first.browserErrors,
+    chartAudit: first.chartAudit,
+    layoutIssues: first.layoutIssues,
+    runtimeIntegrity: first.runtimeIntegrity,
+    viewportAudit: first.viewportAudit,
+  }));
   assert.equal(first.workspaceRoot, await realpath(workspace));
+  assert.equal(first.review.status, "missing");
   assert.equal(first.screenshots.length, 3);
   assert.match(first.sourceHash, /^[0-9a-f]{64}$/);
   assert.equal(first.sourceHash, await computeDeckSourceHash({ sourcePath: probe }));
@@ -333,6 +347,164 @@ try {
   ));
   await writeFile(generatedAsset, generatedBytes);
 
+  const integratedPath = join(workspace, "integrated.html");
+  await writeFile(
+    integratedPath,
+    '<section class="slide" data-slide-id="01" data-visual-modality="conceptual">'
+    + '<img src="assets/concept.png" alt="One plugin packages reusable capabilities.">'
+    + '<footer data-citation>Source: <a href="#fixture-extract">Fixture extract</a></footer>'
+    + "</section>"
+    + '<section class="slide" id="fixture-extract" data-slide-id="99"'
+    + ' data-visual-modality="native" data-section="supporting"><h1>Fixture extract</h1>'
+    + '<footer data-citation>Method: <a href="https://example.com/source">Fixture documentation</a></footer>'
+    + "</section>",
+  );
+  const imageText = {
+    mode: "integrated",
+    bakedText: ["WHAT IS A PLUGIN?", "PLUGIN DIRECTORY", "INSTALL"],
+    forbidExtraText: true,
+    accessibleDescription: "One plugin packages reusable capabilities.",
+  };
+  await writeJson(`${generatedAsset}.provenance.json`, {
+    prompt: "An integrated-text conceptual fixture.",
+    model: "fixture-model",
+    size: "1536x1024",
+    quality: "draft",
+    outputSha256: createHash("sha256").update(generatedBytes).digest("hex"),
+    generatedAt: "2026-08-12T00:00:00Z",
+    intendedSlide: "01",
+    visualRole: "Conceptual fixture",
+    imageTextMode: imageText.mode,
+    bakedText: imageText.bakedText,
+    forbidExtraText: imageText.forbidExtraText,
+    accessibleDescription: imageText.accessibleDescription,
+  });
+  await configure([contract("01", {
+    modality: "conceptual",
+    renderer: "generated-image",
+    generatedAsset: "assets/concept.png",
+    provenance: "assets/concept.png.provenance.json",
+    imageText,
+  }), contract("99")]);
+  assert.equal((await scanWorkspace({
+    root: workspace,
+    sourcePath: integratedPath,
+  })).length, 0);
+  const wrongAltPath = join(workspace, "integrated-wrong-alt.html");
+  await writeFile(
+    wrongAltPath,
+    (await readFile(integratedPath, "utf8")).replace(
+      'alt="One plugin packages reusable capabilities."',
+      'alt="Different description."',
+    ),
+  );
+  assert((await scanWorkspace({ root: workspace, sourcePath: wrongAltPath })).some(
+    ({ name }) => name === "generated-image-text-accessibility",
+  ));
+
+  const apostropheImageText = {
+    ...imageText,
+    accessibleDescription: "A customer's plugin.",
+  };
+  await writeJson(`${generatedAsset}.provenance.json`, {
+    prompt: "An integrated-text conceptual fixture.",
+    model: "fixture-model",
+    size: "1536x1024",
+    quality: "draft",
+    outputSha256: createHash("sha256").update(generatedBytes).digest("hex"),
+    generatedAt: "2026-08-12T00:00:00Z",
+    intendedSlide: "01",
+    visualRole: "Conceptual fixture",
+    imageTextMode: apostropheImageText.mode,
+    bakedText: apostropheImageText.bakedText,
+    forbidExtraText: apostropheImageText.forbidExtraText,
+    accessibleDescription: apostropheImageText.accessibleDescription,
+  });
+  const encodedAltPath = join(workspace, "integrated-encoded-alt.html");
+  await writeFile(
+    encodedAltPath,
+    (await readFile(integratedPath, "utf8")).replace(
+      'alt="One plugin packages reusable capabilities."',
+      'alt="A customer&apos;s plugin."',
+    ),
+  );
+  await configure([contract("01", {
+    modality: "conceptual",
+    renderer: "generated-image",
+    generatedAsset: "assets/concept.png",
+    provenance: "assets/concept.png.provenance.json",
+    imageText: apostropheImageText,
+  }), contract("99")]);
+  assert.equal((await scanWorkspace({
+    root: workspace,
+    sourcePath: encodedAltPath,
+  })).length, 0);
+
+  const greaterThanImageText = {
+    ...imageText,
+    accessibleDescription: "A > B comparison.",
+  };
+  const greaterThanMetadata = JSON.parse(
+    await readFile(`${generatedAsset}.provenance.json`, "utf8"),
+  );
+  greaterThanMetadata.accessibleDescription = greaterThanImageText.accessibleDescription;
+  await writeJson(`${generatedAsset}.provenance.json`, greaterThanMetadata);
+  const greaterThanAltPath = join(workspace, "integrated-greater-than-alt.html");
+  await writeFile(
+    greaterThanAltPath,
+    (await readFile(integratedPath, "utf8")).replace(
+      'alt="One plugin packages reusable capabilities."',
+      'alt="A > B comparison."',
+    ),
+  );
+  await configure([contract("01", {
+    modality: "conceptual",
+    renderer: "generated-image",
+    generatedAsset: "assets/concept.png",
+    provenance: "assets/concept.png.provenance.json",
+    imageText: greaterThanImageText,
+  }), contract("99")]);
+  assert.equal((await scanWorkspace({
+    root: workspace,
+    sourcePath: greaterThanAltPath,
+  })).length, 0);
+
+  await configure([contract("01", {
+    modality: "conceptual",
+    renderer: "generated-image",
+    generatedAsset: "assets/concept.png",
+    provenance: "assets/concept.png.provenance.json",
+    imageText: { ...imageText, accessibleDescription: 42 },
+  }), contract("99")]);
+  assert((await scanWorkspace({ root: workspace, sourcePath: integratedPath })).some(
+    ({ name }) => name === "generated-image-text-accessibility",
+  ));
+
+  await configure([contract("01", {
+    modality: "conceptual",
+    renderer: "generated-image",
+    generatedAsset: "assets/concept.png",
+    provenance: "assets/concept.png.provenance.json",
+    imageText: { ...imageText, bakedText: ["DIFFERENT"] },
+  }), contract("99")]);
+  assert((await scanWorkspace({ root: workspace, sourcePath: integratedPath })).some(
+    ({ name }) => name === "generated-image-text-mismatch",
+  ));
+
+  await configure([contract("01", {
+    modality: "conceptual",
+    renderer: "generated-image",
+    generatedAsset: "assets/concept.png",
+    provenance: "assets/concept.png.provenance.json",
+    imageText: {
+      ...imageText,
+      bakedText: ["https://example.com/source"],
+    },
+  }), contract("99")]);
+  assert((await scanWorkspace({ root: workspace, sourcePath: integratedPath })).some(
+    ({ name }) => name === "generated-image-text-citation",
+  ));
+
   const chartPath = join(workspace, "chart.html");
   await writeFile(chartPath, `<!doctype html>
   <html><head>
@@ -437,16 +609,58 @@ try {
   // Citations to supporting slides must survive as internal PDF destinations,
   // otherwise the linked-citation contract dies in the delivered format.
   const pdfPath = join(workspace, "deck.pdf");
+  await assert.rejects(
+    exportDeck({ sourcePath: chartPath, outputPath: pdfPath }),
+    /adversarial review is missing/,
+  );
+  await assert.rejects(
+    exportPortable({ sourcePath: chartPath, outputDir: join(workspace, "blocked-portable") }),
+    /adversarial review is missing/,
+  );
+
+  const reviewPreview = await previewDeck({ sourcePath: chartPath, browser });
+  const initializedReview = await initReview({ workspace, previewPath: reviewPreview.previewFile });
+  const reviewRecord = JSON.parse(await readFile(initializedReview.reviewPath, "utf8"));
+  const reviewedHashes = reviewRecord.screenshots.map(({ sha256: hash }) => hash);
+  reviewRecord.roles = requiredReviewRoles.map((role) => ({
+    role,
+    verdict: "approve",
+    reviewerContext: "screenshot-first",
+    reviewedScreenshotHashes: reviewedHashes,
+    findings: [],
+    reviewedAt: "2026-09-02T00:00:00Z",
+  }));
+  await writeJson(initializedReview.reviewPath, reviewRecord);
+  const approvedReview = await validateReview({
+    workspace,
+    previewRecord: reviewPreview,
+  });
+  await writeFile(reviewPreview.screenshots[0], "concurrent replacement");
+  const pinnedScreenshots = await reviewedScreenshotBuffers(reviewPreview, approvedReview);
+  assert.equal(
+    createHash("sha256").update(pinnedScreenshots[0]).digest("hex"),
+    reviewedHashes[0],
+  );
+
   const pdf = await exportDeck({ sourcePath: chartPath, outputPath: pdfPath });
   assert.deepEqual(pdf.skippedLinks, []);
   assert.equal(pdf.pages, 3);
   assert(pdf.links >= 1);
-  const pdfText = (await readFile(pdfPath)).toString("latin1");
+  const pdfText = (await readFile(pdf.output)).toString("latin1");
   assert.match(pdfText, /\/Dest \/nd-page-3/);
 
   const portableRoot = join(workspace, "portable");
   const portable = await exportPortable({ sourcePath: chartPath, outputDir: portableRoot });
   assert.doesNotMatch(await readFile(portable.html, "utf8"), /\/__nice-deck\//);
+  await access(join(portable.root, "data", "figures.js"));
+  await access(join(portable.root, "data", "extract.csv"));
+  await access(join(portable.root, "data", "extract.tsv"));
+  const draftPdf = await exportDeck({
+    sourcePath: chartPath,
+    outputPath: join(workspace, "review-copy"),
+    draft: true,
+  });
+  assert.match(draftPdf.output, /\.draft\.pdf$/);
   const staticServer = await startStaticServer(portable.root);
   liveServer = staticServer;
   let page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
@@ -466,6 +680,58 @@ try {
   });
   assert(portableState.width > 0 && portableState.height > 0 && portableState.marks > 0);
   await page.close();
+
+  const customCanvasPath = join(workspace, "custom-canvas.html");
+  await configure([contract("01"), contract("02"), contract("03")]);
+  await writeFile(
+    customCanvasPath,
+    nativeDocument("Custom canvas").replace(
+      "<html>",
+      '<html data-deck-width="1920" data-deck-height="1080">',
+    ),
+  );
+  const customCanvas = await previewDeck({ sourcePath: customCanvasPath, browser });
+  assert.equal(customCanvas.ok, true, JSON.stringify(customCanvas.viewportAudit));
+  assert.deepEqual(customCanvas.viewportAudit, []);
+
+  const legacyRuntimePath = join(workspace, "legacy-runtime.html");
+  await configure([contract("01")]);
+  await writeFile(
+    legacyRuntimePath,
+    '<!doctype html><html><body>'
+    + '<section class="slide" data-slide-id="01" data-visual-modality="native">'
+    + '<h1>Legacy runtime</h1>'
+    + citation
+    + "</section><script src=\"deck.js\"></script></body></html>",
+  );
+  await writeFile(
+    join(workspace, "deck.js"),
+    "window.__niceDeck={goTo(){return 0;},current(){return 0;}};",
+  );
+  const legacyRuntime = await previewDeck({ sourcePath: legacyRuntimePath, browser });
+  assert.equal(legacyRuntime.ok, false);
+  assert(legacyRuntime.viewportAudit.some(
+    ({ message }) => message === "fixed-canvas runtime geometry is unavailable",
+  ));
+  await cp(join(here, "..", "runtime", "deck.js"), join(workspace, "deck.js"));
+  await configure([contract("01"), contract("02"), contract("03")]);
+
+  const missingRuntimePath = join(workspace, "missing-runtime.html");
+  await configure([contract("01")]);
+  await writeFile(
+    missingRuntimePath,
+    '<!doctype html><html><body>'
+    + '<section class="slide" data-slide-id="01" data-visual-modality="native">'
+    + '<h1>Missing runtime</h1>'
+    + citation
+    + "</section></body></html>",
+  );
+  const missingRuntime = await previewDeck({ sourcePath: missingRuntimePath, browser });
+  assert.equal(missingRuntime.ok, false);
+  assert(missingRuntime.browserErrors.includes(
+    "runtime: decks must load the current fixed-canvas runtime/deck.js",
+  ));
+  await configure([contract("01"), contract("02"), contract("03")]);
   await staticServer.close();
   liveServer = undefined;
 

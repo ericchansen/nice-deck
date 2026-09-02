@@ -19,6 +19,7 @@ if (!url || !Number.isFinite(stress) || stress < 1 || stress > 5) {
 
 let failed = 0;
 let slideCount = 0;
+let viewportFailures = 0;
 const browser = await chromium.launch();
 try {
   const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
@@ -29,8 +30,15 @@ try {
   slideCount = await page.evaluate(() => document.querySelectorAll(".slide").length);
   if (slideCount === 0) throw new Error("no .slide elements found, so there is nothing to check");
   const hasRuntime = await page.evaluate(() => typeof window.__niceDeck?.goTo === "function");
-  if (slideCount > 1 && !hasRuntime) {
-    throw new Error("window.__niceDeck.goTo is unavailable, so slides cannot be walked");
+  if (!hasRuntime) {
+    throw new Error("fixed-canvas runtime is required for every deck; sync runtime/deck.js");
+  }
+  const hasFixedCanvasRuntime = await page.evaluate(() => (
+    typeof window.__niceDeck?.geometry === "function"
+    && typeof window.__niceDeck?.whenSettled === "function"
+  ));
+  if (hasRuntime && !hasFixedCanvasRuntime) {
+    throw new Error("fixed-canvas runtime is unavailable; sync runtime/deck.js before layout testing");
   }
 
   for (let index = 1; index <= slideCount; index += 1) {
@@ -57,12 +65,13 @@ try {
       if (!slide) return { id: "", overflow: ["no .slide element found"], overlaps: [] };
       const style = getComputedStyle(slide);
       const rect = slide.getBoundingClientRect();
+      const scale = window.__niceDeck?.geometry?.().scale ?? 1;
       const pad = (value) => (Number.isFinite(Number.parseFloat(value)) ? Number.parseFloat(value) : 0);
       const box = {
-        left: rect.left + pad(style.paddingLeft),
-        right: rect.right - pad(style.paddingRight),
-        top: rect.top + pad(style.paddingTop),
-        bottom: rect.bottom - pad(style.paddingBottom),
+        left: rect.left + pad(style.paddingLeft) * scale,
+        right: rect.right - pad(style.paddingRight) * scale,
+        top: rect.top + pad(style.paddingTop) * scale,
+        bottom: rect.bottom - pad(style.paddingBottom) * scale,
       };
       const exempt = (element) => element.closest("[data-chart], [data-echart], svg, pre, code");
       // A full-bleed background is allowed to escape the padding box, but it
@@ -80,10 +89,10 @@ try {
         const current = element.getBoundingClientRect();
         if (current.width < 2 || current.height < 2) continue;
         const escapes = [];
-        if (current.right > box.right + 1) escapes.push(`right ${Math.round(current.right - box.right)}px`);
-        if (current.left < box.left - 1) escapes.push(`left ${Math.round(box.left - current.left)}px`);
-        if (current.bottom > box.bottom + 1) escapes.push(`bottom ${Math.round(current.bottom - box.bottom)}px`);
-        if (current.top < box.top - 1) escapes.push(`top ${Math.round(box.top - current.top)}px`);
+        if (current.right > box.right + scale) escapes.push(`right ${Math.round(current.right - box.right)}px`);
+        if (current.left < box.left - scale) escapes.push(`left ${Math.round(box.left - current.left)}px`);
+        if (current.bottom > box.bottom + scale) escapes.push(`bottom ${Math.round(current.bottom - box.bottom)}px`);
+        if (current.top < box.top - scale) escapes.push(`top ${Math.round(box.top - current.top)}px`);
         if (escapes.length) overflow.push(`${escapes.join(", ")} :: ${label(element)}`);
       }
 
@@ -113,7 +122,11 @@ try {
             for (const second of measured[b].boxes) {
               const width = Math.min(first.right, second.right) - Math.max(first.left, second.left);
               const height = Math.min(first.bottom, second.bottom) - Math.max(first.top, second.top);
-              if (width > 2 && height > 2 && (!worst || width * height > worst.width * worst.height)) {
+              if (
+                width > 2 * scale
+                && height > 2 * scale
+                && (!worst || width * height > worst.width * worst.height)
+              ) {
                 worst = { width, height };
               }
             }
@@ -139,11 +152,67 @@ try {
       console.log(`ok   ${index} ${report.id}`);
     }
   }
+
+  if (hasRuntime) {
+    const viewports = [
+      [1600, 900],
+      [1280, 720],
+      [640, 360],
+      [1600, 600],
+      [700, 900],
+      [520, 900],
+    ];
+    for (const [width, height] of viewports) {
+      await page.setViewportSize({ width, height });
+      await page.evaluate(() => window.__niceDeck.whenSettled());
+      for (let index = 0; index < slideCount; index += 1) {
+        await page.evaluate((slideIndex) => window.__niceDeck.goTo(slideIndex), index);
+        await page.evaluate(() => window.__niceDeck.whenSettled());
+        const report = await page.evaluate(({ expectedWidth, expectedHeight }) => {
+          const geometry = window.__niceDeck.geometry();
+          const slide = document.querySelector(".slide:not([hidden])") ?? document.querySelector(".slide");
+          const rect = slide.getBoundingClientRect();
+          const scale = Math.min(
+            expectedWidth / geometry.designWidth,
+            expectedHeight / geometry.designHeight,
+          );
+          const width = geometry.designWidth * scale;
+          const height = geometry.designHeight * scale;
+          const tolerance = 1.5;
+          const findings = [];
+          if (Math.abs(geometry.scale - scale) > 0.002) findings.push("incorrect scale");
+          if (Math.abs(rect.width - width) > tolerance || Math.abs(rect.height - height) > tolerance) {
+            findings.push("incorrect rendered size");
+          }
+          if (
+            Math.abs(rect.left - (expectedWidth - width) / 2) > tolerance
+            || Math.abs(rect.top - (expectedHeight - height) / 2) > tolerance
+          ) {
+            findings.push("canvas is not centered");
+          }
+          if (
+            document.documentElement.scrollWidth > expectedWidth + 1
+            || document.documentElement.scrollHeight > expectedHeight + 1
+          ) {
+            findings.push("unexpected scrollbars");
+          }
+          return findings;
+        }, { expectedWidth: width, expectedHeight: height });
+        if (report.length) {
+          viewportFailures += 1;
+          console.log(`FAIL viewport ${width}x${height}, slide ${index + 1}: ${report.join(", ")}`);
+        } else {
+          console.log(`ok   viewport ${width}x${height}, slide ${index + 1}`);
+        }
+      }
+    }
+    failed += viewportFailures;
+  }
 } finally {
   await browser.close();
 }
 
 console.log(failed
-  ? `\n${failed}/${slideCount} slides fail at stress=${stress}`
-  : `\nPASS at stress=${stress}: no overflow, no text overlap`);
+  ? `\n${failed} slide or viewport checks fail at stress=${stress}`
+  : `\nPASS at stress=${stress}: no overflow, text overlap, or viewport scaling failures`);
 process.exit(failed ? 1 : 0);

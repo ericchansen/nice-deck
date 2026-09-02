@@ -57,7 +57,10 @@ six treatments when the user asks for a wider comparison.
 Probes are typography and data. Do not generate imagery to explore a direction:
 it is slow, it buys a look before the argument is settled, and it makes the
 comparison about one lucky picture. If the user explicitly wants image-led
-directions, record `"imageryApproved": true` in the matrix first.
+directions, record `"imageryApproved": true` in the matrix first. Any generated
+proof also declares image-text mode and exact baked strings before generation;
+integrated strings are proofread in the rendered pixels rather than duplicated
+as native labels.
 
 Create `directions/visual-direction-matrix.json` from the shared template
 before implementing any treatment. For every direction declare:

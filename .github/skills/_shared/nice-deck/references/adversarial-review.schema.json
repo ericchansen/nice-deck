@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "nice-deck adversarial review",
+  "type": "object",
+  "required": [
+    "version",
+    "sourceHash",
+    "screenshots",
+    "generatedAssets",
+    "roles"
+  ],
+  "properties": {
+    "version": { "const": 1 },
+    "sourceHash": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "screenshots": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["slide", "file", "sha256"],
+        "properties": {
+          "slide": { "type": "integer", "minimum": 1 },
+          "file": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "minLength": 64, "maxLength": 64 }
+        }
+      }
+    },
+    "generatedAssets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["slideId", "file", "sha256"],
+        "properties": {
+          "slideId": { "type": "string", "minLength": 1 },
+          "file": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "minLength": 64, "maxLength": 64 }
+        }
+      }
+    },
+    "roles": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "required": [
+          "role",
+          "verdict",
+          "reviewerContext",
+          "reviewedScreenshotHashes",
+          "findings"
+        ],
+        "properties": {
+          "role": {
+            "enum": [
+              "cold-read",
+              "art-direction",
+              "image-text-proof",
+              "geometry-citations"
+            ]
+          },
+          "verdict": { "enum": ["pending", "approve", "revise"] },
+          "reviewerContext": { "const": "screenshot-first" },
+          "reviewedScreenshotHashes": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 64, "maxLength": 64 }
+          },
+          "findings": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "reviewedAt": { "type": ["string", "null"] }
+        }
+      }
+    }
+  }
+}

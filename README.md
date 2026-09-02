@@ -37,12 +37,15 @@ validation, and export. Shared production rules live under
   internal extracts and calculations to a supporting slide in the same deck.
 - A plain black-and-white supporting section at the end of the deck: data,
   extracts, and methods, with no art direction.
-- Native HTML, CSS, SVG, and selectable exact text.
-- AI-generated graphics where illustration, atmosphere, texture, or character
-  work makes the idea land faster — produced after the content and direction
-  are settled, never to explore a look.
+- Native HTML, CSS, SVG, and selectable text where interaction or deterministic
+  revision matters.
+- AI-generated graphics and self-contained infographics where integrated
+  illustration and concise text make the idea land faster — produced after the
+  content and direction are settled, never to explore a look.
 - A web-native deck with keyboard navigation and reduced-motion support.
 - Playwright screenshots tied to the exact source hash shown in Canvas.
+- Independent adversarial reviews tied to the exact screenshot and generated
+  asset hashes approved for presentation.
 
 PPTX is an optional lossy export and never drives the design.
 
@@ -105,6 +108,14 @@ npm run preview -- $HOME\Documents\decks\my-deck\deck.html
 
 Open the printed cache-busted URL; press `Ctrl+C` to stop the preview server.
 
+Preview renders drafts even when visual review is missing. Initialize and
+validate the presentation gate against the exact preview record:
+
+```powershell
+npm run review:init -- $HOME\Documents\decks\my-deck
+npm run validate:review -- $HOME\Documents\decks\my-deck
+```
+
 Export an email-safe PDF from those exact inspected renders:
 
 ```powershell
@@ -123,8 +134,14 @@ an Entra ID token from Azure CLI. Copy `.env.example` to `.env`, set the
 endpoint and deployment, then run:
 
 ```powershell
-python scripts\image.py --prompt-file direction.txt --out assets\direction.png --quality medium
+python scripts\image.py --prompt-file direction.txt --out assets\direction.png `
+  --quality high --intended-slide plugin-explainer --visual-role "Self-contained infographic" `
+  --image-text-mode integrated --baked-text-file baked-text.json `
+  --accessible-description "A plugin packages reusable capabilities into one install."
 ```
+
+Integrated image text is intentional, concise, and recorded in provenance.
+Citations, source IDs, URLs, and provenance remain native linked deck content.
 
 Configuration is local and ignored by git. No endpoint, subscription, token, or
 generated dogfood deck belongs in this repository.

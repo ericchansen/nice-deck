@@ -462,7 +462,149 @@ function validateSupporting(declarations, styles, findings) {
   }
 }
 
-async function validateGeneratedAsset(root, entry, findings) {
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function decodeHtmlAttribute(value) {
+  const named = {
+    amp: "&",
+    apos: "'",
+    gt: ">",
+    lt: "<",
+    quot: "\"",
+  };
+  return value.replace(
+    /&(?:#(\d+)|#x([0-9a-f]+)|(amp|apos|gt|lt|quot));/gi,
+    (match, decimal, hexadecimal, entity) => {
+      if (decimal) return String.fromCodePoint(Number.parseInt(decimal, 10));
+      if (hexadecimal) return String.fromCodePoint(Number.parseInt(hexadecimal, 16));
+      return named[entity.toLowerCase()] ?? match;
+    },
+  );
+}
+
+function openingTags(source, tagName) {
+  const tags = [];
+  const start = new RegExp(`<${tagName}\\b`, "gi");
+  for (const match of source.matchAll(start)) {
+    let quote = null;
+    for (let index = match.index; index < source.length; index += 1) {
+      const character = source[index];
+      if (quote) {
+        if (character === quote) quote = null;
+      } else if (character === "\"" || character === "'") {
+        quote = character;
+      } else if (character === ">") {
+        tags.push(source.slice(match.index, index + 1));
+        break;
+      }
+    }
+  }
+  return tags;
+}
+
+function validateImageText(entry, metadata, slideHtml, findings) {
+  const configured = entry.imageText ?? { mode: "none" };
+  if (!configured || typeof configured !== "object" || Array.isArray(configured)) {
+    findings.push(finding(
+      "generated-image-text-invalid",
+      `Slide ${entry.id} imageText must be an object.`,
+    ));
+    return;
+  }
+  const mode = configured.mode ?? "none";
+  if (!["none", "integrated"].includes(mode)) {
+    findings.push(finding(
+      "generated-image-text-invalid",
+      `Slide ${entry.id} imageText.mode must be none or integrated.`,
+    ));
+    return;
+  }
+
+  const metadataMode = metadata.imageTextMode ?? "none";
+  if (metadataMode !== mode) {
+    findings.push(finding(
+      "generated-image-text-mismatch",
+      `Slide ${entry.id} image-text mode does not match its provenance sidecar.`,
+    ));
+  }
+  if (mode === "none") return;
+
+  const bakedText = configured.bakedText;
+  const bakedTextValid = (
+    !Array.isArray(bakedText)
+    ? false
+    : bakedText.length > 0
+      && bakedText.every((value) => typeof value === "string" && value.trim())
+  );
+  if (!bakedTextValid) {
+    findings.push(finding(
+      "generated-image-text-invalid",
+      `Slide ${entry.id} integrated image text requires a non-empty bakedText array.`,
+    ));
+  }
+  const accessibleDescriptionValid = (
+    typeof configured.accessibleDescription === "string"
+    && configured.accessibleDescription.trim()
+  );
+  if (!accessibleDescriptionValid) {
+    findings.push(finding(
+      "generated-image-text-accessibility",
+      `Slide ${entry.id} integrated image text requires an accessibleDescription.`,
+    ));
+  }
+  if (configured.forbidExtraText !== true) {
+    findings.push(finding(
+      "generated-image-text-invalid",
+      `Slide ${entry.id} integrated image text must set forbidExtraText to true.`,
+    ));
+  }
+  if (
+    bakedTextValid && bakedText.some((value) => (
+      /https?:\/\/|www\.|\[[A-Z]\d+\]/i.test(value)
+    ))
+  ) {
+    findings.push(finding(
+      "generated-image-text-citation",
+      `Slide ${entry.id} keeps citations, URLs, and source IDs outside generated pixels.`,
+    ));
+  }
+  if (
+    JSON.stringify(metadata.bakedText ?? []) !== JSON.stringify(bakedTextValid ? bakedText : [])
+    || metadata.forbidExtraText !== configured.forbidExtraText
+    || metadata.accessibleDescription !== configured.accessibleDescription
+  ) {
+    findings.push(finding(
+      "generated-image-text-mismatch",
+      `Slide ${entry.id} image-text contract does not match its provenance sidecar.`,
+    ));
+  }
+
+  const normalizedAsset = String(entry.generatedAsset).replaceAll("\\", "/");
+  const imageTag = openingTags(slideHtml, "img")
+    .find((tag) => new RegExp(
+      `\\bsrc\\s*=\\s*["']${escapeRegExp(normalizedAsset)}["']`,
+      "i",
+    ).test(tag.replaceAll("\\", "/")));
+  const altMatch = imageTag?.match(/\balt\s*=\s*(?:"([^"]*)"|'([^']*)')/i);
+  const alt = decodeHtmlAttribute(altMatch?.[1] ?? altMatch?.[2] ?? "");
+  if (
+    !alt
+    || (
+      accessibleDescriptionValid
+      && alt.replace(/\s+/g, " ").trim()
+        !== configured.accessibleDescription.replace(/\s+/g, " ").trim()
+    )
+  ) {
+    findings.push(finding(
+      "generated-image-text-accessibility",
+      `Slide ${entry.id} generated image alt text must match accessibleDescription.`,
+    ));
+  }
+}
+
+async function validateGeneratedAsset(root, entry, slideHtml, findings) {
   const assetReference = entry.generatedAsset;
   const provenanceReference = entry.provenance;
   if (!assetReference || !provenanceReference) {
@@ -514,6 +656,7 @@ async function validateGeneratedAsset(root, entry, findings) {
       `Slide ${entry.id} provenance is missing prompt, model, generatedAt, or visualRole.`,
     ));
   }
+  validateImageText(entry, metadata, slideHtml, findings);
 }
 
 export async function scanWorkspace({ root, sourcePath, source, styles = "" } = {}) {
@@ -691,7 +834,8 @@ export async function scanWorkspace({ root, sourcePath, source, styles = "" } = 
       }
     }
     if (entry.modality === "conceptual" || entry.modality === "hybrid") {
-      await validateGeneratedAsset(workspaceRoot, entry, findings);
+      const declaration = declarations.find((item) => item.id === id);
+      await validateGeneratedAsset(workspaceRoot, entry, declaration?.body ?? "", findings);
     }
   }
 

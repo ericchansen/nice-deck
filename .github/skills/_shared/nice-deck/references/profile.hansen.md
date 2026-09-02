@@ -46,8 +46,10 @@ deck's visual world.
 - Original graphics are welcome, including AI-generated work, when they carry
   real meaning.
 - Use ECharts for measured or modeled data and generated imagery for primary
-  conceptual visuals. Keep exact labels, values, formulas, citations, and
-  recommendations native.
+  conceptual visuals. A self-contained generated infographic may integrate
+  concise explanatory text when the text is part of the composition. Do not
+  surround it with redundant labels. Keep citations, URLs, source IDs, and
+  provenance native and linked.
 - Do not add image or figure captions to abstract or generated imagery by
   default. Use a visible caption only when it is necessary for evidence,
   attribution, or comprehension.
@@ -123,3 +125,5 @@ deck's visual world.
 - Generating imagery before the content and the direction are agreed.
 - Showing a slide that has not been freshly rendered, inspected, and refreshed
   in Canvas.
+- Presenting a slide whose exact screenshot and generated assets have not passed
+  independent adversarial review.

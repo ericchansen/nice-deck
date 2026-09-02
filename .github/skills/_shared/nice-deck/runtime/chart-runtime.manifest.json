@@ -6,7 +6,7 @@
       "role": "echarts"
     },
     "charts.js": {
-      "sha256": "c04bd3a02dfe29eef824d630cbffc21100c74073877229ae15fdff65db0968fa",
+      "sha256": "0ffe05061e960f7d52467069f8c1b4b774c26b9c841389e73203eab85b6219d3",
       "role": "authored-helper-and-theme"
     }
   }

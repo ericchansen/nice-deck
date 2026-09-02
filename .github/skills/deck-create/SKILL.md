@@ -126,9 +126,11 @@ slide anchor.
 
 Use graphics to carry meaning rather than adding prose to compensate for a weak
 visual. Generate imagery only for slides whose approved frame declares a
-conceptual or hybrid modality, and only after the direction is approved. Keep
-exact technical strings, citations, values, formulas, and links native and
-selectable.
+conceptual or hybrid modality, and only after the direction is approved.
+Self-contained generated infographics may integrate concise explanatory text.
+Declare their image-text mode and exact baked strings before generation, then
+proofread the final pixels. Do not repeat integrated strings as native labels.
+Keep citations, source IDs, URLs, and provenance native and linked.
 
 Make every visible element earn its place. Do not fill open space reflexively:
 one meaningful image, value, phrase, or chart may carry an otherwise blank slide
@@ -157,6 +159,12 @@ slide for:
 - projection-scale hierarchy, contrast, overflow, and reduced motion
 - a plain, data-only supporting section whose anchors all resolve
 - asset, console, navigation, and chart-readiness failures
+
+Run the adversarial-review workflow from
+`references/adversarial-review.md`. Draft preview remains available, but do not
+present or deliver the deck until `npm run validate:review -- <workspace>`
+reports a current approved review bound to the exact screenshot and generated
+asset hashes.
 
 Synchronize the pinned runtime and follow the shared delivery contract. The
 task is complete only when the artifacts in their final location visibly match
