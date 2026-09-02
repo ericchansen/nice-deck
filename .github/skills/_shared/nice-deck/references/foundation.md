@@ -100,8 +100,10 @@ WCAG-compliant color. Do not bold labels, source names, or links unless the
 user explicitly requests emphasis. Format each field inline as
 `Label: content`, and prefer one compact strip over a grid of labeled blocks.
 
-Separate citations from the main slide with either a light one-pixel rule or a
-subtle background-color change. Never use a bold horizontal divider. If a
+Main-slide content avoids horizontal rules by default. Use spacing, alignment,
+typography, or background change to establish hierarchy. The standard horizontal
+rule is a light one-pixel separator above the citation area; a subtle citation
+background may replace it. A purposeful exception must carry meaning. If a
 citation wraps, use a hanging continuation that preserves the inline label.
 
 ## Slide structure
@@ -113,8 +115,9 @@ The rules that the explanatory contract depends on:
 
 - Each slide layout declares exactly one grid, and every visible region is a
   real element, a direct child of that grid, carrying `data-region`.
-- Dividers are borders on grid children. A rule that implies alignment must be
-  produced by a shared grid line.
+- Avoid dividers. When a necessary boundary cannot be carried by spacing,
+  alignment, typography, or background change, it is a border on a grid child.
+  A rule that implies alignment must be produced by a shared grid line.
 - Do not position content regions absolutely inside a slide. An absolutely
   positioned strip cannot align with the grid above it, and will not stay
   aligned across viewports. Visually hidden helpers and `data-bleed`

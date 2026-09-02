@@ -108,8 +108,10 @@ Use the sanctioned ECharts SVG runtime for measured or modeled data. Keep
 authoritative overlays native.
 
 Every treatment follows the shared slide-structure rule: one grid per layout,
-regions as real `data-region` elements, dividers on grid lines, and no
-absolutely positioned content strips.
+regions as real `data-region` elements, horizontal rules avoided by default,
+purposeful boundaries on grid lines, and no absolutely positioned content
+strips. A light separator above citations is the standard horizontal rule;
+other uses must carry meaning.
 
 Mark visible question, answer, and evidence with `data-contract-field`. Add
 `data-claim-status`, `data-source-ids`, and `data-type-system-id`. Mark

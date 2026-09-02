@@ -74,7 +74,11 @@ Judge the whole deck and each slide:
 
 Reject generic SaaS cards, repeated gray containers, decorative glass,
 gradient text, colored card stripes, tiny tracked kickers, absolutely
-positioned content strips, and topic-reflex imagery.
+positioned content strips, and topic-reflex imagery. Treat horizontal rules in
+main-slide content as a presumptive issue: remove routine rules and recover
+hierarchy with spacing, alignment, typography, or background change. Keep a
+light separator above citations by default, while allowing purposeful
+exceptions that carry meaning.
 
 For data slides, verify the sanctioned ECharts SVG renderer, direct labels,
 units, takeaway, deterministic capture state, and useful no-hover default.
