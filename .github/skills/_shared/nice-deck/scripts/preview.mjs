@@ -25,6 +25,7 @@ import {
 } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright";
+import { assessReview } from "./review.mjs";
 import { formatFindings, scanSource, scanWorkspace } from "./scan.mjs";
 import { proseBudget } from "./text-rules.mjs";
 
@@ -63,6 +64,14 @@ const assetExtensions = new Set([
   ".woff",
   ".woff2",
 ]);
+const viewportMatrix = [
+  { width: 1600, height: 900, name: "canonical" },
+  { width: 1280, height: 720, name: "scaled-16-9" },
+  { width: 640, height: 360, name: "small-16-9" },
+  { width: 1600, height: 600, name: "wide-short" },
+  { width: 700, height: 900, name: "narrow-tall" },
+  { width: 520, height: 900, name: "side-panel" },
+];
 
 function isWithin(root, path) {
   const pathFromRoot = relative(root, path);
@@ -333,7 +342,13 @@ async function ensureSnapshot(renderDirectory, snapshotRoot, sources) {
     try {
       await rename(temporaryRoot, snapshotRoot);
     } catch (error) {
-      if (displaced) await rename(backupRoot, snapshotRoot);
+      // Another preview process may have published the same immutable snapshot
+      // between our final comparison and rename. Treat that as success.
+      if (await snapshotMatches(snapshotRoot, sources)) {
+        if (displaced) await rm(backupRoot, { recursive: true, force: true });
+        return;
+      }
+      if (displaced && !await exists(snapshotRoot)) await rename(backupRoot, snapshotRoot);
       throw error;
     }
     if (displaced) await rm(backupRoot, { recursive: true, force: true });
@@ -433,6 +448,7 @@ async function auditLayout(page, slideIndex) {
     if (!slide) return [];
 
     const findings = [];
+    const scale = window.__niceDeck?.geometry?.().scale ?? 1;
     const add = (name, message) => findings.push({ slide: index + 1, name, message });
     const round = (value) => Math.round(value * 100) / 100;
     const label = (element) => (
@@ -456,10 +472,10 @@ async function auditLayout(page, slideIndex) {
         for (let second = first + 1; second < regions.length; second += 1) {
           const a = regions[first];
           const b = regions[second];
-          const vertical = a.rect.bottom <= b.rect.top + 1 || b.rect.bottom <= a.rect.top + 1;
+          const vertical = a.rect.bottom <= b.rect.top + scale || b.rect.bottom <= a.rect.top + scale;
           if (!vertical) continue;
           const delta = Math.abs(a.rect[edge] - b.rect[edge]);
-          if (delta > 1 && delta <= 12) {
+          if (delta > scale && delta <= 12 * scale) {
             add(
               "region-misaligned",
               `${a.label} and ${b.label} ${edge} edges differ by ${round(delta)}px; share one grid or declare data-grid-exception`,
@@ -585,6 +601,7 @@ async function auditContrast(page, slideIndex) {
         if (style.backgroundImage !== "none") hasImage = true;
         current = current.parentElement;
       }
+
       let background = [255, 255, 255, 1];
       for (const node of chain) {
         const color = parseColor(getComputedStyle(node).backgroundColor);
@@ -657,6 +674,77 @@ async function auditContrast(page, slideIndex) {
 
     return { failures, unverified };
   }, slideIndex);
+}
+
+async function auditViewport(page, viewport, slideIndex) {
+  await page.setViewportSize({ width: viewport.width, height: viewport.height });
+  await page.waitForFunction(
+    ({ width, height }) => {
+      const geometry = window.__niceDeck?.geometry?.();
+      return geometry
+        && Math.abs(geometry.viewportWidth - width) < 1
+        && Math.abs(geometry.viewportHeight - height) < 1;
+    },
+    { width: viewport.width, height: viewport.height },
+  );
+  await page.evaluate(async () => {
+    await window.__niceDeck?.whenSettled?.();
+    await new Promise((resolveFrame) => requestAnimationFrame(() => requestAnimationFrame(resolveFrame)));
+  });
+  await page.evaluate((index) => window.__niceDeck?.goTo(index), slideIndex);
+  await page.evaluate(() => window.__niceDeck?.whenSettled?.());
+  return page.evaluate(({ expected, index }) => {
+    const geometry = window.__niceDeck?.geometry?.();
+    const slide = document.querySelector(".slide:not([hidden])") ?? document.querySelector(".slide");
+    if (!geometry || !slide) {
+      return [{
+        viewport: expected.name,
+        slide: index + 1,
+        message: "fixed-canvas runtime geometry is unavailable",
+      }];
+    }
+    const findings = [];
+    const tolerance = 1.5;
+    const expectedScale = Math.min(
+      expected.width / geometry.designWidth,
+      expected.height / geometry.designHeight,
+    );
+    const rect = slide.getBoundingClientRect();
+    const expectedWidth = geometry.designWidth * expectedScale;
+    const expectedHeight = geometry.designHeight * expectedScale;
+    if (Math.abs(geometry.scale - expectedScale) > 0.002) {
+      findings.push(`scale ${geometry.scale} does not match ${expectedScale}`);
+    }
+    if (
+      Math.abs(rect.width - expectedWidth) > tolerance
+      || Math.abs(rect.height - expectedHeight) > tolerance
+    ) {
+      findings.push(`slide is ${rect.width}x${rect.height}, expected ${expectedWidth}x${expectedHeight}`);
+    }
+    if (
+      Math.abs(rect.left - (expected.width - expectedWidth) / 2) > tolerance
+      || Math.abs(rect.top - (expected.height - expectedHeight) / 2) > tolerance
+    ) {
+      findings.push(
+        `slide is not centered: ${rect.left},${rect.top}; expected `
+        + `${(expected.width - expectedWidth) / 2},${(expected.height - expectedHeight) / 2}`,
+      );
+    }
+    if (document.documentElement.dataset.niceDeckSettled !== "true") {
+      findings.push("runtime scaling did not settle");
+    }
+    if (
+      document.documentElement.scrollWidth > expected.width + 1
+      || document.documentElement.scrollHeight > expected.height + 1
+    ) {
+      findings.push("viewport has unexpected scrolling");
+    }
+    return findings.map((message) => ({
+      viewport: expected.name,
+      slide: index + 1,
+      message,
+    }));
+  }, { expected: viewport, index: slideIndex });
 }
 
 export async function previewDeck({
@@ -787,9 +875,17 @@ export async function previewDeck({
 
     await page.goto(url, { waitUntil: "networkidle" });
     await page.evaluate(() => document.fonts?.ready);
+    await page.evaluate(() => window.__niceDeck?.whenSettled?.());
 
     const slideCount = await page.locator(".slide").count() || 1;
     const runtimeReady = await page.evaluate(() => Boolean(window.__niceDeck));
+    const fixedCanvasReady = await page.evaluate(() => (
+      typeof window.__niceDeck?.geometry === "function"
+      && typeof window.__niceDeck?.whenSettled === "function"
+    ));
+    if (!isOutline && !fixedCanvasReady) {
+      browserErrors.push("runtime: decks must load the current fixed-canvas runtime/deck.js");
+    }
     const chartCount = await page.locator("[data-echart], [data-chart]").count();
     if (slideCount > 1 && !runtimeReady) {
       browserErrors.push("runtime: multi-slide decks must load deck.js");
@@ -804,6 +900,7 @@ export async function previewDeck({
     for (let index = 0; index < slideCount; index += 1) {
       if (runtimeReady) {
         await page.evaluate((slideIndex) => window.__niceDeck.goTo(slideIndex), index);
+        await page.evaluate(() => window.__niceDeck.whenSettled?.());
       }
       // A slide revealed for the first time can start loading a font it is the
       // first to use. Measuring before that resolves yields fallback metrics.
@@ -878,11 +975,12 @@ export async function previewDeck({
         if (!slide) return [];
         const style = getComputedStyle(slide);
         const slideRect = slide.getBoundingClientRect();
+        const scale = window.__niceDeck?.geometry?.().scale ?? 1;
         const box = {
-          left: slideRect.left + Number.parseFloat(style.paddingLeft),
-          right: slideRect.right - Number.parseFloat(style.paddingRight),
-          top: slideRect.top + Number.parseFloat(style.paddingTop),
-          bottom: slideRect.bottom - Number.parseFloat(style.paddingBottom),
+          left: slideRect.left + Number.parseFloat(style.paddingLeft) * scale,
+          right: slideRect.right - Number.parseFloat(style.paddingRight) * scale,
+          top: slideRect.top + Number.parseFloat(style.paddingTop) * scale,
+          bottom: slideRect.bottom - Number.parseFloat(style.paddingBottom) * scale,
         };
         // charts and preformatted blocks manage their own internal geometry
         const exempt = (element) => element.closest("[data-chart], [data-echart], svg, pre, code");
@@ -901,10 +999,10 @@ export async function previewDeck({
           const rect = element.getBoundingClientRect();
           if (rect.width < 2 || rect.height < 2) continue;
           const escapes = [];
-          if (rect.right > box.right + 1) escapes.push(`right by ${Math.round(rect.right - box.right)}px`);
-          if (rect.left < box.left - 1) escapes.push(`left by ${Math.round(box.left - rect.left)}px`);
-          if (rect.bottom > box.bottom + 1) escapes.push(`bottom by ${Math.round(rect.bottom - box.bottom)}px`);
-          if (rect.top < box.top - 1) escapes.push(`top by ${Math.round(box.top - rect.top)}px`);
+          if (rect.right > box.right + scale) escapes.push(`right by ${Math.round(rect.right - box.right)}px`);
+          if (rect.left < box.left - scale) escapes.push(`left by ${Math.round(box.left - rect.left)}px`);
+          if (rect.bottom > box.bottom + scale) escapes.push(`bottom by ${Math.round(rect.bottom - box.bottom)}px`);
+          if (rect.top < box.top - scale) escapes.push(`top by ${Math.round(box.top - rect.top)}px`);
           if (escapes.length) findings.push(`overflows the slide ${escapes.join(" and ")}: ${label(element)}`);
         }
 
@@ -933,7 +1031,11 @@ export async function previewDeck({
               for (const second of measured[b].boxes) {
                 const width = Math.min(first.right, second.right) - Math.max(first.left, second.left);
                 const height = Math.min(first.bottom, second.bottom) - Math.max(first.top, second.top);
-                if (width > 2 && height > 2 && (!worst || width * height > worst.width * worst.height)) {
+                if (
+                  width > 2 * scale
+                  && height > 2 * scale
+                  && (!worst || width * height > worst.width * worst.height)
+                ) {
                   worst = { width, height };
                 }
               }
@@ -983,13 +1085,44 @@ export async function previewDeck({
     const screenshotHashes = await Promise.all(screenshots.map(async (screenshot) => (
       createHash("sha256").update(await readFile(screenshot)).digest("hex")
     )));
+    const viewportAudit = [];
+    if (fixedCanvasReady) {
+      for (const viewport of viewportMatrix) {
+        for (let index = 0; index < slideCount; index += 1) {
+          viewportAudit.push(...await auditViewport(page, viewport, index));
+          viewportAudit.push(...(await auditLayout(page, index)).map((finding) => ({
+            viewport: viewport.name,
+            slide: index + 1,
+            message: finding.message,
+          })));
+        }
+      }
+      for (const width of [1400, 1100, 800, 520]) {
+        for (let index = 0; index < slideCount; index += 1) {
+          viewportAudit.push(...await auditViewport(page, {
+            width,
+            height: 900,
+            name: `live-resize-${width}`,
+          }, index));
+        }
+      }
+      await page.setViewportSize({ width: 1600, height: 900 });
+      await page.evaluate(() => window.__niceDeck.whenSettled?.());
+    } else if (runtimeReady) {
+      viewportAudit.push({
+        viewport: "runtime",
+        slide: 1,
+        message: "fixed-canvas runtime geometry is unavailable",
+      });
+    }
     const result = {
       ok: scan.length === 0
         && contrast.length === 0
         && browserErrors.length === 0
         && chartAudit.length === 0
         && layoutIssues.length === 0
-        && runtimeIntegrity.length === 0,
+        && runtimeIntegrity.length === 0
+        && viewportAudit.length === 0,
       source,
       workspaceRoot: root,
       sourceHash,
@@ -1003,7 +1136,11 @@ export async function previewDeck({
       chartAudit,
       layoutIssues,
       runtimeIntegrity,
+      viewportAudit,
     };
+    result.review = isOutline
+      ? { status: "not-required", path: null, requiredRoles: [], findings: [] }
+      : await assessReview({ workspace: root, previewRecord: result });
     const previewFile = join(outputRoot, "preview.json");
     await atomicWriteFile(previewFile, `${JSON.stringify(result, null, 2)}\n`);
 
@@ -1044,6 +1181,15 @@ function printResult(result) {
     for (const issue of result.layoutIssues) {
       console.error(`- slide ${issue.slide}: ${issue.name ? `[${issue.name}] ` : ""}${issue.message}`);
     }
+  }
+  if (result.viewportAudit?.length) {
+    console.error("\nviewport scaling:");
+    for (const issue of result.viewportAudit) {
+      console.error(`- ${issue.viewport}, slide ${issue.slide}: ${issue.message}`);
+    }
+  }
+  if (result.review?.status && !["approved", "not-required"].includes(result.review.status)) {
+    console.log(`\nreview: ${result.review.status} - ${result.review.path}`);
   }
   if (result.runtimeIntegrity.length) {
     console.error("\nchart runtime integrity:");

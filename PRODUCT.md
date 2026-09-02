@@ -89,13 +89,17 @@ Use the visual to explain, orient, or create emotion. Quantitative evidence uses
 the sanctioned Apache ECharts SVG runtime, not hand-built bars or pseudo-charts.
 Conceptual diagrams and visual metaphors begin with generated imagery, produced
 after the content and direction are settled. Native HTML and SVG are reserved
-for exact labels, values, formulas, citations, recommendations, simple
-separators, tables, and accessibility fallbacks.
+for links, citations, formulas, deterministic overlays, simple separators,
+tables, and accessibility fallbacks.
 
 Hybrid composition is expected: generated or chart-rendered visual foundations
-carry the idea while native overlays preserve authoritative content. Generated
-imagery must never contain authoritative text, values, logos, or fabricated
-product interfaces. Every slide declares its primary visual modality before
+carry the idea while native overlays preserve interaction and editability.
+Generated infographics may contain concise integrated explanatory text when that
+text makes the image self-contained. Do not surround them with redundant native
+labels. Record every intended baked string, proofread it in the rendered image,
+and keep citations, source IDs, URLs, and provenance in the deck's linked
+citation system. Generated imagery must not fabricate product interfaces. Every
+slide declares its primary visual modality and image-text mode before
 implementation.
 
 The master HTML is a directly openable artifact: runtime, fonts, scripts,
@@ -159,7 +163,8 @@ the direction is chosen, the AI owns the production work and its quality.
 Every changed slide is rendered and visually inspected before it is shown.
 Automated checks catch mechanical failures; an actual visual judgment catches
 bad design. The exact current render, not a stale or parallel surface, is what
-the user sees.
+the user sees. Presentation and delivery require a current adversarial review
+bound to those exact rendered pixels.
 
 ## Accessibility & Inclusion
 

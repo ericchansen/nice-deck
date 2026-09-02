@@ -77,7 +77,11 @@ For every slide record:
 - Allowed interactions:
 - Deterministic capture state:
 - Generated-image prompt and intended composition:
+- Generated-image text mode: `none` or `integrated`
+- Exact baked text and whether extra text is forbidden:
+- Accessible description for generated-image text:
 - Asset provenance:
+- Adversarial review path and status:
 - Static-export fallback:
 - Accessibility summary:
 

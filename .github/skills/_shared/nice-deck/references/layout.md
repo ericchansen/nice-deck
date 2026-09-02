@@ -12,7 +12,7 @@ so a broken layout renders as a slide that merely looks a little empty.
 
 | Web page | Slide |
 |---|---|
-| Height grows with content | Height is fixed at 100vh |
+| Height grows with content | Height is fixed at the design-canvas height |
 | Overflow scrolls, and you see it | Overflow is clipped, and you do not |
 | One column of flow, top to bottom | Several regions competing for one box |
 | Copy can be any length | Copy has a hard pixel budget |
@@ -129,10 +129,21 @@ It exits non-zero when any slide fails.
 A clean render at the authored copy length proves only that today's words fit.
 The stress run is what proves the layout is a system rather than a coincidence.
 
-## What this deliberately does not do
+## Authoring canvas and display scaling
 
-It does not scale the slide to fit. reveal.js and Spectacle solve *display*
-size by transforming a fixed canvas, which is the right answer for projection
-but does nothing about content that was too big for the canvas in the first
-place; in those frameworks overflow remains an authoring problem the tool never
-reports. Here it is reported.
+Slides are authored and audited at a fixed 1600×900 canvas by default. Decks may
+declare another fixed size with `data-deck-width` and `data-deck-height` on
+`<html>`.
+
+The runtime uniformly scales that completed canvas to fit the available display
+and letterboxes the remaining area. It never reflows slide internals when a
+Browser Canvas panel changes shape.
+
+Display scaling does not solve authoring overflow. Preview and `layout-test.mjs`
+measure in unscaled canvas coordinates first, then verify wide, narrow, tall,
+and live-resize displays. A slide that does not fit its design canvas fails even
+if shrinking it would hide the defect.
+
+Prefer fixed canvas dimensions or percentages derived inside the slide grid.
+Legacy `100vw` / `100vh` slide declarations are overridden by the runtime so
+they describe the design canvas rather than the resizable host viewport.

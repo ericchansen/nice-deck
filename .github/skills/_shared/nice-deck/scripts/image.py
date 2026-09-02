@@ -15,8 +15,12 @@ baked in.
   AZURE_SUBSCRIPTION_ID      (optional; passed to `az account get-access-token`)
 
 Usage:
-  python image.py --prompt-file direction.txt --out assets/direction.png --quality medium
-  python image.py --prompt "..." --out assets/final.png --size 1536x1024 --quality high
+  python image.py --prompt-file direction.txt --out assets/direction.png --quality medium \
+    --intended-slide figure-proof --visual-role "Conceptual proof"
+  python image.py --prompt "..." --out assets/final.png --size 1536x1024 --quality high \
+    --intended-slide explainer --visual-role "Integrated infographic" \
+    --image-text-mode integrated --baked-text-file baked-text.json \
+    --accessible-description "The infographic's accessible summary."
 """
 import argparse, base64, datetime, hashlib, json, os, shutil, subprocess, sys, time, urllib.request, urllib.error, urllib.parse
 from pathlib import Path
@@ -99,6 +103,19 @@ def gen(prompt, size, quality, endpoint, deployment, versions, tok):
     sys.exit(f"all api-versions failed. last: {last}")
 
 
+def load_baked_text(path):
+    if not path:
+        return []
+    try:
+        value = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        sys.exit(f"unable to read baked text JSON: {error}")
+    if not isinstance(value, list) or not value or not all(
+            isinstance(item, str) and item.strip() for item in value):
+        sys.exit("--baked-text-file must contain a non-empty JSON array of strings")
+    return value
+
+
 def main():
     # Load only the trusted repo-root config, never a deck workspace's .env.
     load_dotenv(Path(__file__).resolve().parents[3] / ".env")
@@ -111,7 +128,19 @@ def main():
     ap.add_argument("--quality", default="high")
     ap.add_argument("--intended-slide", required=True)
     ap.add_argument("--visual-role", required=True)
+    ap.add_argument("--image-text-mode", choices=("none", "integrated"),
+                    default="none")
+    ap.add_argument("--baked-text-file")
+    ap.add_argument("--accessible-description")
     a = ap.parse_args()
+    baked_text = load_baked_text(a.baked_text_file)
+    if a.image_text_mode == "integrated":
+        if not baked_text:
+            sys.exit("integrated image text requires --baked-text-file")
+        if not a.accessible_description:
+            sys.exit("integrated image text requires --accessible-description")
+    elif baked_text or a.accessible_description:
+        sys.exit("baked text and accessible description require --image-text-mode integrated")
 
     endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT", "")
     if not endpoint:
@@ -139,6 +168,10 @@ def main():
         "generatedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "intendedSlide": a.intended_slide,
         "visualRole": a.visual_role,
+        "imageTextMode": a.image_text_mode,
+        "bakedText": baked_text,
+        "forbidExtraText": a.image_text_mode == "integrated",
+        "accessibleDescription": a.accessible_description or "",
     }
     sidecar = f"{a.out}.provenance.json"
     with open(sidecar, "w", encoding="utf-8") as handle:

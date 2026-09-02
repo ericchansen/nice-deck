@@ -147,15 +147,19 @@ Declare the primary modality before implementation:
   ECharts SVG runtime. This is the default for evidence.
 - `conceptual`: a generated visual metaphor or explanatory image with valid
   provenance.
-- `hybrid`: a generated or chart-rendered visual foundation with authoritative
-  native overlays.
+- `hybrid`: a generated or chart-rendered visual foundation with native
+  interaction, citation, or deterministic overlays.
 - `native`: exact text, a table, a formula, a simple separator, or an
   accessibility fallback. Do not use it to avoid generating the primary visual.
 
 Never build a primary quantitative visual from CSS widths, hand-built SVG bars,
-rails, gates, or pseudo-charts. Generated imagery must not contain
-authoritative text, values, formulas, logos, URLs, commands, quotes, or
-fabricated product interfaces.
+rails, gates, or pseudo-charts. Generated infographics may contain concise
+integrated explanatory text when the text and illustration form one
+self-contained artifact. Record the exact intended strings as `bakedText`,
+proofread every character in the rendered image, and do not duplicate those
+strings as visible native labels. Citations, source IDs, URLs, and provenance
+remain native linked deck content. Generated imagery must not fabricate product
+interfaces.
 
 Generate no imagery before the outline and the direction are approved. A
 `conceptual` slide must justify itself in one sentence against a `data` or
@@ -165,8 +169,15 @@ Data slides require direct labels, visible units, a takeaway, and a linked
 citation. Decision-critical facts remain visible without hover. Legends, dashed
 reference lines, and empty chart regions must be explained or removed.
 
-For final generated assets, run `scripts/image.py` with `--intended-slide` and
-`--visual-role`. Keep its provenance sidecar beside the image.
+Before generation, declare `imageText.mode` as `none` or `integrated` in
+`visual-manifest.json`. Integrated mode also declares `bakedText`,
+`forbidExtraText`, and an accessible description. For final generated assets,
+run `scripts/image.py` with matching image-text arguments, `--intended-slide`,
+and `--visual-role`. Keep its provenance sidecar beside the image.
+
+Generated image text is not mechanically trusted. A current adversarial review
+must approve the exact rendered screenshot and asset hash before presentation or
+delivery. Read `adversarial-review.md`.
 
 ## Workspace and runtime
 
@@ -213,7 +224,10 @@ After every slide edit:
 2. View every exact returned screenshot with an image-capable tool.
 3. Fix visual and mechanical failures.
 4. Refresh Browser Canvas to the exact cache-busted URL.
-5. Only then present the work or request feedback.
+5. Run independent adversarial review and record it against the exact screenshot
+   hashes.
+6. Only present or deliver when review status is `approved`. Draft preview and
+   feedback requests remain available before approval.
 
 A clean scanner result is not visual inspection. Never report completion from
 code inspection alone.

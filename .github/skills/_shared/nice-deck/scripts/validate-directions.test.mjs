@@ -173,7 +173,9 @@ try {
       contrast: preview.contrast,
       browserErrors: preview.browserErrors,
       chartAudit: preview.chartAudit,
+      layoutIssues: preview.layoutIssues,
       runtimeIntegrity: preview.runtimeIntegrity,
+      viewportAudit: preview.viewportAudit,
     }));
     const screenshots = Object.fromEntries(roles.map((role, roleIndex) => (
       [role, relative(workspace, preview.screenshots[roleIndex])]

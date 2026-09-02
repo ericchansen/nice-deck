@@ -1,8 +1,10 @@
+import { createHash } from "node:crypto";
 import { readFile, mkdir } from "node:fs/promises";
-import { dirname, extname, resolve } from "node:path";
+import { dirname, extname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { chromium } from "playwright";
 import { atomicWriteFile, previewDeck } from "./preview.mjs";
+import { validateReview } from "./review.mjs";
 
 const viewport = { width: 1600, height: 900 };
 const pageSize = { width: 1280, height: 720 };
@@ -66,11 +68,35 @@ function exportDocument(slides) {
 </html>`;
 }
 
-export async function exportDeck({ sourcePath, outputPath } = {}) {
+function draftOutputPath(path) {
+  if (/\.draft\.pdf$/i.test(path)) return path;
+  return /\.pdf$/i.test(path) ? path.replace(/\.pdf$/i, ".draft.pdf") : `${path}.draft.pdf`;
+}
+
+export async function reviewedScreenshotBuffers(preview, review) {
+  const reviewPath = resolve(preview.workspaceRoot, review.path);
+  const reviewRoot = dirname(reviewPath);
+  const record = JSON.parse(await readFile(reviewPath, "utf8"));
+  const screenshots = [...record.screenshots].sort((first, second) => first.slide - second.slide);
+  if (screenshots.length !== preview.screenshotHashes.length) {
+    throw new Error("approved review screenshot count does not match preview");
+  }
+  return Promise.all(screenshots.map(async (screenshot, index) => {
+    const image = await readFile(join(reviewRoot, screenshot.file));
+    const hash = createHash("sha256").update(image).digest("hex");
+    if (hash !== screenshot.sha256 || hash !== preview.screenshotHashes[index]) {
+      throw new Error(`approved review screenshot changed: ${screenshot.file}`);
+    }
+    return image;
+  }));
+}
+
+export async function exportDeck({ sourcePath, outputPath, draft = false } = {}) {
   if (!sourcePath) throw new Error("sourcePath is required");
   const source = resolve(sourcePath);
   const extension = extname(source);
-  const output = resolve(outputPath ?? `${source.slice(0, -extension.length)}.pdf`);
+  const requestedOutput = resolve(outputPath ?? `${source.slice(0, -extension.length)}.pdf`);
+  const output = draft ? draftOutputPath(requestedOutput) : requestedOutput;
   await mkdir(dirname(output), { recursive: true });
 
   const preview = await previewDeck({ sourcePath: source, keepServer: true });
@@ -79,6 +105,12 @@ export async function exportDeck({ sourcePath, outputPath } = {}) {
     if (!preview.ok) {
       throw new Error(`preview failed; inspect ${preview.previewFile}`);
     }
+    const reviewed = draft
+      ? null
+      : await validateReview({ workspace: preview.workspaceRoot, previewRecord: preview });
+    const screenshotBuffers = reviewed
+      ? await reviewedScreenshotBuffers(preview, reviewed)
+      : await Promise.all(preview.screenshots.map((screenshot) => readFile(screenshot)));
 
     browser = await chromium.launch();
     const context = await browser.newContext({
@@ -125,7 +157,7 @@ export async function exportDeck({ sourcePath, outputPath } = {}) {
       });
       skippedLinks.push(...linkData.skipped);
       slides.push({
-        image: (await readFile(preview.screenshots[index])).toString("base64"),
+        image: screenshotBuffers[index].toString("base64"),
         links: linkData.links,
         slideId: linkData.slideId,
       });
@@ -148,6 +180,7 @@ export async function exportDeck({ sourcePath, outputPath } = {}) {
       pages: slides.length,
       skippedLinks,
       sourceHash: preview.sourceHash,
+      draft,
     };
   } finally {
     await Promise.all([
@@ -158,16 +191,19 @@ export async function exportDeck({ sourcePath, outputPath } = {}) {
 }
 
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
-  const sourcePath = process.argv[2];
+  const draft = process.argv.includes("--draft");
+  const positional = process.argv.slice(2).filter((argument) => argument !== "--draft");
+  const sourcePath = positional[0];
   if (!sourcePath) {
-    console.error("usage: node export-pdf.mjs <deck.html> [deck.pdf]");
+    console.error("usage: node export-pdf.mjs <deck.html> [deck.pdf] [--draft]");
     process.exit(2);
   }
 
   try {
     const result = await exportDeck({
       sourcePath,
-      outputPath: process.argv[3],
+      outputPath: positional[1],
+      draft,
     });
     console.log(`pdf: ${result.output}`);
     console.log(`pages: ${result.pages}`);
@@ -176,6 +212,7 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) 
       console.log(`skipped unsupported links: ${result.skippedLinks.join(", ")}`);
     }
     console.log(`source hash: ${result.sourceHash}`);
+    if (result.draft) console.log("draft: non-deliverable");
   } catch (error) {
     console.error(`PDF export failed: ${error.message}`);
     process.exitCode = 1;

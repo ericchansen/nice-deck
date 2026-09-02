@@ -9,11 +9,13 @@
     "export:portable": "node scripts/export-portable.mjs",
     "outline": "node scripts/outline.mjs",
     "preview": "node scripts/preview.mjs",
+    "review:init": "node scripts/review.mjs init",
     "sync-runtime": "node scripts/sync-runtime.mjs",
+    "validate:review": "node scripts/review.mjs validate",
     "validate:directions": "node scripts/validate-directions.mjs",
     "validate:outline": "node scripts/outline.mjs --validate",
     "setup": "playwright install chromium",
-    "test": "node --test scripts/validate-directions.test.mjs scripts/preview.test.mjs scripts/outline.test.mjs"
+    "test": "node --test scripts/validate-directions.test.mjs scripts/preview.test.mjs scripts/outline.test.mjs scripts/review.test.mjs"
   },
   "license": "MIT",
   "dependencies": {

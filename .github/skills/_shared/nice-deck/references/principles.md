@@ -140,12 +140,19 @@ a passing scanner, or a screenshot from a different browser is not enough.
 - Native SVG, CSS, and HTML are reserved for exact overlays, simple separators,
   tables, formulas, and accessibility fallbacks.
 - Hybrid composition is expected: a chart or generated visual carries the idea
-  while native labels, values, citations, and recommendations preserve accuracy.
+  while native links, citations, and deterministic overlays preserve interaction
+  and editability.
 - Direction probes use typography and data. Generate imagery only after the
   outline and the direction are approved, and only for a slide that cannot be
   carried by a measurement or by exact text.
-- Generated imagery contains no authoritative text, values, logos, or
-  fabricated product interfaces.
+- A generated infographic may contain concise integrated text when removing that
+  text would make the image harder to understand. Record every intended string,
+  prohibit extra pseudo-text, and proofread the final pixels character by
+  character.
+- Do not label everything twice. Text integrated into an image is not repeated as
+  visible native annotation. Citations, source IDs, URLs, and provenance remain
+  native and linked.
+- Generated imagery must not fabricate product interfaces.
 - Every slide declares its primary visual modality before implementation.
 
 ## Motion
