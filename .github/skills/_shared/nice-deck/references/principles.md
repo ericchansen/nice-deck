@@ -68,6 +68,8 @@ a passing scanner, or a screenshot from a different browser is not enough.
 ## Composition
 
 - Every slide has a job in the argument. Delete filler slides and filler copy.
+- Every visible element must earn its place. Do not add structure, decoration,
+  or a second idea merely because the slide has open space.
 - One slide, one grid. Every visible region is a real element and a child of
   that grid.
 - Avoid horizontal rules as decoration, pacing, or routine division in
@@ -80,8 +82,9 @@ a passing scanner, or a screenshot from a different browser is not enough.
   gray boxes and rules are not a default layout system.
 - A resource directory may be denser than a speaking slide, but its categories,
   descriptions, and canonical URLs must remain scannable and consistent.
-- Empty space is intentional only when the hierarchy, evidence, and conclusion
-  still form a complete thought.
+- Extreme restraint is valid. One meaningful image, value, phrase, or chart can
+  carry an otherwise blank slide when it completes the thought. Minimalism does
+  not excuse missing evidence or sourcing.
 
 ## Reasoning and tone
 
