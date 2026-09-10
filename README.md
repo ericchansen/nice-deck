@@ -39,6 +39,10 @@ validation, and export. Shared production rules live under
   extracts, and methods, with no art direction.
 - Native HTML, CSS, SVG, and selectable text where interaction or deterministic
   revision matters.
+- Source-backed exact architecture diagrams: a factual model before styling,
+  precise editable topology, official icon provenance, and standalone/offline
+  review through the shared
+  [diagram workflow](.github/skills/_shared/nice-deck/references/architecture-diagrams.md).
 - AI-generated graphics and self-contained infographics where integrated
   illustration and concise text make the idea land faster — produced after the
   content and direction are settled, never to explore a look.

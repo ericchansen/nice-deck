@@ -86,6 +86,13 @@ For data slides, verify the sanctioned ECharts SVG renderer, direct labels,
 units, takeaway, deterministic capture state, and useful no-hover default.
 Explain or remove legends, dashed reference lines, and silent empty regions.
 
+For exact native architecture, topology, trust, sequence, or flow diagrams,
+read `../_shared/nice-deck/references/architecture-diagrams.md`. Compare the
+rendered topology against the source-backed packet, not just its geometry;
+check the containing slide and the standalone/exported artifact. Do not demand
+image-generation provenance for authored SVG or assume the scanner verifies
+its internal topology.
+
 For conceptual and hybrid slides, verify the generated visual and matching
 provenance sidecar. When image text is integrated, compare every rendered string
 with the declared `bakedText`, reject extra pseudo-text, and judge the image at

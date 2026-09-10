@@ -32,8 +32,9 @@ const sourceRules = [
   },
   {
     name: "manual-primary-visual",
-    pattern: /class=["'][^"']*(?:growth-bar|scenario-channel|flow-gate|capacity-flow|decision-flow|econ-bar)[^"']*["']/i,
-    message: "Primary bars, rails, gates, and flow diagrams must use ECharts or generated imagery.",
+    // Generic flow names also describe exact topology, not just pseudo-charts.
+    pattern: /class=["'][^"']*(?:growth-bar|scenario-channel|econ-bar)[^"']*["']/i,
+    message: "Primary quantitative bars, rails, and pseudo-charts must use ECharts. Exact source-backed native diagrams are allowed.",
   },
   {
     name: "printed-reasoning",

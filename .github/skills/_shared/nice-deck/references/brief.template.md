@@ -85,6 +85,47 @@ For every slide record:
 - Static-export fallback:
 - Accessibility summary:
 
+### Exact-diagram packet (only when needed)
+
+For architecture, topology, trust, sequence, or flow diagrams, use
+[architecture-diagrams.md](architecture-diagrams.md). Keep facts separate from
+composition; complete facts before styling and composition before implementation.
+
+- Slide identifier, audience, single lesson, diagram type and scope:
+- Factual model: node IDs, exact labels/counts, responsibilities, component
+  types, implemented/optional status, prerequisites, and external authorities
+- Boundaries: IDs, meaning (trust, region, service, ownership), exact members,
+  and source IDs
+- Edges: IDs, source/target ports, direction, exact labels, conditions,
+  credential/trust transitions, and source IDs
+- Sequence factual model (when applicable): `sequence.messages` with unique
+  occurrence `id`, `edgeId`, and `sourceIds`; `rootGroupId` and `groups` with
+  stable `id`, `kind` (`ordered`, `parallel`, `alternative`, `optional`, `loop`),
+  and `sourceIds`
+- Sequence order/grouping: ordered `members` referencing message or nested
+  group IDs; explicit `branches` and membership for parallel/alternative groups;
+  branch/optional guards, loop continuation conditions and repetition bounds
+  (mark unknown bounds), and source-backed cross-branch ordering constraints
+- Unknowns, exclusions, and content approval:
+- Medium and rationale: `native` with `renderer: "svg"` for authored SVG;
+  do not use `generatedAsset` or `bakedText` for native SVG text
+- Composition: target display/figure size, aspect ratio, safe area, exact line
+  breaks, coordinates, routing lanes, crossings/junctions, and paint order
+- Shared semantics, non-color cues, icon allowlist, and licensed provenance:
+- Authored source, original icons, and self-contained output paths in `assets/`:
+- Acceptance: expected node/edge/icon counts, exact strings, containment,
+  readable rendered text, accessibility, and standalone/offline export
+- Sequence acceptance: expected message/group counts, unique occurrences,
+  resolved references, acyclic nesting, one membership per occurrence, exact
+  message order, branch membership, guards, and repetition bounds; no invented
+  total order between parallel branches or lost alternative/optional/loop semantics
+
+Copy the factual model, including sequence semantics, and acceptance counts into
+the slide's `diagram` object in `visual-manifest.json` so model revisions
+participate in the existing source hash. This is authoring metadata, not an
+automatically validated diagram schema.
+Keep all source IDs and metadata off the visible slide.
+
 ## Sources
 
 Create `sources.json` with a stable source ID, title, publisher or owner,

@@ -16,6 +16,10 @@ workflow; this file owns the production contract.
 Read `principles.md` and `layout.md` before working on a deck. Read `profile.hansen.md` when
 working for Eric Hansen.
 
+For exact architecture, topology, trust, sequence, or flow diagrams, also read
+[architecture-diagrams.md](architecture-diagrams.md). Establish the source-backed
+factual model during outline work; compose it only after the existing gates.
+
 ## Order of work
 
 1. **Outline.** Agree the content first, as plain frames. See `outline.md` and
@@ -149,8 +153,11 @@ Declare the primary modality before implementation:
   provenance.
 - `hybrid`: a generated or chart-rendered visual foundation with native
   interaction, citation, or deterministic overlays.
-- `native`: exact text, a table, a formula, a simple separator, or an
-  accessibility fallback. Do not use it to avoid generating the primary visual.
+- `native`: exact text, a table, a formula, a simple separator, an accessibility
+  fallback, or a source-backed exact topology diagram following
+  [architecture-diagrams.md](architecture-diagrams.md). Prefer deterministic SVG
+  when precise labels, boundaries, and connectors carry the evidence; this is
+  not an alternative to ECharts for quantities or to generated illustration.
 
 Never build a primary quantitative visual from CSS widths, hand-built SVG bars,
 rails, gates, or pseudo-charts. Generated infographics may contain concise

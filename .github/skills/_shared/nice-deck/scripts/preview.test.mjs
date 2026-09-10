@@ -195,6 +195,35 @@ try {
       .map(({ name }) => name);
   };
 
+  for (const className of ["flow-gate", "capacity-flow", "decision-flow"]) {
+    assert.deepEqual(await scanRules(
+      '<section class="slide" data-slide-id="01" data-visual-modality="native">'
+      + "<h1>Request path</h1>"
+      + '<figure data-region="diagram">'
+      + `<svg class="${className}" viewBox="0 0 400 100" role="img" aria-labelledby="flow-title">`
+      + '<title id="flow-title">Client sends a request to a service</title>'
+      + "<desc>Two components connected by a directed request path.</desc>"
+      + '<defs><marker id="arrow" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">'
+      + '<path d="M0 0 L6 3 L0 6 Z"/></marker></defs>'
+      + '<path d="M110 50 H290" stroke="black" marker-end="url(#arrow)"/>'
+      + '<rect id="client" x="0" y="30" width="110" height="40" fill="none" stroke="black"/>'
+      + '<rect id="service" x="290" y="30" width="110" height="40" fill="none" stroke="black"/>'
+      + '<text x="10" y="55">Client</text><text x="300" y="55">Service</text>'
+      + '<text x="160" y="40">Request</text></svg></figure>'
+      + citation + "</section>",
+      [contract("01", { renderer: "svg", imageText: { mode: "none" } })],
+    ), [], `exact native diagram with ${className} should scan cleanly`);
+  }
+
+  for (const className of ["growth-bar", "scenario-channel", "econ-bar"]) {
+    assert((await scanRules(
+      '<section class="slide" data-slide-id="01" data-visual-modality="native">'
+      + `<div class="${className}" style="width: 60%">60%</div>`
+      + citation + "</section>",
+      [contract("01")],
+    )).includes("manual-primary-visual"), `${className} must not bypass ECharts as native`);
+  }
+
   assert((await scanRules(
     '<section class="slide" data-slide-id="01" data-visual-modality="native">'
     + "<footer data-citation>Source: Fixture extract</footer></section>",

@@ -136,9 +136,13 @@ a passing scanner, or a screenshot from a different browser is not enough.
 - Quantitative evidence uses the sanctioned Apache ECharts SVG renderer.
   Hand-built CSS/SVG bars, rails, gates, and pseudo-charts are not primary
   visuals.
-- Conceptual diagrams and visual metaphors start from generated imagery.
+- Conceptual illustrations and visual metaphors start from generated imagery.
+  Exact topology, trust, sequence, and flow diagrams instead follow
+  [architecture-diagrams.md](architecture-diagrams.md): source-backed facts
+  first, then deterministic geometry when precision requires it.
 - Native SVG, CSS, and HTML are reserved for exact overlays, simple separators,
-  tables, formulas, and accessibility fallbacks.
+  tables, formulas, accessibility fallbacks, and those exact diagrams. This
+  exception does not permit hand-built quantitative charts.
 - Hybrid composition is expected: a chart or generated visual carries the idea
   while native links, citations, and deterministic overlays preserve interaction
   and editability.
