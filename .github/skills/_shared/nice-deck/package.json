@@ -5,6 +5,7 @@
   "description": "Local preview tooling for co-directed web-native deck prototypes.",
   "type": "module",
   "scripts": {
+    "edit": "node scripts/edit.mjs",
     "export:pdf": "node scripts/export-pdf.mjs",
     "export:portable": "node scripts/export-portable.mjs",
     "outline": "node scripts/outline.mjs",
@@ -15,11 +16,14 @@
     "validate:directions": "node scripts/validate-directions.mjs",
     "validate:outline": "node scripts/outline.mjs --validate",
     "setup": "playwright install chromium",
-    "test": "node --test scripts/validate-directions.test.mjs scripts/preview.test.mjs scripts/outline.test.mjs scripts/review.test.mjs"
+    "test": "node --test scripts/validate-directions.test.mjs scripts/preview.test.mjs scripts/outline.test.mjs scripts/review.test.mjs scripts/edit-source.test.mjs scripts/edit.test.mjs",
+    "test:editor": "node --test scripts/edit-source.test.mjs scripts/edit.test.mjs",
+    "test:editor:browser": "node --test scripts/edit-browser.test.mjs"
   },
   "license": "MIT",
   "dependencies": {
     "echarts": "6.1.0",
+    "parse5": "8.0.0",
     "playwright": "1.61.1"
   }
 }

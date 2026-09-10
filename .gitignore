@@ -13,6 +13,7 @@ __pycache__/
 
 # build / scratch artifacts
 _renders/
+.nice-deck-edit/
 _*.png
 *.pptx
 .DS_Store

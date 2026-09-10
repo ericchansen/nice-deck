@@ -102,7 +102,7 @@ async function configure(manifest) {
 }
 
 try {
-  browser = await chromium.launch();
+  browser = await chromium.launch({ channel: process.env.NICE_DECK_BROWSER_CHANNEL || undefined });
   await writeFile(join(workspace, "brief.md"), "# Test deck\n");
   await cp(join(here, "..", "runtime", "deck.js"), join(workspace, "deck.js"));
   await syncRuntime({ workspaceRoot: workspace });

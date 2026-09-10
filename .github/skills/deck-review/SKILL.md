@@ -28,6 +28,37 @@ Read:
 Use the shared preview and delivery scripts under
 `../_shared/nice-deck/`.
 
+## Live source and wording edits
+
+When the user wants to change text directly on an existing HTML slide, use
+`nice_deck_edit` to open the local source-preserving editor in Browser Canvas.
+If the repo-local tool is unavailable, run `npm run edit -- <HTML>` from the
+shared toolkit and open its printed local URL.
+Use a separate copy for experiments. The tool's launch URL authorizes writes;
+open it in Canvas but do not share or persist the token.
+
+The editor has exactly three primary regions: content left, editable visible
+slide HTML right, and a compact toolbar with status and secondary disclosures.
+Pure HTML text edits inline, including table cells, prices, scope notes, citation
+labels and supporting slides. Edit mixed-format fragments, SVG labels, markup
+and attributes in the source pane; there is no separate text-editing panel.
+Source drafts validate after a short pause and update the preview without saving.
+Invalid syntax retains the last good preview. Navigation retains drafts and
+history. Keep the single slide boundary, container tag, id and data-slide-id;
+close non-void HTML elements explicitly. Duplicate IDs and locked-source changes
+are rejected. All source bytes outside the bounded patches remain untouched;
+source-edited slides use textarea-normalized LF line endings.
+Unchanged runtime nodes/calculators remain live. Changed scripts, handlers and
+embedded application elements are inactive in drafts: save and reopen the saved
+HTML to test them. Image-baked text and generated data still require their
+authoring sources. Changing visible wording or prices does not update evidence
+or calculator data.
+Explicit Save updates bounded text or whole-slide source ranges, never live DOM,
+and requests a canonical render, not
+presentation approval. Preserve unsaved work on conflicts. After a save, inspect
+the exact fresh screenshots, reconcile the source records, and apply the normal
+review gate. Standalone imports without authoring metadata remain drafts.
+
 ## 1. Establish review scope
 
 Inspect the source deck, assets, `brief.md`, `outline.json`, `sources.json`,
