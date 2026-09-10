@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="referrer" content="no-referrer">
+  <title>Slide editor</title>
+  <link rel="stylesheet" href="/editor.css">
+  <script src="/editor.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#workspace">Skip to content and source</a>
+  <div class="app">
+    <section class="toolbar" aria-label="Editor toolbar" data-primary-region>
+      <div class="segmented" role="group" aria-label="View mode">
+        <button id="edit-mode" type="button" aria-pressed="true" disabled>Edit</button>
+        <button id="read-mode" type="button" aria-pressed="false" disabled>Read</button>
+      </div>
+      <button id="undo" type="button" disabled title="Undo (Ctrl or Command Z)">Undo</button>
+      <button id="redo" type="button" disabled title="Redo (Ctrl or Command Shift Z)">Redo</button>
+      <label class="sr-only" for="slide-select">Slide</label>
+      <select id="slide-select" disabled><option>Loading slides…</option></select>
+      <div class="slide-navigation" role="group" aria-label="Slide navigation">
+        <button id="previous-slide" type="button" aria-label="Previous slide" disabled>←</button>
+        <span id="slide-position" aria-live="polite">— / —</span>
+        <button id="next-slide" type="button" aria-label="Next slide" disabled>→</button>
+      </div>
+      <button id="save" class="primary" type="button" disabled>Save changes</button>
+      <details id="settings">
+        <summary>More <span id="save-status" role="status" aria-live="polite">Connecting…</span></summary>
+        <div class="settings-body">
+          <p id="deck-title"></p><p id="filename"></p>
+          <p id="mode-hint">Click slide text to edit.</p>
+          <p id="source-status" role="status">HTML drafts update after a short pause. Save writes source; checks use saved HTML.</p>
+          <p>Changed scripts, event handlers and embedded applications do not run in live drafts. Unchanged runtime nodes are retained. Save and reopen saved HTML to test executable changes; review before presenting.</p>
+          <button id="download-draft" type="button" disabled>Download draft changes</button>
+          <p id="review-status">Review status unavailable.</p>
+          <p id="check-status" role="status" aria-live="polite">Slide checks have not run.</p>
+          <button id="check-slides" type="button" disabled>Check saved slides</button>
+          <a id="check-link" class="button-link" target="_blank" rel="noopener noreferrer" hidden>View slide checks ↗</a>
+          <a id="open-saved" class="button-link" target="_blank" rel="noopener noreferrer" hidden>Open saved HTML ↗</a>
+          <div id="conflict-panel" class="notice" hidden>
+            <h2 id="conflict-title">The saved file has changed</h2>
+            <p>Your draft is retained. Download it before reloading. Nothing will be overwritten.</p>
+            <button id="conflict-download" type="button">Download draft changes</button>
+            <button id="reload-disk" type="button">Reload from disk</button>
+          </div>
+          <div id="error-panel" class="notice" role="alert" hidden>
+            <span id="error-message"></span>
+            <button id="dismiss-error" type="button" aria-label="Dismiss error">Dismiss</button>
+          </div>
+        </div>
+      </details>
+    </section>
+    <main id="workspace" class="workspace" tabindex="-1">
+      <section class="stage-panel" aria-label="Slide content" data-primary-region>
+        <div id="stage" class="stage" aria-busy="true">
+          <iframe id="deck-frame" title="Live deck — editable draft" referrerpolicy="no-referrer" hidden></iframe>
+          <div id="stage-placeholder"><p id="loading-message">Opening slide…</p></div>
+        </div>
+      </section>
+      <section class="source-panel" aria-label="Slide HTML source" data-primary-region>
+        <label id="source-label" for="slide-source">Slide HTML source</label>
+        <textarea id="slide-source" spellcheck="false" wrap="soft" disabled></textarea>
+      </section>
+    </main>
+    <p id="announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+  </div>
+</body>
+</html>

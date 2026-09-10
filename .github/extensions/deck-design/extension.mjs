@@ -1,5 +1,6 @@
 import { joinSession } from "@github/copilot-sdk/extension";
 import { readFileSync } from "node:fs";
+import { realpath } from "node:fs/promises";
 import { extname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname } from "node:path";
@@ -8,6 +9,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "..", "..", "..");
 const toolkitRoot = join(repoRoot, ".github", "skills", "_shared", "nice-deck");
 const previewModuleUrl = pathToFileURL(join(toolkitRoot, "scripts", "preview.mjs")).href;
+const editorModuleUrl = pathToFileURL(join(toolkitRoot, "scripts", "edit.mjs")).href;
 const product = readFileSync(join(repoRoot, "PRODUCT.md"), "utf8");
 const foundation = readFileSync(join(toolkitRoot, "references", "foundation.md"), "utf8");
 const principles = readFileSync(join(toolkitRoot, "references", "principles.md"), "utf8");
@@ -20,6 +22,7 @@ let activeSource;
 let activeRoot;
 let activeServer;
 let previewModule;
+const editors = new Map();
 let renderQueue = Promise.resolve();
 
 const prototypeExtensions = new Set([
@@ -133,6 +136,61 @@ function resultText(result) {
 const session = await joinSession({
   tools: [
     {
+      name: "nice_deck_edit",
+      description: "Open a local, bounded HTML source and inline text editor for an existing trusted deck, with live draft preview and explicit Save. Use a separate copy for experiments. Returns an authorized loopback URL for Browser Canvas; never share that launch URL. Edits are drafts, not presentation approval.",
+      parameters: {
+        type: "object",
+        properties: {
+          htmlPath: {
+            type: "string",
+            description: "The existing HTML source to edit. Copy the deck first if the original must remain unchanged.",
+          },
+        },
+        required: ["htmlPath"],
+      },
+      handler: async ({ htmlPath }) => {
+        try {
+          const sourcePath = await realpath(resolvePath(htmlPath));
+          let editor = editors.get(sourcePath);
+          if (!editor) {
+            const { startEditorServer } = await import(editorModuleUrl);
+            editor = await startEditorServer({
+              sourcePath,
+              onError: (error) => session.log(`nice-deck editor: ${error.message}`, { ephemeral: true }),
+            });
+            editors.set(sourcePath, editor);
+          }
+          const inventory = await editor.read();
+          return {
+            textResultForLlm: JSON.stringify({
+              url: editor.url,
+              sourcePath: editor.sourcePath,
+              slides: inventory.slides.length,
+              editableFields: inventory.fields.length,
+              imported: inventory.imported,
+              sourceRevision: inventory.revision,
+              preview: inventory.checks,
+              next: [
+                "Open this exact authorized URL in Browser Canvas. Keep the launch token private.",
+                "Three regions: live slide content left, editable authored slide HTML right, compact toolbar. Edit outlined text inline or change markup, attributes, mixed fragments and SVG labels in source. Debounced validation previews without saving; invalid HTML retains the last good preview and draft.",
+                "Keep one explicit slide boundary, its container tag, id and data-slide-id; close authored non-void HTML tags explicitly. Duplicate IDs and changes to locked source are rejected. Navigation retains drafts and undo/redo.",
+                "Unchanged runtime/calculator nodes stay live. Changed scripts, handlers and embedded applications are inactive in drafts: Save and reopen saved HTML to test them. Image-baked text and generated chart data require their authoring sources.",
+                "Explicit Save writes bounded text or whole-slide source patches, never live DOM or a preview snapshot. Bytes outside patches stay untouched; textarea source edits normalize line endings inside the edited slide to LF. Preserve draft downloads on revision conflicts.",
+                "Inspect fresh canonical screenshots after changes; a saved draft is not an approved presentation.",
+              ],
+            }, null, 2),
+            resultType: "success",
+          };
+        } catch (error) {
+          session.log(`nice-deck editor launch failed: ${error.message}`, { ephemeral: true });
+          return {
+            textResultForLlm: `The HTML editor could not start: ${error.message}`,
+            resultType: "failure",
+          };
+        }
+      },
+    },
+    {
       name: "nice_deck_preview",
       description: "Render and scan a nice-deck HTML prototype. Returns fresh screenshot paths, a source hash, and the exact cache-busted URL that must be opened in Browser Canvas. Call after every slide change and view the returned PNGs before presenting.",
       parameters: {
@@ -174,6 +232,7 @@ const session = await joinSession({
         additionalContext: [
           "nice-deck repo-local prototyping is active.",
           "For any deck task, follow the product and workflow below.",
+          "For small wording changes to an existing HTML deck, nice_deck_edit opens a source-preserving local editor. Copy first when the original must be preserved. A browser save creates a draft and triggers canonical rendering; it never grants presentation approval.",
           "After editing a slide, use nice_deck_preview, view its exact screenshots, and refresh Browser Canvas to its exact URL before replying.",
           "Agree the content before the look. Produce plain outline frames first and iterate with the user; outline.json must record an approved status before direction work or production begins.",
           "Do not autonomously implement a slide until its primary visual modality is declared in brief.md and visual-manifest.json. Data uses the sanctioned ECharts SVG runtime. Generate no imagery until the outline and the direction are both approved, and only for a slide that no measurement or exact text can carry.",
@@ -198,6 +257,7 @@ const session = await joinSession({
       workspaceRoot = input.workingDirectory || workspaceRoot;
       const paths = changedPaths(input.toolName, input.toolArgs)
         .map(resolvePath)
+        .filter((path) => !isWithin(join(toolkitRoot, "authoring"), path))
         .filter((path) => prototypeExtensions.has(extname(path).toLowerCase()));
       if (!paths.length) return undefined;
 
@@ -237,6 +297,8 @@ const session = await joinSession({
     ),
 
     onSessionEnd: async () => {
+      for (const editor of editors.values()) await editor.close();
+      editors.clear();
       await activeServer?.close();
       activeServer = undefined;
     },

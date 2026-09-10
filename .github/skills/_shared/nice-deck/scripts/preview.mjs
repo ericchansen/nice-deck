@@ -436,6 +436,7 @@ export async function startStaticServer(root) {
     },
     close: () => new Promise((resolveClose, reject) => {
       server.close((error) => (error ? reject(error) : resolveClose()));
+      server.closeAllConnections();
     }),
   };
 }
