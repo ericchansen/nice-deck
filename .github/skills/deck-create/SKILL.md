@@ -119,6 +119,13 @@ Create `visual-manifest.json` before implementing slides. Extend the approved
 grammar in small batches of one or a few slides. Consistency of voice matters
 more than identical layouts.
 
+For exact architecture, topology, trust, sequence, or flow diagrams, follow
+`../_shared/nice-deck/references/architecture-diagrams.md`. Complete the brief's
+bounded diagram packet from the approved factual model; prefer deterministic
+SVG under `native` when exact labels and connectors matter. Prove one diagram
+before extending variants, and reuse the existing source-hashed assets and
+adversarial review rather than introducing a diagram renderer or new gate.
+
 Build the main slides first, then the supporting section at the end of the same
 file, following `references/supporting.md`. Link every citation: public sources
 to their canonical HTTPS URL, internal and derived sources to their supporting

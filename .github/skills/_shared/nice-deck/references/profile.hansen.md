@@ -46,7 +46,10 @@ deck's visual world.
 - Original graphics are welcome, including AI-generated work, when they carry
   real meaning.
 - Use ECharts for measured or modeled data and generated imagery for primary
-  conceptual visuals. A self-contained generated infographic may integrate
+  conceptual illustrations. Exact architecture and flow diagrams follow
+  [architecture-diagrams.md](architecture-diagrams.md); prefer deterministic SVG
+  when topology, trust boundaries, and exact labels are the evidence.
+  A self-contained generated infographic may integrate
   concise explanatory text when the text is part of the composition. Do not
   surround it with redundant labels. Keep citations, URLs, source IDs, and
   provenance native and linked.
@@ -120,8 +123,9 @@ deck's visual world.
 - Routine horizontal rules in main-slide content, repeated gray boxes, and
   arbitrary category colors.
 - Absolutely positioned strips that cannot align with the slide's grid.
-- Hand-built CSS/SVG pseudo-charts, rails, gates, and flow diagrams used as
-  primary visuals.
+- Hand-built quantitative CSS/SVG pseudo-charts, rails, and gates. Exact
+  source-backed topology diagrams are a distinct native modality use, not
+  pseudo-charts or substitutes for generated illustration.
 - Generating imagery before the content and the direction are agreed.
 - Showing a slide that has not been freshly rendered, inspected, and refreshed
   in Canvas.

@@ -87,10 +87,15 @@ design input, not a late approval gate.
 
 Use the visual to explain, orient, or create emotion. Quantitative evidence uses
 the sanctioned Apache ECharts SVG runtime, not hand-built bars or pseudo-charts.
-Conceptual diagrams and visual metaphors begin with generated imagery, produced
-after the content and direction are settled. Native HTML and SVG are reserved
-for links, citations, formulas, deterministic overlays, simple separators,
-tables, and accessibility fallbacks.
+Conceptual illustrations and visual metaphors begin with generated imagery,
+produced after the content and direction are settled. Exact architecture,
+topology, trust, sequence, and flow diagrams separate a source-backed factual
+model from composition; prefer deterministic editable SVG when exact labels,
+boundaries, and connectors are the evidence. This is a conditional native
+medium, not a replacement for generated illustration or ECharts. Follow the
+shared [architecture-diagram workflow](.github/skills/_shared/nice-deck/references/architecture-diagrams.md).
+Native HTML and SVG also serve links, citations, formulas, deterministic
+overlays, simple separators, tables, and accessibility fallbacks.
 
 Hybrid composition is expected: generated or chart-rendered visual foundations
 carry the idea while native overlays preserve interaction and editability.

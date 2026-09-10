@@ -77,7 +77,11 @@ late:
 
 - `data` — the frame's artifact is a measured or modeled chart. This is the
   default for evidence.
-- `native` — exact text, a table, a formula, or a quote.
+- `native` — exact text, a table, a formula, a quote, or source-backed exact
+  topology. For architecture, trust, sequence, and flow diagrams, inventory
+  nodes, edges, boundaries, and unknowns using
+  [architecture-diagrams.md](architecture-diagrams.md) before writing the frame.
+  The outline still shows plain text, not a rendered diagram.
 - `hybrid` — a chart or generated visual with authoritative native overlays.
 - `conceptual` — a generated visual metaphor. Use it only when no measurement
   or exact text can carry the idea. Nothing is generated during the outline.

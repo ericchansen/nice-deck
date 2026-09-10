@@ -62,6 +62,11 @@ dimension — and that is exactly the material worth a slide.
 
 `validate:outline` refuses to accept frames until this block is filled.
 
+For exact architecture, topology, trust, sequence, or flow evidence, also read
+`../_shared/nice-deck/references/architecture-diagrams.md`. Build its factual
+node/edge/boundary model before writing frames; use `native` and keep the
+outline plain. Do not let drawing invent missing facts.
+
 ## 3. Write the frames
 
 Create `outline.json` from

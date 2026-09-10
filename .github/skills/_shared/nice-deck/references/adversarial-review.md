@@ -46,6 +46,19 @@ author's rationale or the other reviewers' findings.
 - Verify citations are linked, subordinate, and separate from integrated image
   text.
 
+For exact diagrams, apply
+[architecture-diagrams.md](architecture-diagrams.md) within these existing
+roles. After the screenshot-first read, geometry/citations compares the
+node/edge/boundary model with sources and checks ports, conditions, containment,
+crossings, and standalone/offline output. For sequences, also compare message
+occurrences and order, group nesting, parallel/alternative branch membership,
+guards, repetition bounds, and message/group counts against the approved model.
+Image-text proof checks native SVG
+strings against the packet rather than requiring generated `bakedText`.
+Art direction judges labels at actual on-slide size. Keep model metadata in
+`visual-manifest.json` and diagram SVGs under `assets/` so changes invalidate
+the source hash; a clean scanner is not a topology or SVG-safety approval.
+
 ## Verdict
 
 Every role records `approve` or `revise` and concrete findings. Approval requires
