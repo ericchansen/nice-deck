@@ -168,8 +168,21 @@ the direction is chosen, the AI owns the production work and its quality.
 Every changed slide is rendered and visually inspected before it is shown.
 Automated checks catch mechanical failures; an actual visual judgment catches
 bad design. The exact current render, not a stale or parallel surface, is what
-the user sees. Presentation and delivery require a current adversarial review
-bound to those exact rendered pixels.
+the user sees. The author inspects changed slides in one focused pass;
+independent adversarial review is available on request, not required to show
+or deliver a revision.
+
+### Fast feedback is a product requirement
+
+Small user changes use a small workflow: edit, build once, preview the affected
+slides, inspect them, and show the result. Do not automatically render after
+every file write, restart approval, launch review agents, or rerun full-deck,
+appendix, calculator, and delivery checks for unrelated changes.
+
+The default preview is feedback mode with explicit slide selection. Full
+mechanical audits and strict review-gated exports are opt-in. Check changed
+facts or behavior where needed, but never make the user wait for redundant
+assurance after the requested revision is ready.
 
 ## Accessibility & Inclusion
 

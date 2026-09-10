@@ -98,6 +98,8 @@ function roleTemplate(role) {
 export async function initReview({ workspace, previewPath } = {}) {
   const root = await resolveWorkspace(workspace);
   const preview = await resolvePreview(root, previewPath);
+  assertFullDeckPreview(preview.value);
+  if (preview.value.mode === "feedback") throw new Error("formal review requires a full audit preview");
   if (!preview.value.ok) throw new Error("mechanically failing previews cannot enter adversarial review");
   const sourceHash = String(preview.value.sourceHash ?? "");
   if (!/^[a-f0-9]{64}$/i.test(sourceHash)) throw new Error("preview sourceHash is missing or invalid");
@@ -145,6 +147,13 @@ export async function initReview({ workspace, previewPath } = {}) {
 function sameSet(first, second) {
   return first.length === second.length
     && [...first].sort().every((value, index) => value === [...second].sort()[index]);
+}
+
+export function assertFullDeckPreview(preview) {
+  if (preview.scope === "selected"
+    || (preview.slideCount !== undefined && preview.screenshots?.length !== preview.slideCount)) {
+    throw new Error("selected or incomplete previews cannot serve as full-deck review/export evidence");
+  }
 }
 
 function reviewShapeFindings(review) {
@@ -222,6 +231,8 @@ async function currentReviewEvidence(root, preview) {
 export async function assessReview({ workspace, previewPath, previewRecord } = {}) {
   const root = await resolveWorkspace(workspace);
   const preview = previewRecord ?? (await resolvePreview(root, previewPath)).value;
+  assertFullDeckPreview(preview);
+  if (preview.mode === "feedback") throw new Error("formal review requires a full audit preview");
   const sourceHash = String(preview.sourceHash ?? "");
   const reviewPath = join(root, "reviews", sourceHash, "review.json");
   const result = {

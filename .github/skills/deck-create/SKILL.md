@@ -15,6 +15,14 @@ This is the broad end-to-end workflow. For the content brainstorm alone, use
 `deck-explore-direction`. For an audit or improvement of an already implemented
 deck, use `deck-review`.
 
+## Revisions are not new decks
+
+For feedback on an existing deck, follow
+`../_shared/nice-deck/references/feedback.md` instead of restarting this
+workflow. Read the affected source, edit and build once, preview only changed
+`slideIds`, inspect them yourself, and show the result. No mandatory review
+agents, full-deck validation, or renewed approval for a concrete user edit.
+
 ## Load before working
 
 Read:
@@ -146,7 +154,7 @@ when it completes the thought and preserves required sourcing.
 Print no decision-relevance lines, no caveat lines, and no conjecture. Keep
 visible prose under the shared budget.
 
-After each batch, follow the shared rendered-truth loop and collect a reaction.
+After each batch, preview and inspect only the changed slides and collect a reaction.
 Do not continue from an unresolved representative system merely to make the
 remaining deck acceptable.
 
@@ -167,12 +175,10 @@ slide for:
 - a plain, data-only supporting section whose anchors all resolve
 - asset, console, navigation, and chart-readiness failures
 
-Run the adversarial-review workflow from
-`references/adversarial-review.md`. Draft preview remains available, but do not
-present or deliver the deck until `npm run validate:review -- <workspace>`
-reports a current approved review bound to the exact screenshot and generated
-asset hashes.
+Do this complete visual read-through once for a new deck. Do not repeat it for
+feedback edits. Full mechanical audits and independent adversarial reviews are
+opt-in, not presentation or delivery gates; see `references/feedback.md`.
 
-Synchronize the pinned runtime and follow the shared delivery contract. The
+Reuse the pinned runtime; synchronize only if it changed or is missing. The
 task is complete only when the artifacts in their final location visibly match
-the approved deck.
+the intended deck. Open the intended delivery surface once, not three copies.

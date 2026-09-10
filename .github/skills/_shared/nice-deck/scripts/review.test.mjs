@@ -56,6 +56,15 @@ try {
   };
   const previewPath = join(root, "_renders", "preview.json");
   await writeJson(previewPath, preview);
+  for (const scoped of [
+    { ...preview, scope: "selected", slideCount: 1 },
+    { ...preview, scope: "full-deck", slideCount: 2 },
+  ]) {
+    await writeJson(previewPath, scoped);
+    await assert.rejects(initReview({ workspace: root }), /full-deck/);
+    await assert.rejects(validateReview({ workspace: root, previewRecord: scoped }), /full-deck/);
+  }
+  await writeJson(previewPath, preview);
 
   const initialized = await initReview({ workspace: root });
   assert.equal(initialized.created, true);

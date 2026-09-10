@@ -19,6 +19,9 @@ deck's visual world.
   making the type systems materially different.
 - The central metaphor, mood, and graphic world are collaborative decisions.
 - React to feedback as design input. Do not defend an unsuccessful visual.
+- Turn feedback around quickly: one scoped edit/build/preview pass, inspected
+  by the author. No routine review agents, full-deck revalidation, or repeated
+  delivery-surface checks; use `feedback.md`.
 - Make one representative proof system excellent before producing the deck.
 - When adapting an existing deck, preserve its titles, structure, and visual
   framing unless Eric explicitly asks for a redesign.
@@ -129,5 +132,5 @@ deck's visual world.
 - Generating imagery before the content and the direction are agreed.
 - Showing a slide that has not been freshly rendered, inspected, and refreshed
   in Canvas.
-- Presenting a slide whose exact screenshot and generated assets have not passed
-  independent adversarial review.
+- Blocking a small requested revision on independent adversarial review or
+  checks of unchanged slides and calculators.

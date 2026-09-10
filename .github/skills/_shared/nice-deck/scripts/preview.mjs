@@ -753,9 +753,21 @@ export async function previewDeck({
   workspaceRoot,
   keepServer = false,
   captureMode = true,
+  mode = "feedback",
+  slideIds,
   browser: suppliedBrowser,
 } = {}) {
   if (!sourcePath) throw new Error("sourcePath is required");
+  if (!["feedback", "audit"].includes(mode)) throw new Error("mode must be feedback or audit");
+  if (slideIds !== undefined && (
+    !Array.isArray(slideIds) || !slideIds.length
+    || slideIds.some((id) => typeof id !== "string" || !id.trim())
+    || new Set(slideIds).size !== slideIds.length
+  )) throw new Error("slideIds must be a non-empty array of unique slide IDs");
+  if (mode === "audit" && slideIds !== undefined) {
+    throw new Error("audit cannot be combined with slideIds");
+  }
+  const fullAudit = mode === "audit";
 
   const source = await realpath(resolve(sourcePath));
   if (extname(source).toLowerCase() !== ".html") {
@@ -782,7 +794,9 @@ export async function previewDeck({
   const sourceHash = hashSources(sources);
   const shortHash = sourceHash.slice(0, 12);
   const renderDirectory = await ensureDirectory(
-    join(outputRoot, shortHash),
+    join(outputRoot, fullAudit ? shortHash : `${shortHash}-feedback-${slideIds
+      ? createHash("sha256").update(JSON.stringify(slideIds)).digest("hex").slice(0, 12)
+      : "all"}`),
     "render directory",
     outputRoot,
   );
@@ -793,13 +807,13 @@ export async function previewDeck({
   const cssSources = sources.filter(
     ({ file }) => extname(file).toLowerCase() === ".css",
   );
-  const scan = await scanWorkspace({
+  const scan = fullAudit ? await scanWorkspace({
     root,
     sourcePath: source,
     source: sourceRecord.content.toString("utf8"),
     styles: cssSources.map(({ content }) => content.toString("utf8")).join("\n"),
-  });
-  for (const scanned of cssSources) {
+  }) : [];
+  for (const scanned of fullAudit ? cssSources : []) {
     for (const finding of scanSource(scanned.content.toString("utf8"))) {
       scan.push({ file: scanned.path, ...finding });
     }
@@ -878,6 +892,24 @@ export async function previewDeck({
     await page.evaluate(() => window.__niceDeck?.whenSettled?.());
 
     const slideCount = await page.locator(".slide").count() || 1;
+    const deckSlideIds = await page.locator(".slide").evaluateAll((slides) => (
+      slides.map((slide) => slide.dataset.slideId || slide.id || null)
+    ));
+    const htmlSlideIds = await page.locator(".slide").evaluateAll((slides) => (
+      slides.map((slide) => slide.id)
+    ));
+    const indices = slideIds === undefined
+      ? Array.from({ length: slideCount }, (_, index) => index)
+      : slideIds.map((id) => {
+        const matches = deckSlideIds.flatMap((value, index) => (
+          value === id || htmlSlideIds[index] === id ? [index] : []
+        ));
+        if (matches.length !== 1) throw new Error(`slide ID must match exactly one slide: ${id}`);
+        return matches[0];
+      }).sort((a, b) => a - b);
+    if (new Set(indices).size !== indices.length) {
+      throw new Error("slideIds must select unique slides, not multiple aliases of the same slide");
+    }
     const runtimeReady = await page.evaluate(() => Boolean(window.__niceDeck));
     const fixedCanvasReady = await page.evaluate(() => (
       typeof window.__niceDeck?.geometry === "function"
@@ -897,7 +929,7 @@ export async function previewDeck({
       }
     }
 
-    for (let index = 0; index < slideCount; index += 1) {
+    for (const index of indices) {
       if (runtimeReady) {
         await page.evaluate((slideIndex) => window.__niceDeck.goTo(slideIndex), index);
         await page.evaluate(() => window.__niceDeck.whenSettled?.());
@@ -950,6 +982,7 @@ export async function previewDeck({
           `charts: slide ${index + 1} has ${unreadyCharts} chart(s) without data-chart-ready="true"`,
         );
       }
+      if (fullAudit) {
       const interactiveAudit = await page.evaluate((slideIndex) => {
         const slide = document.querySelector(".slide:not([hidden])") ?? document.querySelector(".slide");
         const findings = [];
@@ -1049,6 +1082,7 @@ export async function previewDeck({
       }, index);
       layoutIssues.push(...layoutFindings);
       layoutIssues.push(...await auditLayout(page, index));
+      }
 
       const audit = await auditContrast(page, index);
       contrast.push(...audit.failures);
@@ -1062,7 +1096,7 @@ export async function previewDeck({
       screenshots.push(screenshot);
     }
 
-    if (!captureMode && slideCount > 1 && runtimeReady) {
+    if (fullAudit && !captureMode && slideCount > 1 && runtimeReady) {
       for (let index = slideCount - 1; index >= 0; index -= 1) {
         await page.evaluate((slideIndex) => window.__niceDeck.goTo(slideIndex), index);
         await page.evaluate(() => window.niceDeckCharts?.resize());
@@ -1086,7 +1120,7 @@ export async function previewDeck({
       createHash("sha256").update(await readFile(screenshot)).digest("hex")
     )));
     const viewportAudit = [];
-    if (fixedCanvasReady) {
+    if (fullAudit && fixedCanvasReady) {
       for (const viewport of viewportMatrix) {
         for (let index = 0; index < slideCount; index += 1) {
           viewportAudit.push(...await auditViewport(page, viewport, index));
@@ -1108,7 +1142,7 @@ export async function previewDeck({
       }
       await page.setViewportSize({ width: 1600, height: 900 });
       await page.evaluate(() => window.__niceDeck.whenSettled?.());
-    } else if (runtimeReady) {
+    } else if (fullAudit && runtimeReady) {
       viewportAudit.push({
         viewport: "runtime",
         slide: 1,
@@ -1116,6 +1150,15 @@ export async function previewDeck({
       });
     }
     const result = {
+      mode,
+      scope: slideIds === undefined ? "full-deck" : "selected",
+      slideIds: indices.map((index) => deckSlideIds[index] ?? null),
+      slideNumbers: indices.map((index) => index + 1),
+      totalSlides: slideCount,
+      slideCount,
+      capturedSlideCount: screenshots.length,
+      auditComplete: fullAudit,
+      skippedChecks: fullAudit ? [] : ["workspace-scan", "layout", "chart-lifecycle", "viewport-matrix", "review"],
       ok: scan.length === 0
         && contrast.length === 0
         && browserErrors.length === 0
@@ -1126,7 +1169,7 @@ export async function previewDeck({
       source,
       workspaceRoot: root,
       sourceHash,
-      url,
+      url: slideIds === undefined ? url : `${url}#${encodeURIComponent(htmlSlideIds[indices[0]] || String(indices[0] + 1))}`,
       screenshots,
       screenshotHashes,
       scan,
@@ -1138,10 +1181,12 @@ export async function previewDeck({
       runtimeIntegrity,
       viewportAudit,
     };
-    result.review = isOutline
+    result.review = isOutline || !fullAudit
       ? { status: "not-required", path: null, requiredRoles: [], findings: [] }
       : await assessReview({ workspace: root, previewRecord: result });
-    const previewFile = join(outputRoot, "preview.json");
+    const previewFile = fullAudit
+      ? join(outputRoot, "preview.json")
+      : join(renderDirectory, "feedback-preview.json");
     await atomicWriteFile(previewFile, `${JSON.stringify(result, null, 2)}\n`);
 
     serverTransferred = keepServer;
@@ -1157,6 +1202,7 @@ export async function previewDeck({
 }
 
 function printResult(result) {
+  console.log(`mode: ${result.mode}; scope: ${result.scope}; captured: ${result.capturedSlideCount}/${result.slideCount}`);
   console.log(`source hash: ${result.sourceHash}`);
   console.log(`url: ${result.url}`);
   for (const screenshot of result.screenshots) console.log(`render: ${screenshot}`);
@@ -1200,16 +1246,32 @@ function printResult(result) {
 }
 
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
-  const sourcePath = process.argv[2];
+  const args = process.argv.slice(2);
+  let mode = "feedback";
+  let slideIds;
+  const positional = [];
+  for (let index = 0; index < args.length; index += 1) {
+    if (args[index] === "--audit") mode = "audit";
+    else if (args[index] === "--mode") {
+      mode = args[++index];
+      if (!mode) throw new Error("--mode requires feedback or audit");
+    }
+    else if (["--slide-ids", "--slides"].includes(args[index])) slideIds = (args[++index] ?? "").split(",");
+    else if (args[index].startsWith("--")) throw new Error(`Unknown option: ${args[index]}`);
+    else positional.push(args[index]);
+  }
+  const sourcePath = positional[0];
   if (!sourcePath) {
-    console.error("usage: node preview.mjs <deck.html> [out-dir]");
+    console.error("usage: node preview.mjs <deck.html> [out-dir] [--audit | --mode feedback|audit] [--slides id,id]");
     process.exit(2);
   }
 
   try {
     const result = await previewDeck({
       sourcePath,
-      outDir: process.argv[3],
+      outDir: positional[1],
+      mode,
+      slideIds,
       keepServer: true,
     });
     printResult(result);
