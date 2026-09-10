@@ -28,6 +28,26 @@ Read:
 Use the shared preview and delivery scripts under
 `../_shared/nice-deck/`.
 
+## Small wording edits
+
+When the user wants to change text directly on an existing HTML slide, use
+`nice_deck_edit` to open the local source-preserving editor in Browser Canvas.
+If the repo-local tool is unavailable, run `npm run edit -- <HTML>` from the
+shared toolkit and open its printed local URL.
+Use a separate copy for experiments. The tool's launch URL authorizes writes;
+open it in Canvas but do not share or persist the token.
+
+Native slide text is editable by default, including table cells, prices, scope
+notes, citation labels, and supporting slides. Formatted text fragments and
+source SVG labels use the inspector without flattening their markup. Link
+destinations, formatting, scripts, and geometry are preserved. Image-baked text,
+generated chart internals, embedded applications, and explicitly locked regions
+still require their original authoring sources.
+Saving updates bounded HTML text ranges and requests a canonical render, not
+presentation approval. Preserve unsaved work on conflicts. After a save, inspect
+the exact fresh screenshots, reconcile the source records, and apply the normal
+review gate. Standalone imports without authoring metadata remain drafts.
+
 ## 1. Establish review scope
 
 Inspect the source deck, assets, `brief.md`, `outline.json`, `sources.json`,

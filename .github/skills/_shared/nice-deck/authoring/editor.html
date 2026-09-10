@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="referrer" content="no-referrer">
+  <title>nice-deck · Local editor</title>
+  <link rel="stylesheet" href="/editor.css">
+  <script src="/editor.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#workspace">Skip to slide editor</a>
+  <div class="app">
+    <header class="app-header">
+      <div class="identity">
+        <span class="brand" aria-label="nice-deck">nice<span>—</span>deck</span>
+        <span class="local-badge">Local HTML</span>
+      </div>
+      <div class="document-heading">
+        <h1 id="deck-title">Your deck, with room to refine.</h1>
+        <p id="filename">Connecting to your local session…</p>
+      </div>
+      <div class="save-group">
+        <span id="save-status" role="status" aria-live="polite">Connecting…</span>
+        <button id="save" class="primary" type="button" disabled>Save changes</button>
+      </div>
+    </header>
+
+    <div class="toolbar" role="group" aria-label="Editing tools">
+      <div class="segmented" role="group" aria-label="View mode">
+        <button id="edit-mode" type="button" aria-pressed="true" disabled>Edit</button>
+        <button id="read-mode" type="button" aria-pressed="false" disabled>Read</button>
+      </div>
+      <span class="toolbar-divider" aria-hidden="true"></span>
+      <button id="undo" type="button" disabled title="Undo (Ctrl or Command Z)">Undo</button>
+      <button id="redo" type="button" disabled title="Redo (Ctrl or Command Shift Z)">Redo</button>
+      <span class="toolbar-spacer"></span>
+      <button id="download-draft" type="button" disabled>Download draft changes</button>
+      <button id="toggle-inspector" type="button" aria-expanded="true" aria-controls="inspector">Text panel</button>
+    </div>
+
+    <section id="conflict-panel" class="notice conflict" aria-labelledby="conflict-title" hidden>
+      <div>
+        <h2 id="conflict-title">The saved file has changed</h2>
+        <p>Your draft is still here. Download it before reloading the file from disk. Nothing will be overwritten.</p>
+      </div>
+      <div class="notice-actions">
+        <button id="conflict-download" type="button">Download draft changes</button>
+        <button id="reload-disk" type="button">Reload from disk</button>
+      </div>
+    </section>
+    <div id="error-panel" class="notice error" role="alert" hidden>
+      <span id="error-message"></span>
+      <button id="dismiss-error" type="button" aria-label="Dismiss error">Dismiss</button>
+    </div>
+
+    <main id="workspace" class="workspace" tabindex="-1">
+      <section class="stage-panel" aria-label="Live slide">
+        <div class="slide-toolbar">
+          <div class="slide-chooser">
+            <label for="slide-select">Slide</label>
+            <select id="slide-select" disabled><option>Loading slides…</option></select>
+          </div>
+          <div class="slide-navigation" role="group" aria-label="Slide navigation">
+            <button id="previous-slide" type="button" aria-label="Previous slide" disabled>←</button>
+            <span id="slide-position" aria-live="polite">— / —</span>
+            <button id="next-slide" type="button" aria-label="Next slide" disabled>→</button>
+          </div>
+        </div>
+        <div id="stage" class="stage" aria-busy="true">
+          <iframe id="deck-frame" title="Live deck — editable draft" referrerpolicy="no-referrer" hidden></iframe>
+          <div id="stage-placeholder" class="stage-placeholder">
+            <span class="stage-symbol" aria-hidden="true">Aa</span>
+            <h2>A little polish. Still your design.</h2>
+            <p id="loading-message">Opening the original HTML and finding editable text…</p>
+          </div>
+        </div>
+        <div class="stage-caption">
+          <span id="mode-hint">Click slide text to edit. Formatted fragments and diagram labels use the Text panel.</span>
+          <span class="draft-badge">Live draft · not an approval preview</span>
+        </div>
+      </section>
+
+      <aside id="inspector" class="inspector" aria-labelledby="inspector-title">
+        <div class="inspector-heading">
+          <span class="eyebrow">TEXT INSPECTOR</span>
+          <h2 id="inspector-title">On this slide</h2>
+          <p id="field-count">Editable slide text</p>
+        </div>
+        <div id="field-list" class="field-list" role="group" aria-label="Editable fields"></div>
+        <p id="empty-fields" class="muted" hidden>No source-backed text on this slide. Image text and embedded applications need their original authoring tools.</p>
+        <div id="field-editor" class="field-editor" hidden>
+          <label id="field-label" for="field-text">Selected text</label>
+          <textarea id="field-text" rows="5" spellcheck="true" aria-describedby="field-help field-error" disabled></textarea>
+          <p id="field-help" class="helper">Plain text only. One line of source text; the slide handles wrapping. Pasted line breaks become spaces.</p>
+          <p id="layout-hint" class="helper" role="status" hidden>This text extends beyond the slide. Shorten it or save a draft and check its layout before presenting.</p>
+          <p id="field-error" class="field-error" role="status" hidden></p>
+        </div>
+        <div class="protected-note">
+          <span class="eyebrow">DESIGN, PRESERVED</span>
+          <h3>Only the words you choose.</h3>
+          <p>Edit text in tables, prices, notes, citations, diagrams, and supporting slides. Formatting and link destinations stay intact. Image text, embedded apps, and explicit locks are not rewritten.</p>
+          <p>Edits stay in this tab until you save. A draft download is a recovery file, not an HTML export.</p>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="review-bar" aria-label="Review and saved source">
+      <div class="review-copy">
+        <p id="review-status">Review status will appear when the source is connected.</p>
+        <p id="check-status" role="status" aria-live="polite">Slide checks have not run.</p>
+      </div>
+      <div class="review-actions">
+        <button id="check-slides" type="button" disabled>Check saved slides</button>
+        <a id="check-link" class="button-link" target="_blank" rel="noopener noreferrer" hidden>View slide checks ↗</a>
+        <a id="open-saved" class="button-link" target="_blank" rel="noopener noreferrer" hidden>Open saved HTML ↗</a>
+      </div>
+    </footer>
+    <p id="announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+  </div>
+</body>
+</html>

@@ -112,6 +112,29 @@ npm run preview -- $HOME\Documents\decks\my-deck\deck.html
 
 Open the printed cache-busted URL; press `Ctrl+C` to stop the preview server.
 
+### Edit slide wording in the browser
+
+Ask Copilot to open an existing deck with `nice_deck_edit`, or launch the local editor directly:
+
+```powershell
+cd .github\skills\_shared\nice-deck
+npm run edit -- $HOME\Documents\decks\my-deck\deck.html
+```
+
+Open the printed editor URL. **Copy the deck folder first when you want to preserve an original.** Click slide text, change its wording, and save. The inspector provides an accessible text-field alternative; undo/redo and a clean read view let you compare changes without moving slide elements. The saved HTML remains an ordinary presentation with no editor code or editing attributes added.
+
+Native slide text is editable by default: headings, paragraphs, table cells and prices, scope notes, citation labels, and supporting slides. Pure HTML text edits inline; mixed-format fragments and source SVG labels use the Text panel. A model name beside a styled tier note, or text separated by a line break, can change independently without removing the span, break, table attributes, or link destination. Authors can use `data-edit-id="stable-field-name"` for durable element identity and lock regions with `data-editable="false"` or `data-edit-lock`; locks apply to descendants too.
+
+This is a text editor, not a page builder or data-model editor. Image-baked text, generated chart internals, scripts, and embedded application controls are not rewritten. Their original authoring sources remain responsible for those changes. Ambiguous source ranges are not offered as editable fields. Changing a displayed price does not update its evidence, calculator inputs, or build-time data.
+
+Saving patches only the selected source text ranges; it does not serialize the live DOM, chart SVGs, or runtime wrappers. Revision checks reject stale tabs and outside edits instead of overwriting them. Recoverable save records live under `.nice-deck-edit` beside the source. Do not delete that directory while editing. Unsaved browser changes are not source autosaves; download the draft changes before discarding a conflict or restarting the authoring service.
+
+Each save requests a fresh canonical preview. Render findings and review status remain separate from saving: **saved is not approved**. Existing outline, claim, source, and visual-manifest records are not rewritten by the editor. Reconcile changed wording with those records and obtain a current screenshot-based review before presenting or exporting. If a build script generates the HTML, update its source before rebuilding or it can replace browser edits. Standalone imports may lack their original authoring metadata or sanctioned runtime files; the editor reports them as imported drafts and does not fabricate approval.
+
+The server binds only to loopback and scopes file access to the selected deck folder. Its launch URL authorizes edits: keep it private. Open only trusted local HTML, since the deck's scripts continue to run. Browser permission prompts and filesystem pickers are not required. Preview scans run in a separate worker so large embedded decks do not block the authoring API. Cooperative locking and revision checks prevent competing editor saves; they cannot make arbitrary external file writers participate in a transaction.
+
+Editor service/source tests run with `npm run test:editor`; browser interaction tests use installed Microsoft Edge with `npm run test:editor:browser`. There is no new frontend build step.
+
 Preview renders drafts even when visual review is missing. Initialize and
 validate the presentation gate against the exact preview record:
 

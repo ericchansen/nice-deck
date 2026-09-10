@@ -117,6 +117,12 @@
   }
 
   addEventListener("keydown", (event) => {
+    const ownsKeyboard = event.composedPath().some((node) => (
+      node instanceof Element
+      && (node.isContentEditable || node.matches('input, textarea, select, button, [role="textbox"]'))
+    ));
+    if (event.defaultPrevented || event.isComposing || ownsKeyboard
+      || event.ctrlKey || event.metaKey || event.altKey) return;
     if (["ArrowRight", "PageDown", " "].includes(event.key)) {
       event.preventDefault();
       goTo(current + 1);
