@@ -4,7 +4,7 @@ import { dirname, extname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { chromium } from "playwright";
 import { atomicWriteFile, previewDeck } from "./preview.mjs";
-import { validateReview } from "./review.mjs";
+import { assertFullDeckPreview, validateReview } from "./review.mjs";
 
 const viewport = { width: 1600, height: 900 };
 const pageSize = { width: 1280, height: 720 };
@@ -74,6 +74,7 @@ function draftOutputPath(path) {
 }
 
 export async function reviewedScreenshotBuffers(preview, review) {
+  assertFullDeckPreview(preview);
   const reviewPath = resolve(preview.workspaceRoot, review.path);
   const reviewRoot = dirname(reviewPath);
   const record = JSON.parse(await readFile(reviewPath, "utf8"));
@@ -91,7 +92,8 @@ export async function reviewedScreenshotBuffers(preview, review) {
   }));
 }
 
-export async function exportDeck({ sourcePath, outputPath, draft = false } = {}) {
+export async function exportDeck({ sourcePath, outputPath, draft = false, requireReview = false } = {}) {
+  if (draft && requireReview) throw new Error("--draft cannot be combined with --require-review");
   if (!sourcePath) throw new Error("sourcePath is required");
   const source = resolve(sourcePath);
   const extension = extname(source);
@@ -99,15 +101,16 @@ export async function exportDeck({ sourcePath, outputPath, draft = false } = {})
   const output = draft ? draftOutputPath(requestedOutput) : requestedOutput;
   await mkdir(dirname(output), { recursive: true });
 
-  const preview = await previewDeck({ sourcePath: source, keepServer: true });
+  const preview = await previewDeck({ sourcePath: source, keepServer: true, mode: requireReview ? "audit" : "feedback" });
   let browser;
   try {
+    assertFullDeckPreview(preview);
     if (!preview.ok) {
       throw new Error(`preview failed; inspect ${preview.previewFile}`);
     }
-    const reviewed = draft
-      ? null
-      : await validateReview({ workspace: preview.workspaceRoot, previewRecord: preview });
+    const reviewed = requireReview
+      ? await validateReview({ workspace: preview.workspaceRoot, previewRecord: preview })
+      : null;
     const screenshotBuffers = reviewed
       ? await reviewedScreenshotBuffers(preview, reviewed)
       : await Promise.all(preview.screenshots.map((screenshot) => readFile(screenshot)));
@@ -192,10 +195,11 @@ export async function exportDeck({ sourcePath, outputPath, draft = false } = {})
 
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
   const draft = process.argv.includes("--draft");
-  const positional = process.argv.slice(2).filter((argument) => argument !== "--draft");
+  const requireReview = process.argv.includes("--require-review");
+  const positional = process.argv.slice(2).filter((argument) => !["--draft", "--require-review"].includes(argument));
   const sourcePath = positional[0];
   if (!sourcePath) {
-    console.error("usage: node export-pdf.mjs <deck.html> [deck.pdf] [--draft]");
+    console.error("usage: node export-pdf.mjs <deck.html> [deck.pdf] [--draft | --require-review]");
     process.exit(2);
   }
 
@@ -204,6 +208,7 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) 
       sourcePath,
       outputPath: positional[1],
       draft,
+      requireReview,
     });
     console.log(`pdf: ${result.output}`);
     console.log(`pages: ${result.pages}`);

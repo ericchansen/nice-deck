@@ -16,7 +16,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright";
 import { exportPortable } from "./export-portable.mjs";
 import { exportDeck, reviewedScreenshotBuffers } from "./export-pdf.mjs";
-import { computeDeckSourceHash, previewDeck, startStaticServer } from "./preview.mjs";
+import { computeDeckSourceHash, previewDeck as renderPreview, startStaticServer } from "./preview.mjs";
 import {
   initReview,
   requiredReviewRoles,
@@ -26,6 +26,8 @@ import { scanSource, scanWorkspace } from "./scan.mjs";
 import { syncRuntime } from "./sync-runtime.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
+// Existing exhaustive regressions explicitly exercise the audit path.
+const previewDeck = (options) => renderPreview({ mode: "audit", ...options });
 const workspace = await mkdtemp(join(tmpdir(), "nice-deck-test-"));
 let liveServer;
 let browser;
@@ -143,6 +145,68 @@ try {
   assert.equal(first.workspaceRoot, await realpath(workspace));
   assert.equal(first.review.status, "missing");
   assert.equal(first.screenshots.length, 3);
+  const selected = await renderPreview({ sourcePath: probe, slideIds: ["02"], keepServer: true, browser });
+  try {
+    const selectedPage = await browser.newPage();
+    try {
+      await selectedPage.goto(selected.url, { waitUntil: "networkidle" });
+      assert.equal(await selectedPage.evaluate(() => window.__niceDeck.current()), 1);
+    } finally {
+      await selectedPage.close();
+    }
+  } finally {
+    await selected.server.close();
+  }
+  assert.equal(selected.mode, "feedback");
+  assert.equal(selected.scope, "selected");
+  assert.equal(selected.auditComplete, false);
+  assert.deepEqual(selected.slideIds, ["02"]);
+  assert.deepEqual(selected.slideNumbers, [2]);
+  assert.equal(selected.totalSlides, 3);
+  assert.match(selected.previewFile, /feedback-preview\.json$/);
+  assert.equal(selected.slideCount, 3);
+  assert.equal(selected.screenshots.length, 1);
+  assert.match(selected.screenshots[0], /slide-02\.png$/);
+  assert.equal(selected.sourceHash, first.sourceHash);
+  assert.deepEqual(selected.viewportAudit, []);
+  assert.deepEqual(selected.layoutIssues, []);
+  assert.deepEqual(selected.scan, []);
+  assert.notEqual(selected.previewFile, first.previewFile);
+  assert.equal(JSON.parse(await readFile(first.previewFile, "utf8")).mode, "audit");
+  await assert.rejects(initReview({ workspace, previewPath: selected.previewFile }), /full-deck/);
+  await assert.rejects(validateReview({ workspace, previewRecord: selected }), /full-deck/);
+  await assert.rejects(reviewedScreenshotBuffers(selected, {}), /full-deck/);
+  await assert.rejects(renderPreview({ sourcePath: probe, mode: "audit", slideIds: ["02"] }), /cannot be combined/);
+  await assert.rejects(renderPreview({ sourcePath: probe, slideIds: [] }), /non-empty/);
+  await assert.rejects(renderPreview({ sourcePath: probe, slideIds: ["02", "02"] }), /unique/);
+  await assert.rejects(renderPreview({ sourcePath: probe, slideIds: ["missing"], browser }), /exactly one/);
+  await assert.rejects(renderPreview({ sourcePath: probe, mode: "unknown" }), /mode must/);
+  const byHtmlId = await renderPreview({ sourcePath: probe, slideIds: ["fixture-extract"], browser });
+  assert.deepEqual(byHtmlId.slideIds, ["03"]);
+  assert.equal(byHtmlId.screenshots.length, 1);
+  await assert.rejects(
+    renderPreview({ sourcePath: probe, slideIds: ["03", "fixture-extract"], browser }),
+    /unique slides/,
+  );
+  const feedback = await renderPreview({ sourcePath: probe, browser });
+  assert.equal(feedback.mode, "feedback");
+  assert.equal(feedback.scope, "full-deck");
+  assert.equal(feedback.screenshots.length, 3);
+  assert.equal(feedback.review.status, "not-required");
+  await assert.rejects(initReview({ workspace, previewPath: feedback.previewFile }), /full audit/);
+  await assert.rejects(validateReview({ workspace, previewRecord: feedback }), /full audit/);
+  await writeFile(probe, nativeDocument("First").replace(
+    "<h1>Second</h1>", '<h1 style="color: #eee; background: #fff">Second</h1>',
+  ));
+  const lowContrast = await renderPreview({ sourcePath: probe, slideIds: ["02"], browser });
+  assert.equal(lowContrast.ok, false);
+  assert(lowContrast.contrast.some(({ slide }) => slide === 2));
+  const unaffected = await renderPreview({ sourcePath: probe, slideIds: ["01"], browser });
+  assert.equal(unaffected.ok, true);
+  assert.deepEqual(unaffected.contrast, []);
+  await writeFile(probe, nativeDocument("First"));
+  await assert.rejects(exportDeck({ sourcePath: probe, draft: true, requireReview: true }), /cannot be combined/);
+  await assert.rejects(exportPortable({ sourcePath: probe, draft: true, requireReview: true }), /cannot be combined/);
   assert.match(first.sourceHash, /^[0-9a-f]{64}$/);
   assert.equal(first.sourceHash, await computeDeckSourceHash({ sourcePath: probe }));
   await Promise.all(first.screenshots.map((file) => access(file)));
@@ -639,14 +703,18 @@ try {
   // otherwise the linked-citation contract dies in the delivered format.
   const pdfPath = join(workspace, "deck.pdf");
   await assert.rejects(
-    exportDeck({ sourcePath: chartPath, outputPath: pdfPath }),
+    exportDeck({ sourcePath: chartPath, outputPath: pdfPath, requireReview: true }),
     /adversarial review is missing/,
   );
   await assert.rejects(
-    exportPortable({ sourcePath: chartPath, outputDir: join(workspace, "blocked-portable") }),
+    exportPortable({ sourcePath: chartPath, outputDir: join(workspace, "blocked-portable"), requireReview: true }),
     /adversarial review is missing/,
   );
 
+  const ordinaryPdf = await exportDeck({ sourcePath: chartPath, outputPath: pdfPath });
+  assert.equal(ordinaryPdf.draft, false);
+  const ordinaryPortable = await exportPortable({ sourcePath: chartPath, outputDir: join(workspace, "ordinary-portable") });
+  assert.equal(ordinaryPortable.draft, false);
   const reviewPreview = await previewDeck({ sourcePath: chartPath, browser });
   const initializedReview = await initReview({ workspace, previewPath: reviewPreview.previewFile });
   const reviewRecord = JSON.parse(await readFile(initializedReview.reviewPath, "utf8"));
@@ -671,7 +739,7 @@ try {
     reviewedHashes[0],
   );
 
-  const pdf = await exportDeck({ sourcePath: chartPath, outputPath: pdfPath });
+  const pdf = await exportDeck({ sourcePath: chartPath, outputPath: pdfPath, requireReview: true });
   assert.deepEqual(pdf.skippedLinks, []);
   assert.equal(pdf.pages, 3);
   assert(pdf.links >= 1);
@@ -679,7 +747,7 @@ try {
   assert.match(pdfText, /\/Dest \/nd-page-3/);
 
   const portableRoot = join(workspace, "portable");
-  const portable = await exportPortable({ sourcePath: chartPath, outputDir: portableRoot });
+  const portable = await exportPortable({ sourcePath: chartPath, outputDir: portableRoot, requireReview: true });
   assert.doesNotMatch(await readFile(portable.html, "utf8"), /\/__nice-deck\//);
   await access(join(portable.root, "data", "figures.js"));
   await access(join(portable.root, "data", "extract.csv"));
@@ -757,6 +825,11 @@ try {
   );
   const missingRuntime = await previewDeck({ sourcePath: missingRuntimePath, browser });
   assert.equal(missingRuntime.ok, false);
+  const missingFeedbackRuntime = await renderPreview({ sourcePath: missingRuntimePath, browser });
+  assert.equal(missingFeedbackRuntime.ok, false);
+  assert(missingFeedbackRuntime.browserErrors.includes(
+    "runtime: decks must load the current fixed-canvas runtime/deck.js",
+  ));
   assert(missingRuntime.browserErrors.includes(
     "runtime: decks must load the current fixed-canvas runtime/deck.js",
   ));

@@ -13,7 +13,21 @@ and visual framing unless the user explicitly asks for a redesign.
 If the work needs a fundamentally new visual system, use
 `deck-explore-direction` before propagating a reskin.
 
-## Load before working
+## Small changes: take the fast path
+
+For user feedback on one or a few slides, read
+`../_shared/nice-deck/references/feedback.md` and the affected source only.
+Edit, build once if needed, preview the changed `slideIds`, inspect those
+images yourself, and show the result. No review subagents, full-deck audit,
+pre-edit baseline render, review records, or unchanged calculator checks.
+Do not run the checklist below for routine feedback.
+
+## Full audit: only when requested
+
+The remaining sections apply to a requested whole-deck review, not every
+revision. Keep evidence work and behavioral checks proportional to the change.
+
+Read as needed for the audit:
 
 Read:
 
@@ -21,7 +35,6 @@ Read:
 - `../_shared/nice-deck/references/principles.md`
 - `../_shared/nice-deck/references/layout.md`
 - `../_shared/nice-deck/references/supporting.md`
-- `../_shared/nice-deck/references/adversarial-review.md`
 - `../_shared/nice-deck/references/profile.hansen.md` when working for Eric
   Hansen
 
@@ -34,7 +47,8 @@ Inspect the source deck, assets, `brief.md`, `outline.json`, `sources.json`,
 `visual-manifest.json`, and any requested delivery location. Do not assume the
 framework, runtime, or intended output format.
 
-Render the current deck before diagnosing it. View every exact screenshot and
+Reuse a current render when one exists. For a requested mechanical audit, call
+`nice_deck_preview` with `mode: "audit"` once. View the relevant screenshots and
 open the exact cache-busted URL in Browser Canvas.
 
 Distinguish:
@@ -119,13 +133,12 @@ Make precise fixes that preserve approved intent. If a fix changes the primary
 visual modality, update `brief.md` and `visual-manifest.json` before editing the
 slide.
 
-After every slide change, follow the shared rendered-truth loop. Re-review
+After a batch of fixes, follow the fast feedback loop. Re-review
 adjacent slides when the change affects narrative pacing or visual continuity.
 
-Run four independent screenshot-first adversarial roles: cold read, art
-direction, image-text proof, and geometry/citations. Record findings against the
-exact source, screenshot, and generated-asset hashes. Drafts may render before
-approval; presentation and delivery may not.
+The author performs the visual review. Independent reviewers and formal review
+records are optional, not presentation or delivery gates. Use
+`references/adversarial-review.md` only when the user requests that workflow.
 
 Do not call a redesign complete without paired figure-, text-, and data-heavy
 proofs approved through `deck-explore-direction`, and do not restructure the
@@ -133,7 +146,7 @@ argument without going back through `deck-outline`.
 
 ## 6. Verify delivery readiness
 
-Inspect the final complete deck and confirm:
+For a requested full audit, inspect the complete deck once for:
 
 - no console, page, asset, navigation, or chart-lifecycle errors
 - no clipping, overflow, stale screenshots, or missing fonts
@@ -142,9 +155,9 @@ Inspect the final complete deck and confirm:
 - canonical URLs and working links, including in-deck anchors
 - coherent narrative and visual grammar
 - crisp generated graphics without garbled text
-- a current approved adversarial review
-- direct-file, static-server, and sanctioned-preview behavior
+- behavior in the intended viewing surface
 
-When delivery is requested, synchronize the pinned runtime and follow the
-shared packaging and PDF contract. Report unresolved evidence or design
-decisions plainly rather than producing a success-shaped fallback.
+When delivery is requested, use the existing package and destination, and open
+the changed content there once. Synchronize runtime files only if they changed
+or are missing; do not retest every viewing surface. Report unresolved evidence
+or design decisions plainly.

@@ -6,9 +6,10 @@ forcing the slide.
 
 ## Rendered truth
 
-Look at the rendered slide before presenting it. Render the current source,
-view the image, judge it, and refresh Canvas to that exact build. Code review,
-a passing scanner, or a screenshot from a different browser is not enough.
+Look at the changed slide before presenting it. Finish the edit batch, render
+the affected slides once, inspect their images yourself, and refresh Canvas to
+that build. Code inspection alone is not enough; a full-deck audit and
+independent reviewers are not required. Follow `feedback.md` for revisions.
 
 ## Co-direction
 

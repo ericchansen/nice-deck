@@ -48,8 +48,7 @@ validation, and export. Shared production rules live under
   content and direction are settled, never to explore a look.
 - A web-native deck with keyboard navigation and reduced-motion support.
 - Playwright screenshots tied to the exact source hash shown in Canvas.
-- Independent adversarial reviews tied to the exact screenshot and generated
-  asset hashes approved for presentation.
+- Fast, scoped feedback previews; independent adversarial reviews are optional.
 
 PPTX is an optional lossy export and never drives the design.
 
@@ -103,22 +102,39 @@ npm run validate:directions -- $HOME\Documents\decks\my-deck --review
 npm run validate:directions -- $HOME\Documents\decks\my-deck --approved
 ```
 
-To preview a deck directly:
+For feedback, preview only the changed slide IDs:
 
 ```powershell
 cd .github\skills\_shared\nice-deck
-npm run preview -- $HOME\Documents\decks\my-deck\deck.html
+npm run preview -- $HOME\Documents\decks\my-deck\deck.html --slides pricing,summary
 ```
 
-Open the printed cache-busted URL; press `Ctrl+C` to stop the preview server.
+The `nice_deck_preview` tool accepts the same selection as `slideIds` and
+defaults to `mode: "feedback"`. Omit the selection to capture all slides.
+Feedback mode renders once without exhaustive layout, lifecycle, or off-aspect
+audits, while retaining contrast checks on captured slides. It writes a scoped
+`feedback-preview.json`, leaving any full-audit
+record separate. It is not a claim that the whole deck passed an audit.
 
-Preview renders drafts even when visual review is missing. Initialize and
-validate the presentation gate against the exact preview record:
+Inspect the changed screenshots and open the printed cache-busted URL. The
+extension no longer renders automatically after each file write: finish the
+edit batch and build first. Keep the preview server for the user's review;
+press `Ctrl+C` to stop it.
+
+Routine feedback does not need review agents, formal review JSON, unchanged
+calculator tests, or three delivery-surface checks. See
+[Fast feedback](.github/skills/_shared/nice-deck/references/feedback.md).
+
+Full audits and independent reviews remain available when requested:
 
 ```powershell
+npm run preview -- $HOME\Documents\decks\my-deck\deck.html --audit
 npm run review:init -- $HOME\Documents\decks\my-deck
 npm run validate:review -- $HOME\Documents\decks\my-deck
 ```
+
+The strict review workflow binds four independent roles to a complete audit's
+screenshots and generated assets. It does not block ordinary preview or export.
 
 Export an email-safe PDF from those exact inspected renders:
 
@@ -130,6 +146,8 @@ npm run export:pdf -- $HOME\Documents\decks\my-deck\deck.html
 The PDF is intentionally lossy: each page matches the rendered slide and keeps
 its external web and email links. Unsupported local and internal links are
 reported and omitted. The HTML remains the editable source of truth.
+PDF and portable exports do not require formal review by default. Add
+`--require-review` to enforce the optional strict review gate.
 
 ## Image generation
 

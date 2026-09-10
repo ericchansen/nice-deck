@@ -1,22 +1,26 @@
 # Adversarial visual review
 
-Adversarial review is the presentation and delivery gate. Preview remains
-available for drafts, but a mechanically clean render is not approved design.
+Adversarial review is an opt-in assurance workflow, not the default feedback,
+presentation, or delivery gate. Use it only when the user requests independent
+adversarial review. Routine revisions use `feedback.md`: the author inspects
+the changed slides and shows the result without review agents or review JSON.
 
 ## Canonical evidence
 
-Review the exact 1600×900 screenshots returned by `nice_deck_preview`. Every
+For this strict workflow, run `nice_deck_preview` with `mode: "audit"` and
+review its exact 1600×900 screenshots. Every
 review record is bound to:
 
 - the complete deck source hash
 - each canonical screenshot SHA-256
 - each generated asset SHA-256
 
-Any changed hash makes the review stale.
+Any changed hash makes this optional review stale. That does not block ordinary
+feedback or delivery, and does not automatically trigger another review.
 
 ## Independent roles
 
-Run each role independently. A reviewer sees the screenshots before the
+When this four-role workflow is requested, run each role independently. A reviewer sees the screenshots before the
 author's rationale or the other reviewers' findings.
 
 ### Cold read
@@ -73,9 +77,10 @@ reviews/<source-hash>/
   ...
 ```
 
-Initialize and validate:
+Initialize and validate against a full audit (not a scoped feedback preview):
 
 ```powershell
+npm run preview -- <workspace>\deck.html --audit
 npm run review:init -- <workspace>
 npm run validate:review -- <workspace>
 ```
@@ -84,8 +89,9 @@ npm run validate:review -- <workspace>
 the copied screenshots and complete their role entries. `validate:review`
 rejects missing, rejected, malformed, or stale records.
 
-## Drafts and delivery
+## Export policy
 
-Draft preview and explicit draft exports are allowed before approval. Draft
-exports carry a `.draft` suffix and are not deliverables. Final PDF and portable
-exports require a current approved review.
+Ordinary PDF and portable exports do not require formal review. Add
+`--require-review` when the user wants exports gated on this strict approval.
+Explicit draft exports still carry a `.draft` suffix. A missing or stale review
+does not turn an ordinary export into a draft.

@@ -13,8 +13,10 @@ workflow; this file owns the production contract.
 - Do not use a fixed theme or template library. Derive the visual grammar from
   the argument, audience, setting, source material, and user reaction.
 
-Read `principles.md` and `layout.md` before working on a deck. Read `profile.hansen.md` when
-working for Eric Hansen.
+For an existing-deck revision, read `feedback.md` first and only the references
+needed for the affected content. Its fast-path scope takes precedence over
+full-deck checklists. For a new deck, read `principles.md` and `layout.md`;
+read `profile.hansen.md` when working for Eric Hansen.
 
 For exact architecture, topology, trust, sequence, or flow diagrams, also read
 [architecture-diagrams.md](architecture-diagrams.md). Establish the source-backed
@@ -31,6 +33,8 @@ factual model during outline work; compose it only after the existing gates.
 3. **Production.** Build the deck from approved frames in the approved system.
 
 Expand beyond the defaults when the user asks for it. Do not expand by reflex.
+Existing approved decks do not restart these stages for a concrete feedback
+request. Update the affected contract only if its meaning or modality changes.
 
 ## Explanatory contract
 
@@ -131,7 +135,7 @@ The rules that the explanatory contract depends on:
   a defect. Declare a deliberate exception with `data-grid-exception` when a
   band genuinely needs its own tracks.
 
-Preview measures rendered region edges and reports boundaries that are close
+Audit mode measures rendered region edges and reports boundaries that are close
 but unequal. Fix the grid; do not nudge the offset.
 
 ## Supporting section
@@ -182,9 +186,10 @@ Before generation, declare `imageText.mode` as `none` or `integrated` in
 run `scripts/image.py` with matching image-text arguments, `--intended-slide`,
 and `--visual-role`. Keep its provenance sidecar beside the image.
 
-Generated image text is not mechanically trusted. A current adversarial review
-must approve the exact rendered screenshot and asset hash before presentation or
-delivery. Read `adversarial-review.md`.
+Generated image text is not mechanically trusted. The author proofreads new
+image text in the changed slide's screenshot. This does not require a separate
+review agent or a full-deck audit. Independent adversarial review is optional;
+read `adversarial-review.md` only when requested.
 
 ## Workspace and runtime
 
@@ -225,19 +230,17 @@ contract.
 
 ## Rendered truth
 
-After every slide edit:
+After a completed batch of edits:
 
-1. Run `nice_deck_preview` on the changed deck or treatment.
-2. View every exact returned screenshot with an image-capable tool.
-3. Fix visual and mechanical failures.
-4. Refresh Browser Canvas to the exact cache-busted URL.
-5. Run independent adversarial review and record it against the exact screenshot
-   hashes.
-6. Only present or deliver when review status is `approved`. Draft preview and
-   feedback requests remain available before approval.
+1. Run `nice_deck_preview` once with the affected `slideIds` in default feedback mode.
+2. Inspect those returned screenshots yourself and fix any visible defect.
+3. Refresh Browser Canvas to the returned URL, focused on the changed slide,
+   and deliver the revision.
 
-A clean scanner result is not visual inspection. Never report completion from
-code inspection alone.
+Stop there for routine feedback. Do not launch review agents, collect
+full-deck comparison hashes, or repeat unrelated calculator, appendix, runtime,
+and delivery checks. `mode: "audit"` and formal review are opt-in. A successful
+feedback preview is not a full-deck audit; never imply otherwise.
 
 Every deck must preserve keyboard navigation, reduced-motion behavior,
 projection-scale type, WCAG AA contrast, selectable authoritative text, and
@@ -254,6 +257,9 @@ For an email-safe PDF:
 npm run export:pdf -- <deck.html> [deck.pdf]
 ```
 
-Read the packaged HTML from its final location. Test the direct file, an
-ordinary static server, and sanctioned preview without capture mode. Inspect
-every PDF page, verify external links, and remove duplicate session copies.
+Open the requested artifact from its final location and inspect the changed
+content once. Reuse its existing packaging and live preview. Test extra surfaces
+only when packaging or runtime behavior changed, or the user requests it. A new
+PDF needs a page read-through; regenerating an unchanged PDF is not part of a
+slide feedback loop. Review approval is required only for opt-in
+`--require-review` exports.

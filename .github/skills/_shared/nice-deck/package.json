@@ -15,7 +15,7 @@
     "validate:directions": "node scripts/validate-directions.mjs",
     "validate:outline": "node scripts/outline.mjs --validate",
     "setup": "playwright install chromium",
-    "test": "node --test scripts/validate-directions.test.mjs scripts/preview.test.mjs scripts/outline.test.mjs scripts/review.test.mjs"
+    "test": "node --test scripts/validate-directions.test.mjs scripts/preview.test.mjs scripts/outline.test.mjs scripts/review.test.mjs ../../../extensions/deck-design/definition.test.mjs"
   },
   "license": "MIT",
   "dependencies": {

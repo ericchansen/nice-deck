@@ -29,7 +29,7 @@ body, citation — where every one of those regions shares the same
 `grid-template-columns`. A vertical division at the top then lands on the same
 x as one at the bottom by construction, not by coincidence.
 
-Mark each region with `data-region`. Preview measures the rendered edges of
+Mark each region with `data-region`. Audit mode measures the rendered edges of
 those elements and reports sibling boundaries that are close but unequal, which
 is the failure this rule exists to prevent. A region that genuinely needs its
 own tracks declares `data-grid-exception`.
@@ -103,7 +103,8 @@ passes with its headings and `data-contract-field` text inflated by 1.8x.
 
 ## Verification
 
-`nice_deck_preview` fails the deck on any rendered layout failure, reported as
+For an explicit full audit, `nice_deck_preview` with `mode: "audit"` reports
+rendered layout failures as
 `issueCounts.layout`:
 
 - an element escapes the slide's padding box
@@ -116,7 +117,7 @@ passes with its headings and `data-contract-field` text inflated by 1.8x.
 The static workspace scan catches the source-level form of the last three
 before a render happens; the render is what catches the geometry.
 
-For headroom, run the stress check from the toolkit directory:
+For layout-system work that needs headroom analysis, the optional stress check is:
 
 ```powershell
 cd .github/skills/_shared/nice-deck
@@ -127,7 +128,9 @@ node scripts/layout-test.mjs <url> 1.8   # inflated copy, should pass
 It exits non-zero when any slide fails.
 
 A clean render at the authored copy length proves only that today's words fit.
-The stress run is what proves the layout is a system rather than a coincidence.
+Use the stress run when investigating layout robustness, not after routine
+feedback edits. Default feedback preview captures the affected slides; the
+author checks their visible layout in that pass.
 
 ## Authoring canvas and display scaling
 
@@ -139,7 +142,7 @@ The runtime uniformly scales that completed canvas to fit the available display
 and letterboxes the remaining area. It never reflows slide internals when a
 Browser Canvas panel changes shape.
 
-Display scaling does not solve authoring overflow. Preview and `layout-test.mjs`
+Display scaling does not solve authoring overflow. Audit mode and `layout-test.mjs`
 measure in unscaled canvas coordinates first, then verify wide, narrow, tall,
 and live-resize displays. A slide that does not fit its design canvas fails even
 if shrinking it would hide the defect.

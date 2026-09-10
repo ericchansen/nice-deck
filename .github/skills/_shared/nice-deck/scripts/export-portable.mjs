@@ -16,7 +16,7 @@ import {
 } from "node:path";
 import { pathToFileURL } from "node:url";
 import { findWorkspaceRoot, previewDeck } from "./preview.mjs";
-import { validateReview } from "./review.mjs";
+import { assertFullDeckPreview, validateReview } from "./review.mjs";
 import { scanWorkspace } from "./scan.mjs";
 
 const rootFiles = new Set([
@@ -55,7 +55,8 @@ function draftOutputDirectory(path) {
   return path.endsWith(".draft") ? path : `${path}.draft`;
 }
 
-export async function exportPortable({ sourcePath, outputDir, draft = false } = {}) {
+export async function exportPortable({ sourcePath, outputDir, draft = false, requireReview = false } = {}) {
+  if (draft && requireReview) throw new Error("--draft cannot be combined with --require-review");
   if (!sourcePath || !outputDir) throw new Error("sourcePath and outputDir are required");
   const source = await realpath(resolve(sourcePath));
   const root = await findWorkspaceRoot(source);
@@ -66,9 +67,10 @@ export async function exportPortable({ sourcePath, outputDir, draft = false } = 
   let exportSource = source;
   try {
     if (!draft) {
-      preview = await previewDeck({ sourcePath: source, keepServer: true });
+      preview = await previewDeck({ sourcePath: source, keepServer: true, mode: requireReview ? "audit" : "feedback" });
+      assertFullDeckPreview(preview);
       if (!preview.ok) throw new Error(`preview failed; inspect ${preview.previewFile}`);
-      await validateReview({ workspace: root, previewRecord: preview });
+      if (requireReview) await validateReview({ workspace: root, previewRecord: preview });
       exportRoot = preview.server.root;
       exportSource = join(exportRoot, relative(root, source));
     }
@@ -115,12 +117,14 @@ export async function exportPortable({ sourcePath, outputDir, draft = false } = 
 
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
   const draft = process.argv.includes("--draft");
-  const positional = process.argv.slice(2).filter((argument) => argument !== "--draft");
+  const requireReview = process.argv.includes("--require-review");
+  const positional = process.argv.slice(2).filter((argument) => !["--draft", "--require-review"].includes(argument));
   try {
     const result = await exportPortable({
       sourcePath: positional[0],
       outputDir: positional[1],
       draft,
+      requireReview,
     });
     console.log(`portable root: ${result.root}`);
     console.log(`portable html: ${result.html}`);
