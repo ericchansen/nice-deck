@@ -3,7 +3,7 @@ import { access, readFile, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright";
-import { computeDeckSourceHash } from "./preview.mjs";
+import { computeDeckSourceHash } from "../lib/workspace.mjs";
 import { validateOutline } from "./outline.mjs";
 
 const requiredRoles = ["figure-heavy", "text-heavy", "data-heavy"];

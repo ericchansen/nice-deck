@@ -3,7 +3,8 @@ import { readFile, mkdir } from "node:fs/promises";
 import { dirname, extname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { chromium } from "playwright";
-import { atomicWriteFile, previewDeck } from "./preview.mjs";
+import { previewDeck } from "./preview.mjs";
+import { atomicWriteFile } from "../lib/files.mjs";
 import { assertFullDeckPreview, validateReview } from "./review.mjs";
 
 const viewport = { width: 1600, height: 900 };
