@@ -1,46 +1,22 @@
 import {
-  access,
   cp,
   mkdir,
   readFile,
-  readdir,
   realpath,
   rm,
 } from "node:fs/promises";
 import {
   basename,
-  extname,
   join,
   relative,
   resolve,
 } from "node:path";
 import { pathToFileURL } from "node:url";
-import { findWorkspaceRoot, previewDeck } from "./preview.mjs";
+import { previewDeck } from "./preview.mjs";
+import { findWorkspaceRoot, workspaceInventory } from "../lib/workspace.mjs";
+import { copyIfPresent } from "../lib/files.mjs";
 import { assertFullDeckPreview, validateReview } from "./review.mjs";
 import { scanWorkspace } from "./scan.mjs";
-
-const rootFiles = new Set([
-  "deck.css",
-  "deck.js",
-  "sources.json",
-  "slide-contracts.json",
-  "visual-manifest.json",
-]);
-
-async function exists(path) {
-  try {
-    await access(path);
-    return true;
-  } catch (error) {
-    if (error.code === "ENOENT") return false;
-    throw error;
-  }
-}
-
-async function copyIfPresent(source, destination) {
-  if (!await exists(source)) return;
-  await cp(source, destination, { recursive: true, force: true });
-}
 
 function assertDirectFileHtml(source) {
   if (/\/__nice-deck\//.test(source)) {
@@ -77,23 +53,18 @@ export async function exportPortable({ sourcePath, outputDir, draft = false, req
     await rm(destination, { recursive: true, force: true });
     await mkdir(destination, { recursive: true });
 
-    for (const entry of await readdir(exportRoot, { withFileTypes: true })) {
-      const path = join(exportRoot, entry.name);
-      if (entry.isDirectory() && ["assets", "data"].includes(entry.name)) {
-        await copyIfPresent(path, join(destination, entry.name));
-      } else if (
-        entry.isFile()
-        && (rootFiles.has(entry.name) || extname(entry.name).toLowerCase() === ".js")
-      ) {
-        await cp(path, join(destination, entry.name), { force: true });
-      }
+    const inventory = await workspaceInventory(exportRoot, exportSource, { policy: "delivery" });
+    for (const entry of inventory.filter(({ role }) => role === "input")) {
+      if (entry.recursive) await copyIfPresent(entry.file, join(destination, entry.path));
+      else await cp(entry.file, join(destination, entry.path), { force: true });
     }
 
     const outputHtml = join(destination, basename(source));
     const sourceHtml = await readFile(exportSource, "utf8");
     assertDirectFileHtml(sourceHtml);
     await cp(exportSource, outputHtml, { force: true });
-    await copyIfPresent(join(exportRoot, "runtime"), join(destination, "runtime"));
+    const runtime = inventory.find(({ role }) => role === "runtime");
+    await copyIfPresent(runtime.file, join(destination, runtime.path));
 
     const residual = (await readFile(outputHtml, "utf8")).match(/\/__nice-deck\//g);
     if (residual) throw new Error("portable HTML still contains extension-only runtime paths");
