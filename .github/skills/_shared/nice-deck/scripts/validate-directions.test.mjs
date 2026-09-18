@@ -3,12 +3,14 @@ import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { launchTestBrowser } from "./test-support/browser.mjs";
 import { previewDeck } from "./preview.mjs";
 import { syncRuntime } from "./sync-runtime.mjs";
 import { validateDirectionMatrix } from "./validate-directions.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const workspace = await mkdtemp(join(tmpdir(), "nice-deck-directions-"));
+let browser;
 const directionsRoot = join(workspace, "directions");
 const roles = [
   "figure-heavy",
@@ -63,6 +65,7 @@ const typographyInspector = async ({ typeSystem, content: frozenContent, fontAss
 });
 
 try {
+  browser = await launchTestBrowser();
   await mkdir(directionsRoot);
   const outlinePath = join(workspace, "outline.json");
   await writeFile(outlinePath, `${JSON.stringify({
@@ -167,7 +170,7 @@ try {
       version: 1,
       slides: roles.map((role) => ({ role, ...content[role] })),
     }, null, 2)}\n`);
-    const preview = await previewDeck({ sourcePath: treatmentPath });
+    const preview = await previewDeck({ sourcePath: treatmentPath, browser });
     assert.equal(preview.ok, true, JSON.stringify({
       scan: preview.scan,
       contrast: preview.contrast,
@@ -404,5 +407,6 @@ try {
 
   console.log("nice-deck direction-matrix self-test passed");
 } finally {
+  await browser?.close();
   await rm(workspace, { recursive: true, force: true });
 }

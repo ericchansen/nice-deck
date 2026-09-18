@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -54,8 +54,10 @@ function outline(overrides = {}) {
   };
 }
 
-async function workspace() {
-  return mkdtemp(join(tmpdir(), "nice-deck-outline-"));
+async function workspace(t) {
+  const root = await mkdtemp(join(tmpdir(), "nice-deck-outline-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  return root;
 }
 
 test("a complete draft outline validates", () => {
@@ -198,8 +200,8 @@ test("inventory separators are not double-escaped", () => {
   assert.doesNotMatch(html, /&amp;middot;/);
 });
 
-test("generate writes outline.html and the navigation runtime", async () => {
-  const root = await workspace();
+test("generate writes outline.html and the navigation runtime", async (t) => {
+  const root = await workspace(t);
   await writeFile(join(root, "outline.json"), JSON.stringify(outline()), "utf8");
   const result = await generateOutline(root);
   assert.equal(result.ok, true);
@@ -207,8 +209,8 @@ test("generate writes outline.html and the navigation runtime", async () => {
   assert.match(await readFile(join(root, "deck.js"), "utf8"), /__niceDeck/);
 });
 
-test("generate refuses an invalid outline", async () => {
-  const root = await workspace();
+test("generate refuses an invalid outline", async (t) => {
+  const root = await workspace(t);
   await writeFile(
     join(root, "outline.json"),
     JSON.stringify(outline({ frames: [frame({ title: "" })] })),
