@@ -144,7 +144,8 @@ npm run export:pdf -- $HOME\Documents\decks\my-deck\deck.html
 ```
 
 The PDF is intentionally lossy: each page matches the rendered slide and keeps
-its external web and email links. Unsupported local and internal links are
+its external web and email links, plus internal links to slide IDs (including
+supporting slides). Unsupported local links and unresolved internal targets are
 reported and omitted. The HTML remains the editable source of truth.
 PDF and portable exports do not require formal review by default. Add
 `--require-review` to enforce the optional strict review gate.
@@ -173,6 +174,92 @@ generated dogfood deck belongs in this repository.
 The four skills live under `.github/skills`, so repository sessions discover
 them automatically. Installed plugins use the same directory through
 `plugin.json`, making the skills available across repositories.
+
+## Contributor architecture and tests
+
+The toolkit remains an ESM package at `.github/skills/_shared/nice-deck`.
+Command adapters live in `scripts/`; the extension in
+`.github/extensions/deck-design` handles tool arguments, serialized requests,
+and the lifetime of the user's preview server. Keep the extension thin.
+
+Internal ownership follows command adapters → workflow composition →
+workspace/browser/check primitives:
+
+- `lib/files.mjs`, `workspace.mjs`, `snapshot.mjs`, and `server.mjs` own atomic
+  writes, source inventory/identity, captured inputs, and loopback serving.
+  `lib/static-policy.mjs` owns the shared preview/HTTP extension and MIME allowlist.
+  Inventory policies for preview snapshots and draft delivery intentionally
+  differ; draft export copies arbitrary assets and runtime files.
+- `lib/browser-session.mjs` owns browser contexts, offline routing, readiness,
+  and cleanup. A supplied browser belongs to its caller.
+- `lib/capture.mjs` captures selected slides; `lib/audit.mjs` performs exhaustive
+  checks. `lib/checks/` holds browser-serializable layout, contrast, and chart
+  probes. Layout adapters preserve the distinct preview/standalone tolerances,
+  waits, caps, stress behavior, and messages.
+- `scripts/preview.mjs` remains the public compatibility entry point and
+  composes feedback or audit with workspace scanning, record serialization,
+  and optional review assessment; scan/review composition remains here rather
+  than in `lib/audit.mjs`.
+  Feedback must not invoke workspace scanning, exhaustive audits, or review
+  assessment. Full-deck capture alone is not a full audit.
+- PDF and portable commands own delivery composition. Non-draft portable
+  delivery uses captured snapshot inputs, not subsequently changed live files.
+  Internal modules must not import command adapters.
+
+Run the native Node suite from the toolkit directory after installing the
+existing dependencies:
+
+```powershell
+cd .github\skills\_shared\nice-deck
+npm test
+```
+
+For an installed Edge instead of Playwright's bundled Chromium:
+
+```powershell
+$env:NICE_DECK_TEST_BROWSER = 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
+npm test
+```
+
+`scripts/test-support/browser.mjs` exposes `launchTestBrowser(options)`.
+The **test-only** `browser-preload.mjs` also covers internal exporter/direction
+launches and propagates through `NODE_OPTIONS` to child processes. Production
+commands do not import this seam and retain their Chromium launch defaults.
+For a targeted run, retain the preload:
+
+```powershell
+node --import ./scripts/test-support/browser-preload.mjs --test --test-name-pattern="source scan" scripts/preview.test.mjs
+```
+
+The explicit `package.json` test list must include every added suite:
+
+- `workspace.test.mjs`: fixed source-hash byte vectors, discovery, atomic
+  writes, HTTP behavior, snapshot repair, and portable inventory policies.
+- `orchestration.test.mjs`: runtime traps prove feedback does not invoke
+  workspace scanning, rendered audit, or review assessment; also checks
+  compatibility export identities, dependency direction, and session cleanup.
+- `preview.test.mjs`: named scope, snapshot/server, source-scan, runtime, and
+  complete-pipeline suites. Each scenario owns a fresh temporary workspace and
+  registers cleanup before setup; browser scenarios own their browser as well.
+  The pipeline retains chart determinism, review-pinned screenshots, PDF links,
+  portable navigation, and missing-runtime fallback coverage.
+- `layout.test.mjs`: shared measurements and both adapters, including actual
+  standalone CLI subprocesses, stress text, and custom canvases.
+- Existing outline, direction, review, and extension suites preserve their
+  respective contracts. No optional review agents run during tests.
+
+Set `NICE_DECK_TEST_ARTIFACTS` to an **external** directory to retain representative
+screenshots, audit/feedback JSON, PDF, and a portable chart package. Otherwise
+fixtures and their artifacts are removed even on failure. Retained JSON records
+describe the original temporary paths/URLs; they are evidence, not live servers.
+Do not put generated decks or test output in the repository.
+
+Compatibility tests deliberately preserve native path separators and hash
+framing. They also characterize the existing nested-source portable behavior:
+the HTML is flattened to its basename without rewriting `../` links. Fixing
+that delivery limitation is separate from a behavior-preserving refactor.
+There is no lint script; use `node --check` for changed JavaScript in addition
+to running the tests.
 
 ## License
 
