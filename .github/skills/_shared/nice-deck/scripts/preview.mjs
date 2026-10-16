@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { realpath } from "node:fs/promises";
 import { extname, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -7,7 +7,7 @@ import { formatFindings, scanSource, scanWorkspace } from "./scan.mjs";
 import { proseBudget } from "./text-rules.mjs";
 import { atomicWriteFile, ensureDirectory, isWithin } from "../lib/files.mjs";
 import { findWorkspaceRoot, listStaticFiles, readSources, hashSources } from "../lib/workspace.mjs";
-import { ensureSnapshot } from "../lib/snapshot.mjs";
+import { cleanupSnapshots, ensureSnapshot } from "../lib/snapshot.mjs";
 import { startStaticServer } from "../lib/server.mjs";
 import { openPreviewSession } from "../lib/browser-session.mjs";
 import { captureSlides, hashScreenshots } from "../lib/capture.mjs";
@@ -72,7 +72,7 @@ export async function previewDeck({
     "render directory",
     outputRoot,
   );
-  const snapshotRoot = join(renderDirectory, "site");
+  const snapshotRoot = join(renderDirectory, `site-${randomUUID()}`);
   await ensureSnapshot(renderDirectory, snapshotRoot, sources);
 
   const sourceRecord = sources.find(({ file }) => file === source);
@@ -93,13 +93,14 @@ export async function previewDeck({
 
   const server = await startStaticServer(snapshotRoot);
   const snapshotSource = join(server.root, relative(root, source));
-  const url = `${server.urlFor(snapshotSource, shortHash)}${captureMode ? "&capture=1" : ""}`;
+  const serverUrl = `${server.urlFor(snapshotSource, shortHash)}${captureMode ? "&capture=1" : ""}`;
+  const fileUrl = `${pathToFileURL(snapshotSource).href}?v=${shortHash}${captureMode ? "&capture=1" : ""}`;
   const browserErrors = [];
   let session;
   let serverTransferred = false;
 
   try {
-    session = await openPreviewSession({ browser: suppliedBrowser, url, browserErrors });
+    session = await openPreviewSession({ browser: suppliedBrowser, url: serverUrl, browserErrors });
     const options = { slideIds, isOutline, captureMode, renderDirectory, browserErrors };
     const captured = fullAudit
       ? await auditDeck(session.page, options, { budget: proseBudget })
@@ -129,7 +130,9 @@ export async function previewDeck({
       source,
       workspaceRoot: root,
       sourceHash,
-      url: slideIds === undefined ? url : `${url}#${encodeURIComponent(htmlSlideIds[indices[0]] || String(indices[0] + 1))}`,
+      url: slideIds === undefined
+        ? (keepServer ? serverUrl : fileUrl)
+        : `${keepServer ? serverUrl : fileUrl}#${encodeURIComponent(htmlSlideIds[indices[0]] || String(indices[0] + 1))}`,
       screenshots,
       screenshotHashes,
       scan,
@@ -148,6 +151,7 @@ export async function previewDeck({
       ? join(outputRoot, "preview.json")
       : join(renderDirectory, "feedback-preview.json");
     await atomicWriteFile(previewFile, `${JSON.stringify(result, null, 2)}\n`);
+    await cleanupSnapshots(renderDirectory, snapshotRoot);
 
     serverTransferred = keepServer;
     return { ...result, previewFile, ...(keepServer ? { server } : {}) };

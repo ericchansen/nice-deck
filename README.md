@@ -118,8 +118,9 @@ record separate. It is not a claim that the whole deck passed an audit.
 
 Inspect the changed screenshots and open the printed cache-busted URL. The
 extension no longer renders automatically after each file write: finish the
-edit batch and build first. Keep the preview server for the user's review;
-press `Ctrl+C` to stop it.
+edit batch and build first. Extension previews close their temporary server and
+return an immutable `file://` snapshot, so they leave no attached background
+task. The `npm run preview` CLI remains interactive; press `Ctrl+C` to stop it.
 
 Routine feedback does not need review agents, formal review JSON, unchanged
 calculator tests, or three delivery-surface checks. See
@@ -143,12 +144,42 @@ cd .github\skills\_shared\nice-deck
 npm run export:pdf -- $HOME\Documents\decks\my-deck\deck.html
 ```
 
+Export the complete delivery set in one bounded command:
+
+```powershell
+npm run export:bundle -- $HOME\Documents\decks\my-deck\deck.html
+```
+
+The bundle contains the PDF, runnable web folder, ZIP, source HTML,
+`SLIDE-COPY.md` when present (or the file passed with `--slide-copy`),
+`SHA256SUMS.txt`, and `bundle-manifest.json`. It verifies every recorded hash
+before publishing the destination and closes all temporary browsers and
+servers.
+
 The PDF is intentionally lossy: each page matches the rendered slide and keeps
 its external web and email links, plus internal links to slide IDs (including
 supporting slides). Unsupported local links and unresolved internal targets are
 reported and omitted. The HTML remains the editable source of truth.
 PDF and portable exports do not require formal review by default. Add
 `--require-review` to enforce the optional strict review gate.
+
+Portable export still blocks missing files, invalid manifests, preview-only
+paths, privacy findings, and other package-integrity failures. A deck may
+acknowledge selected presentation-contract findings without weakening those
+checks:
+
+```json
+{
+  "version": 1,
+  "delivery": {
+    "allowedFindings": ["slide-text-budget", "grid-track-mismatch"]
+  },
+  "slides": []
+}
+```
+
+Only named presentation findings are eligible. The export returns them as
+warnings and fails on every undeclared or non-suppressible finding.
 
 ## Image generation
 
@@ -179,8 +210,8 @@ them automatically. Installed plugins use the same directory through
 
 The toolkit remains an ESM package at `.github/skills/_shared/nice-deck`.
 Command adapters live in `scripts/`; the extension in
-`.github/extensions/deck-design` handles tool arguments, serialized requests,
-and the lifetime of the user's preview server. Keep the extension thin.
+`.github/extensions/deck-design` handles tool arguments and serialized
+requests. Keep the extension thin.
 
 Internal ownership follows command adapters → workflow composition →
 workspace/browser/check primitives:

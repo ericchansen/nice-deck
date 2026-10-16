@@ -12,7 +12,8 @@ The user should see the revision before time is spent on optional assurance.
 2. Batch the edits and build once, if the deck has a builder.
 3. Call `nice_deck_preview` once with `slideIds` naming the affected slides.
    The default `mode: "feedback"` captures those slides without running a
-   full-deck audit. Inspect their returned images yourself, including any new
+   full-deck audit, closes its temporary HTTP server, and returns an immutable
+   `file://` snapshot. Inspect the returned images yourself, including any new
    generated text. Fix a visible defect if present.
 4. Refresh Browser Canvas to the returned URL, focused on the changed slide.
    Deliver the requested revision. Stop.
@@ -54,4 +55,5 @@ Missing or stale optional reviews do not block ordinary preview or delivery.
 
 If the user asks to cut checks, reduce work immediately rather than announcing
 another validation phase. Reuse the live preview tool; do not build parallel
-servers or delivery harnesses for a small edit.
+servers or delivery harnesses for a small edit. Do not leave a preview server
+or attached background process running after the render.

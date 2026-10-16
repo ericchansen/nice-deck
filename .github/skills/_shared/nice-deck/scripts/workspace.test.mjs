@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
-import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { chromium } from "playwright";
 import {
@@ -9,6 +10,7 @@ import {
 import { exportPortable } from "./export-portable.mjs";
 import { launchTestBrowser } from "./test-support/browser.mjs";
 import { nativeDocument, workspaceFixture } from "./test-support/workspace.mjs";
+import { retryLocked } from "../lib/snapshot.mjs";
 
 async function put(root, path, bytes) {
   const target = join(root, path);
@@ -75,6 +77,29 @@ test("atomic replacement preserves directory targets and leaves no temporary fil
   assert.deepEqual((await readdir(workspace)).sort(), ["directory", "result.json"]);
 });
 
+test("locked snapshot operations use bounded retries", async () => {
+  let attempts = 0;
+  assert.equal(await retryLocked(async () => {
+    attempts++;
+    if (attempts < 3) {
+      const error = new Error("locked");
+      error.code = "EPERM";
+      throw error;
+    }
+    return "published";
+  }, { attempts: 3, delayMs: 0 }), "published");
+  assert.equal(attempts, 3);
+
+  attempts = 0;
+  await assert.rejects(retryLocked(async () => {
+    attempts++;
+    const error = new Error("invalid");
+    error.code = "EINVAL";
+    throw error;
+  }, { attempts: 3, delayMs: 0 }), /invalid/);
+  assert.equal(attempts, 1);
+});
+
 test("server return shape, loopback URL encoding, MIME, cache and restrictions remain compatible", async (t) => {
   const { workspace, track } = await workspaceFixture(t, { native: false });
   const source = await put(workspace, "nested/a space-é.html", "<h1>Fixture</h1>");
@@ -119,12 +144,45 @@ test("snapshots keep captured bytes and repair missing, modified and extra files
   const repaired = await previewDeck({ sourcePath: probe, browser, keepServer: true });
   track(repaired.server);
   assert.equal(repaired.sourceHash, first.sourceHash);
-  assert.equal(repaired.server.root, first.server.root);
+  assert.notEqual(repaired.server.root, first.server.root);
   assert.equal(await readFile(join(repaired.server.root, "probe.html"), "utf8"), original);
   assert.equal(await readFile(join(repaired.server.root, "data/extract.csv"), "utf8"),
     await readFile(join(workspace, "data/extract.csv"), "utf8"));
   await assert.rejects(readFile(join(repaired.server.root, "assets/unexpected.png")), { code: "ENOENT" });
   assert(!(await readdir(dirname(repaired.server.root))).some((name) => name.endsWith(".tmp") || name.endsWith(".bak")));
+});
+
+test("closed previews return an openable file snapshot and use a unique run directory", async (t) => {
+  const { probe, track } = await workspaceFixture(t);
+  const browser = track(await launchTestBrowser());
+  const first = await previewDeck({ sourcePath: probe, browser });
+  const second = await previewDeck({ sourcePath: probe, browser });
+  assert.match(first.url, /^file:/);
+  assert.match(second.url, /^file:/);
+  assert.notEqual(dirname(fileURLToPath(first.url)), dirname(fileURLToPath(second.url)));
+  assert.equal(await readFile(fileURLToPath(first.url), "utf8"), await readFile(probe, "utf8"));
+  const page = await browser.newPage();
+  try {
+    await page.goto(first.url, { waitUntil: "networkidle" });
+    assert.equal(await page.evaluate(() => window.__niceDeck.current()), 0);
+  } finally {
+    await page.close();
+  }
+});
+
+test("previews retain only the three newest immutable snapshots", async (t) => {
+  const { probe, track } = await workspaceFixture(t);
+  const browser = track(await launchTestBrowser());
+  const previews = [];
+  for (let index = 0; index < 5; index += 1) {
+    previews.push(await previewDeck({ sourcePath: probe, browser }));
+  }
+  const snapshotParent = dirname(dirname(fileURLToPath(previews.at(-1).url)));
+  const snapshots = (await readdir(snapshotParent))
+    .filter((name) => name.startsWith("site-"));
+  assert.equal(snapshots.length, 3);
+  await access(fileURLToPath(previews.at(-1).url));
+  await assert.rejects(access(fileURLToPath(previews[0].url)), { code: "ENOENT" });
 });
 
 test("draft portable assets are deliberately broader than captured delivery inputs", async (t) => {
@@ -193,4 +251,29 @@ test("ordinary portable export reads captured bytes rather than live mutations d
   assert.equal(await readFile(join(portable.root, "data/extract.csv"), "utf8"), "Date,Value\n2026-07-01,42\n");
   await assert.rejects(readFile(join(portable.root, "assets/late.png")), { code: "ENOENT" });
   assert.match(await readFile(probe, "utf8"), /Live mutation must not ship/);
+});
+
+test("portable export reports declared presentation exceptions as warnings", async (t) => {
+  const { workspace, probe } = await workspaceFixture(t);
+  await writeFile(probe, (await readFile(probe, "utf8")).replace(
+    "</head>",
+    "<style>:root { --paper: #fff; }</style></head>",
+  ));
+  const manifestPath = join(workspace, "visual-manifest.json");
+  const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+  manifest.delivery = { allowedFindings: ["cream-token"] };
+  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+
+  const portable = await exportPortable({
+    sourcePath: probe,
+    outputDir: join(workspace, "allowed-portable"),
+  });
+  assert.deepEqual(portable.warnings.map(({ name }) => name), ["cream-token"]);
+
+  manifest.delivery.allowedFindings = [];
+  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  await assert.rejects(
+    exportPortable({ sourcePath: probe, outputDir: join(workspace, "blocked-portable") }),
+    /portable package scan failed: cream-token/,
+  );
 });

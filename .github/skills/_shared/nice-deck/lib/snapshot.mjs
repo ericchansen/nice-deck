@@ -1,7 +1,49 @@
 import { randomUUID } from "node:crypto";
 import { lstat, mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { exists } from "./files.mjs";
+
+const lockedFileCodes = new Set(["EACCES", "EBUSY", "EPERM"]);
+
+export async function retryLocked(operation, { attempts = 5, delayMs = 25 } = {}) {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (!lockedFileCodes.has(error.code) || attempt >= attempts) throw error;
+      await delay(delayMs * attempt);
+    }
+  }
+}
+
+export async function cleanupSnapshots(renderDirectory, currentRoot, retain = 3) {
+  const snapshots = await Promise.all(
+    (await readdir(renderDirectory, { withFileTypes: true }))
+      .filter((entry) => entry.isDirectory() && (entry.name === "site" || entry.name.startsWith("site-")))
+      .map(async (entry) => {
+        const path = join(renderDirectory, entry.name);
+        return { path, modified: (await lstat(path)).mtimeMs };
+      }),
+  );
+  const retained = new Set([
+    currentRoot,
+    ...snapshots
+      .filter(({ path }) => path !== currentRoot)
+      .sort((left, right) => right.modified - left.modified)
+      .slice(0, Math.max(0, retain - 1))
+      .map(({ path }) => path),
+  ]);
+  for (const { path } of snapshots) {
+    if (retained.has(path)) continue;
+    try {
+      await retryLocked(() => rm(path, { recursive: true, force: true }));
+    } catch (error) {
+      // A file:// browser may briefly retain an older snapshot; retry it next render.
+      if (!lockedFileCodes.has(error.code)) throw error;
+    }
+  }
+}
 
 async function copySnapshot(sources, snapshotRoot) {
   for (const source of sources) {
@@ -67,26 +109,28 @@ export async function ensureSnapshot(renderDirectory, snapshotRoot, sources) {
     let displaced = false;
     try {
       await lstat(snapshotRoot);
-      await rename(snapshotRoot, backupRoot);
+      await retryLocked(() => rename(snapshotRoot, backupRoot));
       displaced = true;
     } catch (error) {
       if (error.code !== "ENOENT") throw error;
     }
 
     try {
-      await rename(temporaryRoot, snapshotRoot);
+      await retryLocked(() => rename(temporaryRoot, snapshotRoot));
     } catch (error) {
       // Another preview process may have published the same immutable snapshot
       // between our final comparison and rename. Treat that as success.
       if (await snapshotMatches(snapshotRoot, sources)) {
-        if (displaced) await rm(backupRoot, { recursive: true, force: true });
+        if (displaced) await retryLocked(() => rm(backupRoot, { recursive: true, force: true }));
         return;
       }
-      if (displaced && !await exists(snapshotRoot)) await rename(backupRoot, snapshotRoot);
+      if (displaced && !await exists(snapshotRoot)) {
+        await retryLocked(() => rename(backupRoot, snapshotRoot));
+      }
       throw error;
     }
-    if (displaced) await rm(backupRoot, { recursive: true, force: true });
+    if (displaced) await retryLocked(() => rm(backupRoot, { recursive: true, force: true }));
   } finally {
-    await rm(temporaryRoot, { recursive: true, force: true });
+    await retryLocked(() => rm(temporaryRoot, { recursive: true, force: true }));
   }
 }

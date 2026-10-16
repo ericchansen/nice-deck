@@ -16,7 +16,7 @@ import { previewDeck } from "./preview.mjs";
 import { findWorkspaceRoot, workspaceInventory } from "../lib/workspace.mjs";
 import { copyIfPresent } from "../lib/files.mjs";
 import { assertFullDeckPreview, validateReview } from "./review.mjs";
-import { scanWorkspace } from "./scan.mjs";
+import { partitionPortableFindings, scanWorkspace } from "./scan.mjs";
 
 function assertDirectFileHtml(source) {
   if (/\/__nice-deck\//.test(source)) {
@@ -72,13 +72,21 @@ export async function exportPortable({ sourcePath, outputDir, draft = false, req
       root: destination,
       sourcePath: outputHtml,
     });
-    if (findings.length) {
-      throw new Error(`portable package scan failed: ${findings.map(({ name }) => name).join(", ")}`);
+    let manifest = {};
+    try {
+      manifest = JSON.parse(await readFile(join(destination, "visual-manifest.json"), "utf8"));
+    } catch {
+      // scanWorkspace already reports a missing or invalid manifest as fatal.
+    }
+    const { allowed, fatal } = partitionPortableFindings(findings, manifest);
+    if (fatal.length) {
+      throw new Error(`portable package scan failed: ${fatal.map(({ name }) => name).join(", ")}`);
     }
 
     return {
       root: await realpath(destination),
       html: await realpath(outputHtml),
+      warnings: allowed,
       draft,
     };
   } finally {

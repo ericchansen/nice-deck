@@ -75,9 +75,64 @@ const privatePatterns = [
     pattern: /https?:\/\/[^\s"'<>]*(?:\.corp\.|internal|msx|dev\.azure\.com)[^\s"'<>]*/i,
   },
 ];
+const allowablePresentationFindings = new Set([
+  "cream-token",
+  "glass-default",
+  "gradient-text",
+  "grid-track-mismatch",
+  "manual-primary-visual",
+  "numbered-eyebrow",
+  "printed-reasoning",
+  "region-undeclared",
+  "side-stripe",
+  "slide-contract-incomplete",
+  "slide-text-budget",
+  "visible-citation-missing",
+  "visual-modality-conflict",
+]);
 
 function finding(name, message, sample = "") {
   return { name, message, sample };
+}
+
+export function partitionPortableFindings(findings, manifest = {}) {
+  const declared = manifest.delivery?.allowedFindings ?? [];
+  if (
+    !Array.isArray(declared)
+    || declared.some((name) => typeof name !== "string")
+    || new Set(declared).size !== declared.length
+  ) {
+    return {
+      allowed: [],
+      fatal: [
+        ...findings,
+        finding(
+          "visual-manifest-invalid",
+          "delivery.allowedFindings must be an array of unique finding names.",
+        ),
+      ],
+    };
+  }
+
+  const unsupported = declared.filter((name) => !allowablePresentationFindings.has(name));
+  if (unsupported.length) {
+    return {
+      allowed: [],
+      fatal: [
+        ...findings,
+        finding(
+          "visual-manifest-invalid",
+          `delivery.allowedFindings cannot suppress ${unsupported.join(", ")}.`,
+        ),
+      ],
+    };
+  }
+
+  const approved = new Set(declared);
+  return {
+    allowed: findings.filter(({ name }) => approved.has(name)),
+    fatal: findings.filter(({ name }) => !approved.has(name)),
+  };
 }
 
 // Mirrors the rendered audit's exemptions so the static and rendered checks
@@ -418,19 +473,22 @@ function validateSlideText(declarations, findings) {
 
 function validateSupporting(declarations, styles, findings) {
   for (const declaration of declarations.filter(({ section }) => section === "supporting")) {
+    const designedDirectory = /\bdata-supporting-mode=["']designed-directory["']/i.test(
+      declaration.tag,
+    );
     if (!declaration.anchor) {
       findings.push(finding(
         "supporting-anchor-missing",
         `Supporting slide ${declaration.id ?? "(unidentified)"} requires an id so citations can link to it.`,
       ));
     }
-    if (/<img\b|background-image\s*:/i.test(declaration.body)) {
+    if (!designedDirectory && /<img\b|background-image\s*:/i.test(declaration.body)) {
       findings.push(finding(
         "supporting-imagery",
         `Supporting slide ${declaration.id ?? declaration.anchor} must contain data, not imagery.`,
       ));
     }
-    const saturated = declaration.body.match(
+    const saturated = !designedDirectory && declaration.body.match(
       /(?:color|background(?:-color)?)\s*:\s*(?:#(?![0-9a-f]{0,8}$)|rgb|hsl)[^;"']*/i,
     );
     if (saturated) {

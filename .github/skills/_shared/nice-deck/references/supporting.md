@@ -4,8 +4,9 @@ Supporting slides are the evidence appendix. They are the last slides of the
 same `deck.html`, so citation anchors resolve in the browser, from `file://`,
 and in the exported PDF.
 
-They are deliberately boring. The main deck is art-directed; the supporting
-section is not. Its job is to be checkable.
+Most are deliberately plain. Their job is to be checkable. A resource
+directory may instead use the approved deck system when its URLs are useful
+content rather than audit evidence.
 
 ## Placement and identity
 
@@ -17,7 +18,7 @@ section is not. Its job is to be checkable.
 - A short divider slide may introduce the section. It carries a title and
   nothing else.
 
-## The system
+## Evidence appendix mode
 
 - White background, black text. No deck palette, no accent color, no tinted
   panels.
@@ -27,6 +28,32 @@ section is not. Its job is to be checkable.
 - No generated imagery, no photography, no icons, no motion, no metaphor.
 - No art direction of any kind. Do not extend the approved deck grammar into
   this section, and do not create a second grammar for it.
+
+This is the default for extracts, queries, calculations, and methods.
+
+## Designed reference-directory mode
+
+Use this only for a curated directory that the audience will browse or reuse.
+Declare it on the slide:
+
+```html
+<section class="slide"
+  id="references"
+  data-slide-id="references"
+  data-section="supporting"
+  data-supporting-mode="designed-directory"
+  data-visual-modality="native">
+```
+
+- Use the deck background, typography, and established color semantics.
+- Balance two or three columns across the full available slide height.
+- Keep one fixed vertical rhythm within every link group.
+- Treat written canonical URLs as first-class content; do not hide useful
+  endpoints behind vague labels.
+- Preserve enough separation between the title and directory for the title to
+  read as its own region.
+- Keep the slide static, accessible, and linked. The mode relaxes the
+  black-and-white and no-imagery rules, not evidence or delivery integrity.
 
 ## The content
 
@@ -52,8 +79,9 @@ section is not. Its job is to be checkable.
 The workspace scan enforces the section:
 
 - every `data-section="supporting"` slide has an `id`
-- no generated asset, animation, or transition inside the section
-- monochrome only: no deck palette tokens or saturated color
+- no animation or transition inside the section
+- evidence appendix slides remain monochrome and contain no imagery
+- designed reference-directory slides may use imagery and the deck palette
 - every non-public source in `sources.json` names a `deckAnchor` that resolves
   to a supporting slide id in the deck
 
