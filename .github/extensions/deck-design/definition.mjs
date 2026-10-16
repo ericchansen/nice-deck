@@ -35,7 +35,6 @@ export function createDeckDesignExtension({ repoRoot, loadPreview } = {}) {
   const previewModuleUrl = pathToFileURL(join(toolkitRoot, "scripts", "preview.mjs")).href;
   const feedback = readFileSync(join(toolkitRoot, "references", "feedback.md"), "utf8");
   let workspaceRoot = repoRoot;
-  let activeServer;
   let previewModule;
   let renderQueue = Promise.resolve();
 
@@ -46,19 +45,8 @@ export function createDeckDesignExtension({ repoRoot, loadPreview } = {}) {
       outDir: outDir ? resolve(workspaceRoot, outDir) : undefined,
       mode,
       slideIds,
-      keepServer: true,
+      keepServer: false,
     });
-    if (activeServer) {
-      try {
-        await activeServer.close();
-      } catch (error) {
-        if (error.code !== "ERR_SERVER_NOT_RUNNING") {
-          await result.server.close();
-          throw error;
-        }
-      }
-    }
-    activeServer = result.server;
     return result;
   }
 
@@ -128,7 +116,6 @@ export function createDeckDesignExtension({ repoRoot, loadPreview } = {}) {
       },
       onSessionEnd: async () => {
         await renderQueue;
-        await activeServer?.close();
       },
     },
   };

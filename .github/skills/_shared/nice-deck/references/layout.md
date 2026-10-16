@@ -101,6 +101,37 @@ Do not author copy and then discover it does not fit. The deck must survive
 text growth, because it will be edited. The target is that every slide still
 passes with its headings and `data-contract-field` text inflated by 1.8x.
 
+### 7. Comparison columns share rows
+
+For product, server, or endpoint comparisons, each column uses the same explicit
+row model: heading, purpose, URL, status. Do not let each column size those
+bands independently.
+
+```css
+.comparison {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 32px;
+}
+
+.comparison-column {
+  display: grid;
+  grid-template-rows: 64px 76px 40px 32px;
+  row-gap: 14px;
+  min-width: 0;
+}
+
+.comparison-heading { font: 700 34px/1.05 var(--display); }
+.comparison-purpose,
+.comparison-url,
+.comparison-status { font: 500 22px/1.25 var(--body); }
+.comparison-url { white-space: nowrap; letter-spacing: -0.02em; }
+```
+
+Choose the column count and URL type size so every endpoint remains on one line;
+do not truncate or replace it with a vague label. Shared row sizes keep all
+headings, descriptions, endpoints, and statuses on common baselines.
+
 ## Verification
 
 For an explicit full audit, `nice_deck_preview` with `mode: "audit"` reports

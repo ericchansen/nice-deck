@@ -24,7 +24,7 @@ import {
   requiredReviewRoles,
   validateReview,
 } from "./review.mjs";
-import { scanSource, scanWorkspace } from "./scan.mjs";
+import { partitionPortableFindings, scanSource, scanWorkspace } from "./scan.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 // Existing exhaustive regressions explicitly exercise the audit path.
@@ -157,6 +157,24 @@ test("native snapshot identity, screenshots and allowed HTTP assets", async (t) 
 });
 
 describe("source scan", () => {
+test("portable finding exceptions cannot suppress integrity or privacy failures", () => {
+  const findings = [
+    { name: "slide-text-budget", message: "dense reference slide" },
+    { name: "private-path", message: "private path" },
+  ];
+  const partitioned = partitionPortableFindings(findings, {
+    delivery: { allowedFindings: ["slide-text-budget"] },
+  });
+  assert.deepEqual(partitioned.allowed.map(({ name }) => name), ["slide-text-budget"]);
+  assert.deepEqual(partitioned.fatal.map(({ name }) => name), ["private-path"]);
+
+  const invalid = partitionPortableFindings(findings, {
+    delivery: { allowedFindings: ["private-path"] },
+  });
+  assert(invalid.fatal.some(({ name }) => name === "visual-manifest-invalid"));
+  assert(invalid.fatal.some(({ name }) => name === "private-path"));
+});
+
 test("native diagrams, manual visuals, evidence links, prose and supporting order", async (t) => {
   const { workspace, configure } = await workspaceFixture(t);
   assert(scanSource("p { background-clip: text; }").some(
@@ -219,6 +237,16 @@ test("native diagrams, manual visuals, evidence links, prose and supporting orde
       [contract("01")],
     )).includes("manual-primary-visual"), `${className} must not bypass ECharts as native`);
   }
+
+  assert.deepEqual(await scanRules(
+    '<section class="slide" id="resource-directory" data-slide-id="01"'
+    + ' data-visual-modality="native" data-section="supporting"'
+    + ' data-supporting-mode="designed-directory">'
+    + '<img src="assets/directory.png" alt="">'
+    + '<p style="color: #c44">https://example.com/resource</p>'
+    + citation + "</section>",
+    [contract("01")],
+  ), [], "designed resource directories may use the deck visual system");
 
   assert((await scanRules(
     '<section class="slide" data-slide-id="01" data-visual-modality="native">'
